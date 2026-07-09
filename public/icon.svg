@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#f2b8a2"/>
+  <!-- simple footprint -->
+  <ellipse cx="34" cy="38" rx="11" ry="15" fill="#fff8f4"/>
+  <circle cx="22" cy="24" r="3.4" fill="#fff8f4"/>
+  <circle cx="29" cy="20" r="3.2" fill="#fff8f4"/>
+  <circle cx="36" cy="18.6" r="3.0" fill="#fff8f4"/>
+  <circle cx="43" cy="20" r="2.8" fill="#fff8f4"/>
+  <circle cx="48.5" cy="24" r="2.6" fill="#fff8f4"/>
+</svg>
