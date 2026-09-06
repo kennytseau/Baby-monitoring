@@ -28,15 +28,29 @@ export interface GrowthEntry {
   note?: string
 }
 
-export type FeedMethod = 'breast-left' | 'breast-right' | 'bottle' | 'solids'
-export type DiaperKind = 'wet' | 'dirty' | 'both'
+/** How the milk (or food) got in */
+export type FeedKind = 'nursing' | 'bottle' | 'solids'
+export type BreastSide = 'left' | 'right'
+/** What was in the bottle */
+export type BottleContent = 'formula' | 'expressed' | 'mixed'
+export type NappyKind = 'wet' | 'poo' | 'mixed'
 
 export interface FeedEntry {
   id: string
   type: 'feed'
-  /** ISO datetime */
+  /** ISO datetime the feed started */
   time: string
-  method: FeedMethod
+  kind: FeedKind
+  /** Nursing: minutes banked on each side (the live side is added on top while running) */
+  leftMinutes?: number
+  rightMinutes?: number
+  /** Nursing: side currently being timed — set only while the timer runs */
+  activeSide?: BreastSide
+  /** Nursing: ISO datetime the current side started, paired with `activeSide` */
+  sideStartedAt?: string
+  /** Bottle: what was in it */
+  contents?: BottleContent
+  /** Bottle: millilitres taken */
   amountMl?: number
   note?: string
 }
@@ -51,16 +65,30 @@ export interface SleepEntry {
   note?: string
 }
 
-export interface DiaperEntry {
+export interface NappyEntry {
   id: string
-  type: 'diaper'
+  type: 'nappy'
   /** ISO datetime */
   time: string
-  kind: DiaperKind
+  kind: NappyKind
   note?: string
 }
 
-export type LogEntry = FeedEntry | SleepEntry | DiaperEntry
+/** A pumping session — millilitres expressed from each breast */
+export interface PumpEntry {
+  id: string
+  type: 'pump'
+  /** ISO datetime the session started */
+  time: string
+  leftMl?: number
+  rightMl?: number
+  /** How long the session took, in minutes */
+  durationMinutes?: number
+  note?: string
+}
+
+export type LogEntry = FeedEntry | SleepEntry | NappyEntry | PumpEntry
+export type LogEntryType = LogEntry['type']
 
 export interface Memory {
   id: string

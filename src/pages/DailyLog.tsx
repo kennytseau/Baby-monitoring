@@ -1,35 +1,63 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
-import type { DiaperKind, FeedEntry, FeedMethod, LogEntry, SleepEntry } from '../lib/types'
+import { useNow } from '../hooks/useNow'
+import { QuickLog } from '../components/QuickLog'
+import { DayTimeline } from '../components/DayTimeline'
+import { DayTotalsCard } from '../components/DayTotalsCard'
+import type {
+  BottleContent,
+  FeedKind,
+  LogEntry,
+  LogEntryType,
+  NappyKind,
+} from '../lib/types'
 import { uid } from '../lib/storage'
+import { BOTTLE_LABELS, NAPPY_LABELS, dayTotals, sortedByTime, summarizeEntry, wakeWindows } from '../lib/log'
 import { dayOf, formatDayLabel, formatDuration, formatTime, nowLocalDatetime } from '../lib/format'
 
-const FEED_LABELS: Record<FeedMethod, string> = {
-  'breast-left': 'Breast (left)',
-  'breast-right': 'Breast (right)',
+const ICONS: Record<LogEntryType, string> = { feed: '🍼', sleep: '😴', nappy: '🧷', pump: '🥛' }
+const TYPE_LABELS: Record<LogEntryType, string> = {
+  feed: 'Feed',
+  sleep: 'Sleep',
+  nappy: 'Nappy',
+  pump: 'Pump',
+}
+const FEED_KIND_LABELS: Record<FeedKind, string> = {
+  nursing: 'Nursed',
   bottle: 'Bottle',
   solids: 'Solids',
 }
-const DIAPER_LABELS: Record<DiaperKind, string> = { wet: 'Wet', dirty: 'Dirty', both: 'Wet + dirty' }
-const ICONS = { feed: '🍼', sleep: '😴', diaper: '🧷' } as const
 
-type EntryType = LogEntry['type']
+/** A stretch of awake time, shown between sleeps in the timeline */
+interface WakeRow {
+  kind: 'wake'
+  id: string
+  time: string
+  minutes: number
+  open: boolean
+}
+type TimelineRow = { kind: 'entry'; id: string; time: string; entry: LogEntry } | WakeRow
 
 export function DailyLog() {
   const { state, addLog, updateLog, deleteLog } = useAppState()
+  const now = useNow(30_000)
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const [type, setType] = useState<EntryType>('feed')
+  const [type, setType] = useState<LogEntryType>('feed')
   const [time, setTime] = useState(nowLocalDatetime())
-  const [method, setMethod] = useState<FeedMethod>('breast-left')
+  const [feedKind, setFeedKind] = useState<FeedKind>('nursing')
+  const [leftMinutes, setLeftMinutes] = useState('')
+  const [rightMinutes, setRightMinutes] = useState('')
+  const [contents, setContents] = useState<BottleContent>('formula')
   const [amount, setAmount] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [kind, setKind] = useState<DiaperKind>('wet')
+  const [nappyKind, setNappyKind] = useState<NappyKind>('wet')
+  const [pumpLeft, setPumpLeft] = useState('')
+  const [pumpRight, setPumpRight] = useState('')
+  const [pumpMinutes, setPumpMinutes] = useState('')
   const [note, setNote] = useState('')
-
-  const openSleep = state.log.find((e): e is SleepEntry => e.type === 'sleep' && !e.endTime)
 
   const days = useMemo(() => {
     const byDay = new Map<string, LogEntry[]>()
@@ -39,51 +67,67 @@ export function DailyLog() {
       list.push(entry)
       byDay.set(day, list)
     }
+    // Wake windows span sleeps, so they are worked out across the whole log and
+    // then filed under the day the baby woke up.
+    const windowsByDay = new Map<string, WakeRow[]>()
+    for (const w of wakeWindows(state.log, now)) {
+      if (w.minutes < 1) continue
+      const day = dayOf(w.start)
+      const list = windowsByDay.get(day) ?? []
+      list.push({ kind: 'wake', id: `wake-${w.start}`, time: w.start, minutes: w.minutes, open: w.open })
+      windowsByDay.set(day, list)
+    }
+
     return [...byDay.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([day, entries]) => ({
-        day,
-        entries: entries.sort((a, b) => b.time.localeCompare(a.time)),
-      }))
-  }, [state.log])
-
-  function quickFeed() {
-    const lastFeed = [...state.log].reverse().find((e): e is FeedEntry => e.type === 'feed')
-    addLog({ id: uid(), type: 'feed', time: new Date().toISOString(), method: lastFeed?.method ?? 'breast-left' })
-  }
-  function quickSleep() {
-    if (openSleep) updateLog({ ...openSleep, endTime: new Date().toISOString() })
-    else addLog({ id: uid(), type: 'sleep', time: new Date().toISOString() })
-  }
-  function quickDiaper() {
-    addLog({ id: uid(), type: 'diaper', time: new Date().toISOString(), kind: 'wet' })
-  }
+      .map(([day, entries]) => {
+        const rows: TimelineRow[] = [
+          ...entries.map((entry) => ({ kind: 'entry' as const, id: entry.id, time: entry.time, entry })),
+          ...(windowsByDay.get(day) ?? []),
+        ]
+        return { day, entries, rows: sortedByTime(rows) }
+      })
+  }, [state.log, now])
 
   function resetForm() {
     setFormOpen(false)
     setEditingId(null)
     setType('feed')
     setTime(nowLocalDatetime())
-    setMethod('breast-left')
+    setFeedKind('nursing')
+    setLeftMinutes('')
+    setRightMinutes('')
+    setContents('formula')
     setAmount('')
     setEndTime('')
-    setKind('wet')
+    setNappyKind('wet')
+    setPumpLeft('')
+    setPumpRight('')
+    setPumpMinutes('')
     setNote('')
   }
 
   function startEdit(entry: LogEntry) {
+    resetForm()
     setFormOpen(true)
     setEditingId(entry.id)
     setType(entry.type)
     setTime(toLocalInput(entry.time))
     setNote(entry.note ?? '')
     if (entry.type === 'feed') {
-      setMethod(entry.method)
+      setFeedKind(entry.kind)
+      setLeftMinutes(entry.leftMinutes?.toString() ?? '')
+      setRightMinutes(entry.rightMinutes?.toString() ?? '')
+      setContents(entry.contents ?? 'formula')
       setAmount(entry.amountMl?.toString() ?? '')
     } else if (entry.type === 'sleep') {
       setEndTime(entry.endTime ? toLocalInput(entry.endTime) : '')
+    } else if (entry.type === 'nappy') {
+      setNappyKind(entry.kind)
     } else {
-      setKind(entry.kind)
+      setPumpLeft(entry.leftMl?.toString() ?? '')
+      setPumpRight(entry.rightMl?.toString() ?? '')
+      setPumpMinutes(entry.durationMinutes?.toString() ?? '')
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -94,27 +138,44 @@ export function DailyLog() {
     const iso = new Date(time).toISOString()
     const id = editingId ?? uid()
     const trimmedNote = note.trim() || undefined
+    const existing = editingId ? state.log.find((entry) => entry.id === editingId) : undefined
+
     let entry: LogEntry
     if (type === 'feed') {
-      const ml = Number(amount)
       entry = {
         id,
-        type,
+        type: 'feed',
         time: iso,
-        method,
-        amountMl: amount.trim() && Number.isFinite(ml) && ml > 0 ? ml : undefined,
+        kind: feedKind,
+        leftMinutes: feedKind === 'nursing' ? num(leftMinutes) : undefined,
+        rightMinutes: feedKind === 'nursing' ? num(rightMinutes) : undefined,
+        // keep a running timer alive when its session is edited
+        activeSide: existing?.type === 'feed' ? existing.activeSide : undefined,
+        sideStartedAt: existing?.type === 'feed' ? existing.sideStartedAt : undefined,
+        contents: feedKind === 'bottle' ? contents : undefined,
+        amountMl: feedKind === 'bottle' ? num(amount) : undefined,
         note: trimmedNote,
       }
     } else if (type === 'sleep') {
       entry = {
         id,
-        type,
+        type: 'sleep',
         time: iso,
         endTime: endTime ? new Date(endTime).toISOString() : undefined,
         note: trimmedNote,
       }
+    } else if (type === 'nappy') {
+      entry = { id, type: 'nappy', time: iso, kind: nappyKind, note: trimmedNote }
     } else {
-      entry = { id, type, time: iso, kind, note: trimmedNote }
+      entry = {
+        id,
+        type: 'pump',
+        time: iso,
+        leftMl: num(pumpLeft),
+        rightMl: num(pumpRight),
+        durationMinutes: num(pumpMinutes),
+        note: trimmedNote,
+      }
     }
     if (editingId) updateLog(entry)
     else addLog(entry)
@@ -125,20 +186,12 @@ export function DailyLog() {
     <main className="page">
       <header>
         <h1 className="page-title">Daily log</h1>
-        <p className="page-subtitle">Feeds, sleep and diapers — tap to log it as it happens.</p>
+        <p className="page-subtitle">
+          Milk, nappies, sleep and pumping — tap it in as it happens, or add it later.
+        </p>
       </header>
 
-      <div className="quick-btns">
-        <button className="quick-btn" onClick={quickFeed}>
-          <span aria-hidden="true">🍼</span> Feed
-        </button>
-        <button className="quick-btn" onClick={quickSleep}>
-          <span aria-hidden="true">😴</span> {openSleep ? 'Wake up' : 'Sleep'}
-        </button>
-        <button className="quick-btn" onClick={quickDiaper}>
-          <span aria-hidden="true">🧷</span> Diaper
-        </button>
-      </div>
+      <QuickLog />
 
       {!formOpen ? (
         <button className="btn btn-block" onClick={() => setFormOpen(true)}>
@@ -148,15 +201,17 @@ export function DailyLog() {
         <form className="card stack" onSubmit={handleSubmit}>
           <h2 className="item-title">{editingId ? 'Edit entry' : 'New entry'}</h2>
           <div className="seg" role="group" aria-label="Entry type">
-            {(['feed', 'sleep', 'diaper'] as const).map((t) => (
+            {(Object.keys(TYPE_LABELS) as LogEntryType[]).map((t) => (
               <button key={t} type="button" className={type === t ? 'on' : ''} onClick={() => setType(t)}>
-                {ICONS[t]} {t[0].toUpperCase() + t.slice(1)}
+                {ICONS[t]} {TYPE_LABELS[t]}
               </button>
             ))}
           </div>
 
           <div className="field">
-            <label htmlFor="log-time">{type === 'sleep' ? 'Fell asleep' : 'Time'}</label>
+            <label htmlFor="log-time">
+              {type === 'sleep' ? 'Fell asleep' : type === 'feed' ? 'Feed started' : 'Time'}
+            </label>
             <input
               id="log-time"
               type="datetime-local"
@@ -167,33 +222,71 @@ export function DailyLog() {
           </div>
 
           {type === 'feed' && (
-            <div className="field-row">
-              <div className="field">
-                <label htmlFor="log-method">Method</label>
-                <select id="log-method" value={method} onChange={(e) => setMethod(e.target.value as FeedMethod)}>
-                  {Object.entries(FEED_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+            <>
+              <div className="seg" role="group" aria-label="Feed type">
+                {(Object.keys(FEED_KIND_LABELS) as FeedKind[]).map((k) => (
+                  <button key={k} type="button" className={feedKind === k ? 'on' : ''} onClick={() => setFeedKind(k)}>
+                    {FEED_KIND_LABELS[k]}
+                  </button>
+                ))}
               </div>
-              {method === 'bottle' && (
-                <div className="field">
-                  <label htmlFor="log-amount">Amount (ml)</label>
-                  <input
-                    id="log-amount"
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    step="5"
-                    placeholder="90"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
+
+              {feedKind === 'nursing' && (
+                <div className="field-row">
+                  <div className="field">
+                    <label htmlFor="log-left">Left (minutes)</label>
+                    <input
+                      id="log-left"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      step="1"
+                      placeholder="15"
+                      value={leftMinutes}
+                      onChange={(e) => setLeftMinutes(e.target.value)}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="log-right">Right (minutes)</label>
+                    <input
+                      id="log-right"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      step="1"
+                      placeholder="10"
+                      value={rightMinutes}
+                      onChange={(e) => setRightMinutes(e.target.value)}
+                    />
+                  </div>
                 </div>
               )}
-            </div>
+
+              {feedKind === 'bottle' && (
+                <div className="stack">
+                  <div className="seg" role="group" aria-label="What's in the bottle">
+                    {(Object.keys(BOTTLE_LABELS) as BottleContent[]).map((c) => (
+                      <button key={c} type="button" className={contents === c ? 'on' : ''} onClick={() => setContents(c)}>
+                        {c === 'mixed' ? 'Both' : BOTTLE_LABELS[c]}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="field">
+                    <label htmlFor="log-amount">Amount (ml)</label>
+                    <input
+                      id="log-amount"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      step="5"
+                      placeholder="90"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {type === 'sleep' && (
@@ -209,13 +302,57 @@ export function DailyLog() {
             </div>
           )}
 
-          {type === 'diaper' && (
-            <div className="seg" role="group" aria-label="Diaper kind">
-              {(Object.keys(DIAPER_LABELS) as DiaperKind[]).map((k) => (
-                <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>
-                  {DIAPER_LABELS[k]}
+          {type === 'nappy' && (
+            <div className="seg" role="group" aria-label="Nappy kind">
+              {(Object.keys(NAPPY_LABELS) as NappyKind[]).map((k) => (
+                <button key={k} type="button" className={nappyKind === k ? 'on' : ''} onClick={() => setNappyKind(k)}>
+                  {NAPPY_LABELS[k]}
                 </button>
               ))}
+            </div>
+          )}
+
+          {type === 'pump' && (
+            <div className="field-row">
+              <div className="field">
+                <label htmlFor="log-pump-left">Left (ml)</label>
+                <input
+                  id="log-pump-left"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="5"
+                  placeholder="60"
+                  value={pumpLeft}
+                  onChange={(e) => setPumpLeft(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="log-pump-right">Right (ml)</label>
+                <input
+                  id="log-pump-right"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="5"
+                  placeholder="60"
+                  value={pumpRight}
+                  onChange={(e) => setPumpRight(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="log-pump-mins">Minutes</label>
+                <input
+                  id="log-pump-mins"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  placeholder="20"
+                  value={pumpMinutes}
+                  onChange={(e) => setPumpMinutes(e.target.value)}
+                />
+              </div>
             </div>
           )}
 
@@ -241,35 +378,32 @@ export function DailyLog() {
         </form>
       )}
 
-      {days.length === 0 && <div className="empty">Nothing logged yet — the buttons above make it a one-tap job.</div>}
+      {days.length === 0 && (
+        <div className="empty">Nothing logged yet — the buttons above make it a one-tap job.</div>
+      )}
 
-      {days.map(({ day, entries }) => (
-        <section key={day}>
-          <div className="row-between day-divider">
-            <span>{formatDayLabel(day)}</span>
-            <span style={{ textTransform: 'none', letterSpacing: 0 }}>{daySummary(entries)}</span>
-          </div>
-          <div className="card" style={{ marginTop: 6 }}>
-            {entries.map((entry) => (
-              <div className="list-item" key={entry.id}>
-                <div className="item-icon" aria-hidden="true">
-                  {ICONS[entry.type]}
+      {days.map(({ day, entries, rows }) => (
+        <section key={day} className="stack">
+          <div className="day-divider">{formatDayLabel(day)}</div>
+          <DayTimeline day={day} entries={entries} now={now} />
+          <DayTotalsCard totals={dayTotals(entries, now)} />
+          <div className="card">
+            {rows.map((row) =>
+              row.kind === 'wake' ? (
+                <div className="wake-row" key={row.id}>
+                  <span aria-hidden="true">☀️</span> Awake {formatDuration(row.minutes)}
+                  {row.open ? ' so far' : ''} · from {formatTime(row.time)}
                 </div>
-                <div className="grow">
-                  <div className="item-title">{describe(entry)}</div>
-                  <div className="item-sub">
-                    {formatTime(entry.time)}
-                    {entry.note ? ` · ${entry.note}` : ''}
-                  </div>
-                </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => startEdit(entry)}>
-                  Edit
-                </button>
-                <button className="btn btn-danger btn-sm" onClick={() => deleteLog(entry.id)}>
-                  Delete
-                </button>
-              </div>
-            ))}
+              ) : (
+                <LogRow
+                  key={row.id}
+                  entry={row.entry}
+                  now={now}
+                  onEdit={() => startEdit(row.entry)}
+                  onDelete={() => deleteLog(row.entry.id)}
+                />
+              ),
+            )}
           </div>
         </section>
       ))}
@@ -277,29 +411,42 @@ export function DailyLog() {
   )
 }
 
-function describe(entry: LogEntry): string {
-  if (entry.type === 'feed') {
-    return entry.amountMl ? `${FEED_LABELS[entry.method]} · ${entry.amountMl} ml` : FEED_LABELS[entry.method]
-  }
-  if (entry.type === 'sleep') {
-    if (!entry.endTime) return `Sleeping since ${formatTime(entry.time)}`
-    const mins = (new Date(entry.endTime).getTime() - new Date(entry.time).getTime()) / 60000
-    return `Sleep · ${formatTime(entry.time)}–${formatTime(entry.endTime)} (${formatDuration(mins)})`
-  }
-  return `Diaper · ${DIAPER_LABELS[entry.kind]}`
+function LogRow({
+  entry,
+  now,
+  onEdit,
+  onDelete,
+}: {
+  entry: LogEntry
+  now: Date
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const { title, detail } = summarizeEntry(entry, now)
+  return (
+    <div className="list-item">
+      <div className="item-icon" aria-hidden="true">
+        {ICONS[entry.type]}
+      </div>
+      <div className="grow">
+        <div className="item-title">{title}</div>
+        <div className="item-sub">
+          {[formatTime(entry.time), detail, entry.note].filter(Boolean).join(' · ')}
+        </div>
+      </div>
+      <button className="btn btn-ghost btn-sm" onClick={onEdit}>
+        Edit
+      </button>
+      <button className="btn btn-danger btn-sm" onClick={onDelete}>
+        Delete
+      </button>
+    </div>
+  )
 }
 
-function daySummary(entries: LogEntry[]): string {
-  const feeds = entries.filter((e) => e.type === 'feed').length
-  const diapers = entries.filter((e) => e.type === 'diaper').length
-  const sleepMins = entries
-    .filter((e): e is SleepEntry => e.type === 'sleep' && !!e.endTime)
-    .reduce((t, e) => t + (new Date(e.endTime!).getTime() - new Date(e.time).getTime()) / 60000, 0)
-  const parts: string[] = []
-  if (feeds) parts.push(`${feeds} feeds`)
-  if (sleepMins) parts.push(formatDuration(sleepMins))
-  if (diapers) parts.push(`${diapers} diapers`)
-  return parts.join(' · ')
+function num(value: string): number | undefined {
+  const n = Number(value)
+  return value.trim() && Number.isFinite(n) && n > 0 ? n : undefined
 }
 
 function toLocalInput(iso: string): string {

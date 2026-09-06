@@ -13,7 +13,8 @@ screen like an app.
 
 - **Home ("Today")** — her exact age (with adjusted age for babies born early),
   a summary of what she's likely doing in her current developmental window,
-  one-tap quick logging, and today's feed/sleep/diaper counts at a glance.
+  one-tap quick logging, whether she's asleep or how long she's been awake, and
+  today's milk / sleep / nappy totals at a glance.
 - **Milestones** — checklists for 0–24 months based on the CDC
   "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
   age), organised by age band with her current band highlighted. Every
@@ -23,9 +24,19 @@ screen like an app.
 - **Growth** — log weight, length and head circumference; see them plotted
   over shaded percentile bands (3rd–97th) approximating the WHO Child Growth
   Standards, with an estimated percentile for each entry.
-- **Daily log** — quick-tap feeds (breast side / bottle + amount / solids),
-  sleep sessions (start now, end when she wakes), and diapers, in a timeline
-  grouped by day with daily totals.
+- **Daily log** — the day in one place:
+  - **Milk** — nursing with a live per-side timer (start on the left, switch to
+    the right, finish; minutes are banked to each breast), or a bottle with what
+    was in it (formula / expressed breast milk / both) and how many ml. Solids
+    too, when she gets there.
+  - **Nappies** — wet, poo or both, with the time.
+  - **Sleep** — tap when she goes down, tap again when she wakes; the gaps in
+    between are shown as **wake windows**.
+  - **Pumping** — millilitres from the left and right breast, and how long the
+    session took.
+  - Each day gets a 24-hour strip (sleep as bars, feeds / nappies / pumping as
+    marks) plus totals: milk in, nursing minutes per side, nappies by type,
+    total and longest sleep, and how much was pumped.
 - **Memories** — dated journal entries for the firsts (first smile, first
   laugh…), each shown with how old she was at the time.
 - **Backup** — download all data as JSON from *Settings & data* on the Home
@@ -56,30 +67,37 @@ Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
   library
 - All state in a single versioned `localStorage` document
   (`src/lib/storage.ts`) behind a React context (`src/hooks/useAppState.tsx`),
-  ready to be swapped for IndexedDB or a sync backend later
+  ready to be swapped for IndexedDB or a sync backend later. The document is
+  migrated on load, so data logged under an older schema keeps working
+- A running nursing session is just a log entry with the side and its start
+  time on it, so the timer survives a reload (and a flat battery)
 
 ```
 src/
-  lib/        age math, storage, percentile interpolation, formatting
+  lib/        age math, storage + schema migrations, log maths (durations,
+              wake windows, day totals), percentiles, formatting
   data/       milestone dataset (CDC-based) + growth curve tables (WHO-based)
-  hooks/      app state provider
+  hooks/      app state provider, quick-log actions, ticking clock
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Memories
-  components/ TabBar, GrowthChart
+  components/ TabBar, GrowthChart, QuickLog, NursingTimer, DayTimeline,
+              DayTotalsCard
 ```
 
 ## Data & privacy
 
 All data lives in your browser's `localStorage` on the device you use. Nothing
 ever leaves the device. That also means: clearing site data erases it, and a
-second device starts empty — download a JSON backup from *Settings & data*
-before clearing or switching. (Cross-device sync is a natural next step —
-see below.)
+second device starts empty. **Two phones do not see each other's entries yet** —
+if both of you log, you each keep your own copy, so for now pick one device as
+the record (or export/import between them). Download a JSON backup from
+*Settings & data* before clearing or switching. Shared, synced logging is the
+next step below.
 
 ## Ideas for later
 
 - Photos on memories (needs IndexedDB — `localStorage` is too small)
 - JSON backup **import** to restore/move devices
-- Optional sync backend + accounts for sharing with a partner
+- Optional sync backend + accounts so both parents log into the same day
 - Reminders (tummy time, vitamin D drops), a service worker for full offline
   installs, sleep/feed pattern charts
 

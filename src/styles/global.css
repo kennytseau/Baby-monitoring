@@ -171,7 +171,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .btn-danger { color: #b3423a; border-color: transparent; background: transparent; }
 .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
 .btn-block { width: 100%; }
-.quick-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.quick-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 10px; }
 .quick-btn {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   background: var(--surface);
@@ -366,3 +366,65 @@ a { color: var(--accent-text); }
   text-align: center;
   padding: 0 32px;
 }
+
+/* ---------- Quick logging ---------- */
+.quick-btn-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.quick-panel { padding: 12px; }
+/* Five one-tap actions stay on one row, even on a narrow phone */
+.quick-btns-5 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.quick-btns-5 .quick-btn { padding: 12px 2px; font-size: 0.72rem; gap: 2px; }
+.quick-btns-5 .quick-btn span:first-child { font-size: 1.35rem; }
+
+.timer-card { display: flex; flex-direction: column; gap: 10px; }
+.timer-readout {
+  font-size: 2.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.timer-sides {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.timer-sides .on { color: var(--accent-text); }
+
+/* ---------- Day totals ---------- */
+.totals-card { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.totals-row { display: flex; gap: 10px; align-items: baseline; }
+.totals-label {
+  flex: 0 0 62px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.totals-values { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- Day timeline ---------- */
+.day-timeline { width: 100%; height: auto; display: block; }
+.dt-track { fill: var(--surface-2); }
+.dt-sleep { fill: var(--accent); opacity: 0.75; }
+.dt-grid { stroke: var(--border); stroke-width: 1; }
+.dt-tick { fill: var(--text-faint); font-size: 16px; }
+.dt-feed { fill: var(--accent-strong); }
+.dt-nappy { fill: var(--good); }
+.dt-pump { fill: var(--cat-cognitive); }
+
+.wake-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.wake-row:last-child { border-bottom: none; }

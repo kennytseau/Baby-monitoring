@@ -55,3 +55,26 @@ export function formatDuration(minutes: number): string {
   if (m === 0) return `${h} h`
   return `${h} h ${m} m`
 }
+
+/** Live stopwatch reading from minutes: "7:12" under an hour, else "1:03:20" */
+export function formatStopwatch(minutes: number): string {
+  const total = Math.max(0, Math.floor(minutes * 60))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
+}
+
+/** "just now" / "25 min ago" / "3 h 10 m ago" */
+export function formatAgo(iso: string, now: Date = new Date()): string {
+  const minutes = (now.getTime() - new Date(iso).getTime()) / 60000
+  if (minutes < 1) return 'just now'
+  return `${formatDuration(minutes)} ago`
+}
+
+/** Minutes past local midnight, used to place entries on a 24-hour strip */
+export function minutesIntoDay(iso: string): number {
+  const d = new Date(iso)
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
+}
