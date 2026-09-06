@@ -7,6 +7,10 @@ free tier.
 
 You deploy this once. After that the app talks to it directly.
 
+**Not comfortable with a terminal?** Follow
+[SETUP-WITHOUT-A-TERMINAL.md](SETUP-WITHOUT-A-TERMINAL.md) instead — the same
+setup done entirely by clicking in Cloudflare's website, with no installs.
+
 ## Deploy it
 
 You need a free [Cloudflare account](https://dash.cloudflare.com/sign-up) and

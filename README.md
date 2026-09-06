@@ -68,7 +68,10 @@ Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 Out of the box the app is device-local. To share a log:
 
 1. Deploy the sync server once — a Cloudflare Worker plus a D1 database, both
-   on the free tier. Full instructions in [`worker/README.md`](worker/README.md):
+   on the free tier. No terminal needed: follow
+   [`worker/SETUP-WITHOUT-A-TERMINAL.md`](worker/SETUP-WITHOUT-A-TERMINAL.md)
+   to do it by clicking. Or, from a terminal
+   ([`worker/README.md`](worker/README.md)):
 
    ```bash
    cd worker && npm install
