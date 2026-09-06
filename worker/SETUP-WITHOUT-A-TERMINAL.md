@@ -30,11 +30,31 @@ This is where the log is stored.
 
    Click **Create**.
 3. Open the database you just made and choose the **Console** tab.
-4. In another browser tab open
-   [`worker/schema.sql`](schema.sql) in this repository, click the
-   **copy raw file** button, and paste the whole thing into the console.
-5. Click **Run** (or **Execute**). It should report success. You have just
-   created two empty tables — nothing else happens yet.
+4. Copy the block below, paste it into the console box, and click **Run**
+   (or **Execute**). Then do the same for the second and third blocks, one at a
+   time — **run each one on its own**, clearing the box in between.
+
+   ```sql
+   CREATE TABLE IF NOT EXISTS households (id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, seq INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+   ```
+
+   ```sql
+   CREATE TABLE IF NOT EXISTS records (household_id TEXT NOT NULL, collection TEXT NOT NULL, id TEXT NOT NULL, updated_at TEXT NOT NULL, deleted_at TEXT, data TEXT, seq INTEGER NOT NULL, PRIMARY KEY (household_id, collection, id));
+   ```
+
+   ```sql
+   CREATE INDEX IF NOT EXISTS records_by_seq ON records (household_id, seq);
+   ```
+
+   Each should report success. You have just created two empty tables and an
+   index — nothing else happens yet.
+
+   > **"The request is malformed: Requests without any query are not
+   > supported."** means the console got nothing to run: the box was empty, the
+   > paste did not take, or what was pasted was only the comment lines. Click
+   > into the box, make sure you can see the `CREATE ...` text, and press Run
+   > again. This is also why the statements are split up above — pasting the
+   > whole file at once, comments and all, is what usually trips this.
 
 ## Step 3 — Create the Worker (this is where your URL comes from)
 
@@ -106,6 +126,28 @@ You should see exactly this:
 
 If you see that, the server is running. (If you get an error mentioning `DB`,
 Step 5 did not save — check the variable name is `DB` in capitals.)
+
+## If something goes wrong
+
+**"The request is malformed: Requests without any query are not supported."**
+The database console was asked to run an empty query — see the note in Step 2.
+Run the three `CREATE` statements one at a time.
+
+**The health check shows an error mentioning `DB`.** The database is not
+connected to the Worker. Redo Step 5 and check the variable name is `DB`, in
+capitals, and that you clicked Deploy/Save afterwards.
+
+**The health check shows a Cloudflare error page instead of `{"ok":true}`.**
+The code did not save. Redo Step 4, making sure the editor was completely empty
+before pasting, and click Deploy.
+
+**The app says "That family code was not accepted."** The code was mistyped or
+belongs to a different Worker. Copy it again from the first phone — dashes and
+capitals do not matter, but every character does.
+
+**The app says it cannot reach the sync server.** Check the address in the app
+matches your Worker exactly (it must start with `https://` and have no slash on
+the end), and that the health check above works in a browser.
 
 ## Step 7 — Pair the two phones
 
