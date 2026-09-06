@@ -97,8 +97,17 @@ to it, so treat it like a house key; it is stored only on your phones and is
 deliberately left out of the JSON backup. If you both lose it there is no way
 back into that log — keep a backup.
 
-Set the repository variable `VITE_SYNC_URL` to your Worker URL and the deployed
-site will pre-fill it, so neither of you has to type it.
+**Pre-filling the server URL.** Typing the Worker URL on each phone is a
+one-off, but you can bake it into the deployed site instead — either way works:
+
+- Uncomment the `VITE_SYNC_URL=` line in [`.env.production`](.env.production),
+  paste your Worker URL, and commit. Nothing to configure on GitHub.
+- Or set a repository variable named `VITE_SYNC_URL` (repo *Settings →
+  Secrets and variables → Actions → Variables*); the deploy workflow passes it
+  through, and it overrides the file.
+
+The URL is not a secret — it ends up in the built JavaScript either way, and
+it is the family code that protects the log.
 
 ## How it's built
 

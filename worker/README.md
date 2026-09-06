@@ -34,7 +34,8 @@ https://baby-log-sync.yourname.workers.dev
 ```
 
 That URL is what you paste into the app: **Home → Settings & data → Share with
-your partner → Create shared log**. The app hands you a family code; type that
+your partner → Create shared log**. (To avoid typing it on each phone, put it
+in `.env.production` at the repo root and commit — see the main README.) The app hands you a family code; type that
 code into the same screen on the other phone ("Join with a code"), and the two
 phones stay in step from then on.
 
