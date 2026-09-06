@@ -5,13 +5,17 @@ import { adjustedAgeInDays, ageInMonthsFloat, correctionDays, formatAge, parseIS
 import { bandForAgeMonths, findMilestone, nextBand } from '../data/milestones'
 import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
 import { estimatePercentile, ordinal } from '../lib/percentiles'
-import { dayOf, formatDuration, formatTime, todayISO } from '../lib/format'
-import type { FeedEntry, FeedMethod, SleepEntry } from '../lib/types'
-import { uid } from '../lib/storage'
+import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
+import { QuickLog } from '../components/QuickLog'
+import { SharingPanel } from '../components/SharingPanel'
+import { DayTotalsCard } from '../components/DayTotalsCard'
+import { useNow } from '../hooks/useNow'
+import { currentWakeMinutes, dayTotals, findOpenSleep, sleepMinutes, sortedByTime } from '../lib/log'
 
 export function Home() {
-  const { state, addLog, updateLog, setProfile, exportData, resetAll } = useAppState()
+  const { state, setProfile, exportData, resetAll, sync } = useAppState()
   const profile = state.profile!
+  const now = useNow(30_000)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const corrDays = correctionDays(profile)
@@ -38,16 +42,12 @@ export function Home() {
   const nextInBand = band.milestones.filter((m) => !achievedSet.has(m.id)).slice(0, 3)
 
   const today = todayISO()
-  const todayLog = state.log.filter((e) => dayOf(e.time) === today)
-  const feedsToday = todayLog.filter((e) => e.type === 'feed').length
-  const diapersToday = todayLog.filter((e) => e.type === 'diaper').length
-  const openSleep = state.log.find((e): e is SleepEntry => e.type === 'sleep' && !e.endTime)
-  const sleepMinutesToday = state.log
-    .filter((e): e is SleepEntry => e.type === 'sleep' && dayOf(e.time) === today)
-    .reduce((total, e) => {
-      const end = e.endTime ? new Date(e.endTime).getTime() : Date.now()
-      return total + Math.max(0, (end - new Date(e.time).getTime()) / 60000)
-    }, 0)
+  const todayLog = useMemo(() => state.log.filter((e) => dayOf(e.time) === today), [state.log, today])
+  const totals = dayTotals(todayLog, now)
+  const openSleep = findOpenSleep(state.log)
+  const awakeMinutes = currentWakeMinutes(state.log, now)
+  const lastFeed = sortedByTime(state.log.filter((e) => e.type === 'feed'))[0]
+  const milkToday = totals.bottleMl
 
   const latestGrowth = useMemo(() => {
     const entries = [...state.growth].sort((a, b) => b.date.localeCompare(a.date))
@@ -65,22 +65,6 @@ export function Home() {
     return null
   }, [state.growth, profile.sex, profile.birthDate])
 
-  function quickFeed() {
-    const lastFeed = [...state.log].reverse().find((e): e is FeedEntry => e.type === 'feed')
-    const method: FeedMethod = lastFeed ? lastFeed.method : 'breast-left'
-    addLog({ id: uid(), type: 'feed', time: new Date().toISOString(), method })
-  }
-  function quickSleep() {
-    if (openSleep) {
-      updateLog({ ...openSleep, endTime: new Date().toISOString() })
-    } else {
-      addLog({ id: uid(), type: 'sleep', time: new Date().toISOString() })
-    }
-  }
-  function quickDiaper() {
-    addLog({ id: uid(), type: 'diaper', time: new Date().toISOString(), kind: 'wet' })
-  }
-
   return (
     <main className="page">
       <header>
@@ -91,6 +75,20 @@ export function Home() {
         {usesAdjusted && (
           <p className="tiny muted">
             Born {Math.round(corrDays / 7)} weeks early — milestones use her adjusted age.
+          </p>
+        )}
+        {sync.paired && (
+          <p className="tiny faint">
+            Shared log ·{' '}
+            {sync.status === 'syncing'
+              ? 'syncing…'
+              : sync.status === 'error'
+                ? `not synced (${sync.pendingCount} waiting)`
+                : sync.pendingCount > 0
+                  ? `${sync.pendingCount} change${sync.pendingCount === 1 ? '' : 's'} waiting`
+                  : sync.lastSyncedAt
+                    ? `synced ${formatAgo(sync.lastSyncedAt, now)}`
+                    : 'in sync'}
           </p>
         )}
       </header>
@@ -109,17 +107,23 @@ export function Home() {
       </section>
 
       <section>
+        <h2 className="section-title">Right now</h2>
+        <p className="small" style={{ marginTop: 4 }}>
+          {openSleep
+            ? `Asleep since ${formatTime(openSleep.time)} — ${formatDuration(sleepMinutes(openSleep, now))} so far.`
+            : awakeMinutes == null
+              ? 'No sleep logged yet today.'
+              : awakeMinutes < 1
+                ? 'Just woke up.'
+                : `Awake for ${formatDuration(awakeMinutes)}.`}
+          {lastFeed ? ` Last feed ${formatAgo(lastFeed.time, now)}.` : ''}
+        </p>
+      </section>
+
+      <section>
         <h2 className="section-title">Quick log</h2>
-        <div className="quick-btns" style={{ marginTop: 8 }}>
-          <button className="quick-btn" onClick={quickFeed}>
-            <span aria-hidden="true">🍼</span> Feed
-          </button>
-          <button className="quick-btn" onClick={quickSleep}>
-            <span aria-hidden="true">😴</span> {openSleep ? 'Wake up' : 'Sleep'}
-          </button>
-          <button className="quick-btn" onClick={quickDiaper}>
-            <span aria-hidden="true">🧷</span> Diaper
-          </button>
+        <div style={{ marginTop: 8 }}>
+          <QuickLog />
         </div>
       </section>
 
@@ -127,20 +131,32 @@ export function Home() {
         <h2 className="section-title">Today</h2>
         <div className="stat-grid" style={{ marginTop: 8 }}>
           <div className="stat-tile">
-            <span className="stat-value">{feedsToday}</span>
-            <span className="stat-label">Feeds</span>
-          </div>
-          <div className="stat-tile">
             <span className="stat-value">
-              {openSleep ? `zZ since ${formatTime(openSleep.time)}` : formatDuration(sleepMinutesToday)}
+              {milkToday ? `${milkToday} ml` : totals.nursingMinutes ? formatDuration(totals.nursingMinutes) : '—'}
             </span>
-            <span className="stat-label">Sleep</span>
+            <span className="stat-label">
+              {milkToday && totals.nursingMinutes
+                ? `Bottles · ${formatDuration(totals.nursingMinutes)} nursing`
+                : milkToday
+                  ? 'Milk in bottles'
+                  : 'Nursing'}
+            </span>
           </div>
           <div className="stat-tile">
-            <span className="stat-value">{diapersToday}</span>
-            <span className="stat-label">Diapers</span>
+            <span className="stat-value">{formatDuration(totals.sleepMinutes)}</span>
+            <span className="stat-label">Sleep ({totals.sleeps})</span>
+          </div>
+          <div className="stat-tile">
+            <span className="stat-value">{totals.nappyTotal}</span>
+            <span className="stat-label">Nappies</span>
           </div>
         </div>
+        <div style={{ marginTop: 10 }}>
+          <DayTotalsCard totals={totals} />
+        </div>
+        <Link to="/log" className="btn btn-ghost btn-sm" style={{ marginLeft: -12 }}>
+          Full daily log →
+        </Link>
       </section>
 
       {nextInBand.length > 0 && (
@@ -201,6 +217,9 @@ export function Home() {
         <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Settings & data</summary>
         <div className="stack" style={{ marginTop: 12 }}>
           <EditProfile />
+          <hr className="rule" />
+          <SharingPanel />
+          <hr className="rule" />
           <button className="btn" onClick={exportData}>
             Download backup (JSON)
           </button>
@@ -225,8 +244,9 @@ export function Home() {
             </button>
           )}
           <p className="tiny faint">
-            All data lives only in this browser. Download a backup before clearing your browser
-            data or switching devices.
+            {sync.paired
+              ? 'Entries are kept on this phone and synced to your shared log. A backup is still worth having before clearing browser data.'
+              : 'All data lives only in this browser. Download a backup before clearing your browser data or switching devices.'}
           </p>
         </div>
       </details>
