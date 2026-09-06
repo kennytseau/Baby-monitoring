@@ -13,6 +13,8 @@
   --accent-text: #a24d30;
   --good: #4d7c5f;
   --good-soft: #e4efe7;
+  --warn: #b3423a;
+  --warn-soft: #f8e3e1;
   --shadow: 0 1px 3px rgb(51 48 44 / 0.07), 0 4px 14px rgb(51 48 44 / 0.05);
   --radius: 16px;
   --radius-sm: 10px;
@@ -42,6 +44,8 @@
     --accent-text: #eda183;
     --good: #8fbf9f;
     --good-soft: #27352c;
+    --warn: #e29a94;
+    --warn-soft: #3b2724;
     --shadow: 0 1px 3px rgb(0 0 0 / 0.3);
 
     --cat-social: #e3a04e;
@@ -199,6 +203,9 @@ input, select, textarea { font: inherit; color: inherit; }
 .chip-motor { background: var(--cat-motor-soft); color: var(--cat-motor); }
 .chip-neutral { background: var(--surface-2); color: var(--text-muted); }
 .chip-good { background: var(--good-soft); color: var(--good); }
+.chip-warn { background: var(--warn-soft); color: var(--warn); }
+.warn { color: var(--warn); }
+.rule { border: none; border-top: 1px solid var(--border); margin: 4px 0; width: 100%; }
 
 /* ---------- Forms ---------- */
 .field { display: flex; flex-direction: column; gap: 5px; }
@@ -366,6 +373,25 @@ a { color: var(--accent-text); }
   text-align: center;
   padding: 0 32px;
 }
+
+/* ---------- Sync ---------- */
+.sync-banner {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.sync-banner-error { background: var(--warn-soft); color: var(--warn); }
+.sync-banner .btn { padding: 2px 8px; }
 
 /* ---------- Quick logging ---------- */
 .quick-btn-on {

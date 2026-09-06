@@ -1,6 +1,17 @@
 export type Sex = 'female' | 'male'
 
-export interface BabyProfile {
+/**
+ * Sync bookkeeping carried by every record that syncs between devices.
+ * `updatedAt` is the last-write-wins key; a deleted record is kept as a
+ * tombstone (`deletedAt` set) so the delete reaches the other phone too.
+ * Both are stamped by the app state provider, never by callers.
+ */
+export interface SyncMeta {
+  updatedAt?: string
+  deletedAt?: string
+}
+
+export interface BabyProfile extends SyncMeta {
   name: string
   /** ISO date, YYYY-MM-DD */
   birthDate: string
@@ -12,13 +23,13 @@ export interface BabyProfile {
 export type MilestoneCategory = 'social' | 'language' | 'cognitive' | 'motor'
 
 /** A milestone the baby has achieved, keyed by the static dataset id */
-export interface MilestoneRecord {
+export interface MilestoneRecord extends SyncMeta {
   milestoneId: string
   /** ISO date it was achieved */
   achievedOn: string
 }
 
-export interface GrowthEntry {
+export interface GrowthEntry extends SyncMeta {
   id: string
   /** ISO date of the measurement */
   date: string
@@ -35,7 +46,7 @@ export type BreastSide = 'left' | 'right'
 export type BottleContent = 'formula' | 'expressed' | 'mixed'
 export type NappyKind = 'wet' | 'poo' | 'mixed'
 
-export interface FeedEntry {
+export interface FeedEntry extends SyncMeta {
   id: string
   type: 'feed'
   /** ISO datetime the feed started */
@@ -55,7 +66,7 @@ export interface FeedEntry {
   note?: string
 }
 
-export interface SleepEntry {
+export interface SleepEntry extends SyncMeta {
   id: string
   type: 'sleep'
   /** ISO datetime the sleep started */
@@ -65,7 +76,7 @@ export interface SleepEntry {
   note?: string
 }
 
-export interface NappyEntry {
+export interface NappyEntry extends SyncMeta {
   id: string
   type: 'nappy'
   /** ISO datetime */
@@ -75,7 +86,7 @@ export interface NappyEntry {
 }
 
 /** A pumping session — millilitres expressed from each breast */
-export interface PumpEntry {
+export interface PumpEntry extends SyncMeta {
   id: string
   type: 'pump'
   /** ISO datetime the session started */
@@ -90,13 +101,31 @@ export interface PumpEntry {
 export type LogEntry = FeedEntry | SleepEntry | NappyEntry | PumpEntry
 export type LogEntryType = LogEntry['type']
 
-export interface Memory {
+export interface Memory extends SyncMeta {
   id: string
   /** ISO date */
   date: string
   title: string
   note?: string
   tag?: string
+}
+
+/**
+ * Everything this device needs to sync with the family's log. The secret is
+ * the half of the family code that proves this device is allowed in, so it
+ * stays on the device and is never itself synced.
+ */
+export interface SyncSettings {
+  /** Base URL of the deployed sync Worker */
+  serverUrl?: string
+  householdId?: string
+  secret?: string
+  /** Highest server change number this device has seen */
+  cursor: number
+  /** "collection:id" keys changed here and not yet pushed */
+  pending: string[]
+  lastSyncedAt?: string
+  lastError?: string
 }
 
 export interface AppState {
@@ -106,4 +135,5 @@ export interface AppState {
   growth: GrowthEntry[]
   log: LogEntry[]
   memories: Memory[]
+  sync: SyncSettings
 }

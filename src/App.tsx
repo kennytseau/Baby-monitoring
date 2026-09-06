@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAppState } from './hooks/useAppState'
 import { TabBar } from './components/TabBar'
+import { SyncBanner } from './components/SyncBanner'
 import { Onboarding } from './pages/Onboarding'
 import { Home } from './pages/Home'
 import { Milestones } from './pages/Milestones'
@@ -21,6 +22,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <SyncBanner />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/milestones" element={<Milestones />} />

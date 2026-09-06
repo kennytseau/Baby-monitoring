@@ -7,12 +7,13 @@ import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
 import { estimatePercentile, ordinal } from '../lib/percentiles'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
+import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
 import { currentWakeMinutes, dayTotals, findOpenSleep, sleepMinutes, sortedByTime } from '../lib/log'
 
 export function Home() {
-  const { state, setProfile, exportData, resetAll } = useAppState()
+  const { state, setProfile, exportData, resetAll, sync } = useAppState()
   const profile = state.profile!
   const now = useNow(30_000)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -74,6 +75,20 @@ export function Home() {
         {usesAdjusted && (
           <p className="tiny muted">
             Born {Math.round(corrDays / 7)} weeks early — milestones use her adjusted age.
+          </p>
+        )}
+        {sync.paired && (
+          <p className="tiny faint">
+            Shared log ·{' '}
+            {sync.status === 'syncing'
+              ? 'syncing…'
+              : sync.status === 'error'
+                ? `not synced (${sync.pendingCount} waiting)`
+                : sync.pendingCount > 0
+                  ? `${sync.pendingCount} change${sync.pendingCount === 1 ? '' : 's'} waiting`
+                  : sync.lastSyncedAt
+                    ? `synced ${formatAgo(sync.lastSyncedAt, now)}`
+                    : 'in sync'}
           </p>
         )}
       </header>
@@ -202,6 +217,9 @@ export function Home() {
         <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Settings & data</summary>
         <div className="stack" style={{ marginTop: 12 }}>
           <EditProfile />
+          <hr className="rule" />
+          <SharingPanel />
+          <hr className="rule" />
           <button className="btn" onClick={exportData}>
             Download backup (JSON)
           </button>
@@ -226,8 +244,9 @@ export function Home() {
             </button>
           )}
           <p className="tiny faint">
-            All data lives only in this browser. Download a backup before clearing your browser
-            data or switching devices.
+            {sync.paired
+              ? 'Entries are kept on this phone and synced to your shared log. A backup is still worth having before clearing browser data.'
+              : 'All data lives only in this browser. Download a backup before clearing your browser data or switching devices.'}
           </p>
         </div>
       </details>

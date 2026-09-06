@@ -1,7 +1,8 @@
-import type { AppState, LogEntry } from './types'
+import type { AppState, LogEntry, SyncMeta } from './types'
+import { DEFAULT_SYNC_URL } from './syncClient'
 
 export const STORAGE_KEY = 'baby-tracker:state'
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 3
 
 export function emptyState(): AppState {
   return {
@@ -11,6 +12,7 @@ export function emptyState(): AppState {
     growth: [],
     log: [],
     memories: [],
+    sync: { serverUrl: DEFAULT_SYNC_URL || undefined, cursor: 0, pending: [] },
   }
 }
 
@@ -40,9 +42,35 @@ function migrate(state: Partial<AppState> & { schemaVersion?: number }): Partial
   if ((migrated.schemaVersion ?? 1) < 2) {
     migrated = { ...migrated, log: (migrated.log ?? []).map(migrateLogEntryV1toV2), schemaVersion: 2 }
   }
+  if ((migrated.schemaVersion ?? 1) < 3) {
+    migrated = migrateV2toV3(migrated)
+  }
   // Future migrations go here, e.g.:
-  // if (migrated.schemaVersion === 2) { ...transform...; migrated.schemaVersion = 3 }
+  // if (migrated.schemaVersion === 3) { ...transform...; migrated.schemaVersion = 4 }
   return migrated
+}
+
+/**
+ * Schema 3 added sync. Records written before it get an `updatedAt` from the
+ * moment they describe rather than from now, so a freshly migrated device
+ * cannot out-rank edits the other phone made in the meantime.
+ */
+function migrateV2toV3(state: Partial<AppState> & { schemaVersion?: number }): Partial<AppState> {
+  const stampedAt = (value: string | undefined): string =>
+    value ? new Date(value).toISOString() : new Date(0).toISOString()
+  const stamp = <T extends SyncMeta>(item: T, at: string | undefined): T =>
+    item.updatedAt ? item : { ...item, updatedAt: stampedAt(at) }
+
+  return {
+    ...state,
+    schemaVersion: 3,
+    profile: state.profile ? stamp(state.profile, state.profile.birthDate) : (state.profile ?? null),
+    log: (state.log ?? []).map((entry) => stamp(entry, entry.time)),
+    growth: (state.growth ?? []).map((entry) => stamp(entry, entry.date)),
+    memories: (state.memories ?? []).map((memory) => stamp(memory, memory.date)),
+    milestones: (state.milestones ?? []).map((record) => stamp(record, record.achievedOn)),
+    sync: state.sync ?? { serverUrl: DEFAULT_SYNC_URL || undefined, cursor: 0, pending: [] },
+  }
 }
 
 /** Schema 1 log shapes, kept only so old saved data can be read */
@@ -101,9 +129,14 @@ export function clearState(): void {
   localStorage.removeItem(STORAGE_KEY)
 }
 
-/** Serialize state for the JSON backup download */
+/**
+ * Serialize state for the JSON backup download. The family code is left out:
+ * a backup gets emailed around, and it should not carry the key to the log.
+ */
 export function exportStateJson(state: AppState): string {
-  return JSON.stringify(state, null, 2)
+  const { sync, ...rest } = state
+  void sync
+  return JSON.stringify(rest, null, 2)
 }
 
 let uidCounter = 0

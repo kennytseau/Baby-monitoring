@@ -5,9 +5,10 @@ what she's likely doing right now, the milestones ahead and how to encourage
 them, her growth against reference percentile curves, the daily rhythm of
 feeds / sleep / diapers, and a journal of firsts.
 
-Everything is stored **on your device only** — no accounts, no server, no
-tracking. It works offline once loaded and can be added to your phone's home
-screen like an app.
+It works offline and can be added to your phone's home screen like an app. By
+default everything stays **on your device only**; deploy the small sync server
+in [`worker/`](worker/README.md) and both parents' phones share one live log,
+still with no accounts and nothing sold or tracked.
 
 ## Features
 
@@ -39,6 +40,10 @@ screen like an app.
     total and longest sleep, and how much was pumped.
 - **Memories** — dated journal entries for the firsts (first smile, first
   laugh…), each shown with how old she was at the time.
+- **Shared log** — one phone creates the shared log and shows a family code;
+  the other joins with it, and from then on both see the same day. Entries you
+  make with no signal queue up and go across as soon as you have one. See
+  *Sharing between two phones* below.
 - **Backup** — download all data as JSON from *Settings & data* on the Home
   screen.
 
@@ -58,6 +63,43 @@ app uses her adjusted age for milestone windows.
 
 Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 
+## Sharing between two phones
+
+Out of the box the app is device-local. To share a log:
+
+1. Deploy the sync server once — a Cloudflare Worker plus a D1 database, both
+   on the free tier. Full instructions in [`worker/README.md`](worker/README.md):
+
+   ```bash
+   cd worker && npm install
+   npx wrangler login
+   npx wrangler d1 create baby-log     # paste the id into wrangler.toml
+   npm run db:init && npm run deploy   # prints your Worker URL
+   ```
+
+2. On the first phone: *Settings & data → Share with your partner → Create
+   shared log*, paste the Worker URL. The app shows a **family code**.
+3. On the second phone: same screen, *Join with a code*, paste the code. Any
+   entries already on that phone are merged in.
+
+After that both phones sync when the app is open (every 20 seconds, on
+returning to the app, and a second or two after each entry). A banner appears
+when something is waiting to go up.
+
+**How conflicts resolve.** Every record carries the time it was last changed;
+if you both edit the same entry the later edit wins. Different entries never
+conflict, so the normal case — one of you logs a nappy while the other logs a
+feed — just merges. Deleting an entry deletes it on both phones rather than
+having it reappear.
+
+**The family code is the key to the log.** Anyone who has it can read and add
+to it, so treat it like a house key; it is stored only on your phones and is
+deliberately left out of the JSON backup. If you both lose it there is no way
+back into that log — keep a backup.
+
+Set the repository variable `VITE_SYNC_URL` to your Worker URL and the deployed
+site will pre-fill it, so neither of you has to type it.
+
 ## How it's built
 
 - **Vite + React + TypeScript**, React Router for the tab navigation
@@ -66,38 +108,47 @@ Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 - Hand-rolled SVG growth charts (`src/components/GrowthChart.tsx`) — no chart
   library
 - All state in a single versioned `localStorage` document
-  (`src/lib/storage.ts`) behind a React context (`src/hooks/useAppState.tsx`),
-  ready to be swapped for IndexedDB or a sync backend later. The document is
-  migrated on load, so data logged under an older schema keeps working
+  (`src/lib/storage.ts`) behind a React context (`src/hooks/useAppState.tsx`).
+  The document is migrated on load, so data logged under an older schema keeps
+  working
+- Local-first sync: the device is always the source of truth for what you can
+  see, and `src/lib/sync.ts` merges the server's records into it last-write-wins
+  (tombstones for deletes, a pending queue for changes made offline). The
+  server (`worker/`) is a dependency-free Cloudflare Worker over D1
 - A running nursing session is just a log entry with the side and its start
   time on it, so the timer survives a reload (and a flat battery)
 
 ```
 src/
   lib/        age math, storage + schema migrations, log maths (durations,
-              wake windows, day totals), percentiles, formatting
+              wake windows, day totals), sync merge + client, percentiles,
+              formatting
   data/       milestone dataset (CDC-based) + growth curve tables (WHO-based)
   hooks/      app state provider, quick-log actions, ticking clock
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Memories
   components/ TabBar, GrowthChart, QuickLog, NursingTimer, DayTimeline,
-              DayTotalsCard
+              DayTotalsCard, SharingPanel, SyncBanner
+worker/       sync server: Cloudflare Worker + D1 schema
 ```
 
 ## Data & privacy
 
-All data lives in your browser's `localStorage` on the device you use. Nothing
-ever leaves the device. That also means: clearing site data erases it, and a
-second device starts empty. **Two phones do not see each other's entries yet** —
-if both of you log, you each keep your own copy, so for now pick one device as
-the record (or export/import between them). Download a JSON backup from
-*Settings & data* before clearing or switching. Shared, synced logging is the
-next step below.
+Unpaired, all data lives in your browser's `localStorage` and never leaves the
+device. Paired, it also lives in the D1 database of the Worker **you** deployed
+to **your** Cloudflare account — nobody else's server is involved, and the only
+thing that opens it is the family code. Either way there are no accounts, no
+third-party analytics and nothing sold.
+
+Clearing site data still erases the copy on that phone (a paired phone pulls it
+back from the shared log; an unpaired one does not), so download a JSON backup
+from *Settings & data* before clearing or switching devices.
 
 ## Ideas for later
 
 - Photos on memories (needs IndexedDB — `localStorage` is too small)
 - JSON backup **import** to restore/move devices
-- Optional sync backend + accounts so both parents log into the same day
+- Per-entry attribution ("logged by Mum") now that two devices share a log
+- Pruning old tombstones so a long-running log stays small
 - Reminders (tummy time, vitamin D drops), a service worker for full offline
   installs, sleep/feed pattern charts
 

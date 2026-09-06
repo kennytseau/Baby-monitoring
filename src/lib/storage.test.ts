@@ -53,6 +53,28 @@ describe('deserializeState', () => {
     expect(log[1]).toEqual({ id: 'b', type: 'pump', time: '2026-09-01T10:00:00.000Z', leftMl: 60, rightMl: 40 })
   })
 
+  it('stamps pre-sync records with the time they describe', () => {
+    const v2 = JSON.stringify({
+      schemaVersion: 2,
+      profile: { name: 'Mia', birthDate: '2026-06-20', sex: 'female' },
+      log: [{ id: 'a', type: 'nappy', kind: 'wet', time: '2026-09-01T09:00:00.000Z' }],
+      milestones: [{ milestoneId: 'm2-social-smile', achievedOn: '2026-08-01' }],
+    })
+    const restored = deserializeState(v2)
+    expect(restored.log[0].updatedAt).toBe('2026-09-01T09:00:00.000Z')
+    expect(restored.profile?.updatedAt).toBe(new Date('2026-06-20').toISOString())
+    expect(restored.milestones[0].updatedAt).toBe(new Date('2026-08-01').toISOString())
+    expect(restored.sync).toEqual({ cursor: 0, pending: [] })
+  })
+
+  it('leaves the family code out of a backup file', () => {
+    const state = emptyState()
+    state.sync = { serverUrl: 'https://sync.example', householdId: 'H', secret: 'S', cursor: 4, pending: [] }
+    const backup = exportStateJson(state)
+    expect(backup).not.toContain('secret')
+    expect(deserializeState(backup).sync.householdId).toBeUndefined()
+  })
+
   it('fills in missing collections from older/partial data', () => {
     const restored = deserializeState(JSON.stringify({ schemaVersion: 1, profile: null }))
     expect(restored.growth).toEqual([])
