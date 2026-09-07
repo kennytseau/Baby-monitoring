@@ -1,11 +1,12 @@
 name: Deploy to GitHub Pages
 
+# Only the published branch deploys. Work branches still get built and tested
+# through their pull request, but must not publish over the live site.
 on:
   push:
     branches:
       - main
       - claude/baby-tracking-app-h2wpqe
-      - claude/baby-tracking-webpage-tvn778
   workflow_dispatch:
 
 permissions:

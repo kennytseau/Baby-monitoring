@@ -112,6 +112,25 @@ one-off, but you can bake it into the deployed site instead — either way works
 The URL is not a secret — it ends up in the built JavaScript either way, and
 it is the family code that protects the log.
 
+## If the published site stops working
+
+If `https://kennytseau.github.io/Baby-monitoring/` shows GitHub's "There isn't a
+GitHub Pages site here" page, Pages has been switched off for the repository —
+the app itself is fine. Turn it back on:
+
+**Settings → Pages → Build and deployment → Source: GitHub Actions.**
+
+Then go to the **Actions** tab, open the most recent *Deploy to GitHub Pages*
+run on the default branch and click **Re-run all jobs**. The site is back a
+minute later.
+
+Two things unpublish a site by accident, both on that Settings → Pages screen:
+changing *Source* away from **GitHub Actions**, and the **Unpublish site**
+button lower down the page.
+
+A failed deploy never takes the site down on its own — the previous
+deployment keeps serving until a new one succeeds.
+
 ## How it's built
 
 - **Vite + React + TypeScript**, React Router for the tab navigation
