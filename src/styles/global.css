@@ -374,6 +374,28 @@ a { color: var(--accent-text); }
   padding: 0 32px;
 }
 
+/* ---------- What's next ---------- */
+.rhythm-card {
+  background: linear-gradient(180deg, var(--accent-soft), var(--surface));
+  border-color: transparent;
+  padding: 14px 16px;
+}
+.rhythm-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.rhythm-time {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
 /* ---------- Sync ---------- */
 .sync-banner {
   position: sticky;

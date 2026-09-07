@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { CURRENT_SCHEMA_VERSION, deserializeState, emptyState, exportStateJson, uid } from './storage'
+import {
+  CURRENT_SCHEMA_VERSION,
+  deserializeState,
+  emptyState,
+  exportStateJson,
+  importStateJson,
+  uid,
+} from './storage'
 
 describe('deserializeState', () => {
   it('returns empty state for null', () => {
@@ -88,5 +95,53 @@ describe('uid', () => {
   it('generates unique ids', () => {
     const ids = new Set(Array.from({ length: 1000 }, () => uid()))
     expect(ids.size).toBe(1000)
+  })
+})
+
+describe('importStateJson', () => {
+  const backup = (log: unknown[]) => JSON.stringify({ schemaVersion: 3, log })
+  const nappy = (id: string, time: string, kind = 'wet') => ({
+    id,
+    type: 'nappy',
+    kind,
+    time,
+    updatedAt: time,
+  })
+
+  it('adds entries from a backup and queues them to sync', () => {
+    const result = importStateJson(backup([nappy('a', '2026-09-01T08:00:00.000Z')]), emptyState())
+    expect(result?.imported).toBe(1)
+    expect(result?.state.log).toHaveLength(1)
+    expect(result?.state.sync.pending).toEqual(['log:a'])
+  })
+
+  it('keeps what is already logged here', () => {
+    const current = { ...emptyState(), log: [nappy('mine', '2026-09-02T08:00:00.000Z')] as never }
+    const result = importStateJson(backup([nappy('theirs', '2026-09-01T08:00:00.000Z')]), current)
+    expect(result?.state.log.map((e) => e.id).sort()).toEqual(['mine', 'theirs'])
+  })
+
+  it('importing the same file twice changes nothing', () => {
+    const file = backup([nappy('a', '2026-09-01T08:00:00.000Z')])
+    const once = importStateJson(file, emptyState())!.state
+    const twice = importStateJson(file, once)!.state
+    expect(twice.log).toEqual(once.log)
+  })
+
+  it('migrates an older backup on the way in', () => {
+    const old = JSON.stringify({
+      schemaVersion: 1,
+      log: [{ id: 'a', type: 'diaper', kind: 'dirty', time: '2026-09-01T08:00:00.000Z' }],
+    })
+    expect(importStateJson(old, emptyState())?.state.log[0]).toMatchObject({
+      type: 'nappy',
+      kind: 'poo',
+    })
+  })
+
+  it('refuses anything that is not a backup', () => {
+    expect(importStateJson('not json', emptyState())).toBeNull()
+    expect(importStateJson('{"hello":"world"}', emptyState())).toBeNull()
+    expect(importStateJson(backup([]), emptyState())).toBeNull()
   })
 })

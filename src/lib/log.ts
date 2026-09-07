@@ -61,8 +61,10 @@ export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
   return minutesBetween(entry.time, entry.endTime ?? now.toISOString())
 }
 
+/** What the session yielded — the sides when they were measured, else the combined amount */
 export function pumpTotalMl(entry: PumpEntry): number {
-  return (entry.leftMl ?? 0) + (entry.rightMl ?? 0)
+  const sides = (entry.leftMl ?? 0) + (entry.rightMl ?? 0)
+  return sides > 0 ? sides : (entry.totalMl ?? 0)
 }
 
 /** The sleep that has started but not ended, if the baby is asleep right now */
@@ -228,6 +230,7 @@ export function summarizeEntry(entry: LogEntry, now = new Date()): EntrySummary 
       const parts = [
         entry.leftMl != null ? `L ${entry.leftMl} ml` : null,
         entry.rightMl != null ? `R ${entry.rightMl} ml` : null,
+        entry.leftMl == null && entry.rightMl == null && entry.totalMl != null ? 'both sides' : null,
         entry.durationMinutes ? formatDuration(entry.durationMinutes) : null,
       ].filter(Boolean)
       return { title: `Pumped ${pumpTotalMl(entry)} ml`, detail: parts.join(' · ') }

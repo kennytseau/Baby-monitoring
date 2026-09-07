@@ -1,5 +1,6 @@
 import type { AppState, LogEntry, SyncMeta } from './types'
 import { DEFAULT_SYNC_URL } from './syncClient'
+import { allRecords, applyRemoteRecords, recordKey } from './sync'
 
 export const STORAGE_KEY = 'baby-tracker:state'
 export const CURRENT_SCHEMA_VERSION = 3
@@ -137,6 +138,33 @@ export function exportStateJson(state: AppState): string {
   const { sync, ...rest } = state
   void sync
   return JSON.stringify(rest, null, 2)
+}
+
+/**
+ * Merge a backup file into what is already here. Entries are matched on their
+ * id and the newer one wins, so importing the same file twice changes nothing,
+ * and importing on a paired device pushes the merged result to the shared log.
+ */
+export function importStateJson(
+  raw: string,
+  current: AppState,
+): { state: AppState; imported: number } | null {
+  let incoming: AppState
+  try {
+    const parsed = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null || !Array.isArray(parsed.log)) return null
+    incoming = deserializeState(raw)
+  } catch {
+    return null
+  }
+
+  const records = allRecords({ ...incoming, sync: current.sync })
+  if (records.length === 0) return null
+
+  const merged = applyRemoteRecords(current, records)
+  const keys = records.map((record) => recordKey(record.collection, record.id))
+  const pending = [...new Set([...merged.sync.pending, ...keys])]
+  return { state: { ...merged, sync: { ...merged.sync, pending } }, imported: records.length }
 }
 
 let uidCounter = 0

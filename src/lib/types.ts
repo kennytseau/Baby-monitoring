@@ -93,6 +93,8 @@ export interface PumpEntry extends SyncMeta {
   time: string
   leftMl?: number
   rightMl?: number
+  /** Combined amount, for sessions pumped into one bottle with no per-side split */
+  totalMl?: number
   /** How long the session took, in minutes */
   durationMinutes?: number
   note?: string

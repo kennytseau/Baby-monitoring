@@ -11,9 +11,10 @@ export function todayISO(): string {
   return toISODate(new Date())
 }
 
-/** "13:05" from an ISO datetime */
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+/** "13:05" from an ISO datetime or a Date */
+export function formatTime(at: string | Date): string {
+  const date = typeof at === 'string' ? new Date(at) : at
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
 /** Day portion (YYYY-MM-DD) of an ISO datetime or date */
