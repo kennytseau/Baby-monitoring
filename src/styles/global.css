@@ -425,10 +425,10 @@ a { color: var(--accent-text); }
   color: var(--accent-text);
 }
 .quick-panel { padding: 12px; }
-/* Five one-tap actions stay on one row, even on a narrow phone */
-.quick-btns-5 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.quick-btns-5 .quick-btn { padding: 12px 2px; font-size: 0.72rem; gap: 2px; }
-.quick-btns-5 .quick-btn span:first-child { font-size: 1.35rem; }
+/* Six one-tap actions, three to a row so the labels stay readable on a phone */
+.quick-btns-6 { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick-btns-6 .quick-btn { padding: 12px 4px; font-size: 0.78rem; gap: 3px; }
+.quick-btns-6 .quick-btn span:first-child { font-size: 1.45rem; }
 
 .timer-card { display: flex; flex-direction: column; gap: 10px; }
 .timer-readout {

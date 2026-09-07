@@ -8,7 +8,6 @@ import { Milestones } from './pages/Milestones'
 import { Growth } from './pages/Growth'
 import { DailyLog } from './pages/DailyLog'
 import { Memories } from './pages/Memories'
-import { Medication } from './pages/Medication'
 
 export default function App() {
   const { state } = useAppState()
@@ -30,7 +29,6 @@ export default function App() {
         <Route path="/growth" element={<Growth />} />
         <Route path="/log" element={<DailyLog />} />
         <Route path="/memories" element={<Memories />} />
-        <Route path="/medication" element={<Medication />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <TabBar />
