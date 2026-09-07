@@ -68,7 +68,10 @@ Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 Out of the box the app is device-local. To share a log:
 
 1. Deploy the sync server once — a Cloudflare Worker plus a D1 database, both
-   on the free tier. Full instructions in [`worker/README.md`](worker/README.md):
+   on the free tier. No terminal needed: follow
+   [`worker/SETUP-WITHOUT-A-TERMINAL.md`](worker/SETUP-WITHOUT-A-TERMINAL.md)
+   to do it by clicking. Or, from a terminal
+   ([`worker/README.md`](worker/README.md)):
 
    ```bash
    cd worker && npm install
@@ -108,6 +111,25 @@ one-off, but you can bake it into the deployed site instead — either way works
 
 The URL is not a secret — it ends up in the built JavaScript either way, and
 it is the family code that protects the log.
+
+## If the published site stops working
+
+If `https://kennytseau.github.io/Baby-monitoring/` shows GitHub's "There isn't a
+GitHub Pages site here" page, Pages has been switched off for the repository —
+the app itself is fine. Turn it back on:
+
+**Settings → Pages → Build and deployment → Source: GitHub Actions.**
+
+Then go to the **Actions** tab, open the most recent *Deploy to GitHub Pages*
+run on the default branch and click **Re-run all jobs**. The site is back a
+minute later.
+
+Two things unpublish a site by accident, both on that Settings → Pages screen:
+changing *Source* away from **GitHub Actions**, and the **Unpublish site**
+button lower down the page.
+
+A failed deploy never takes the site down on its own — the previous
+deployment keeps serving until a new one succeeds.
 
 ## How it's built
 
