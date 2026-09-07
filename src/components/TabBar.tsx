@@ -5,6 +5,7 @@ const TABS = [
   { to: '/milestones', icon: '🌟', label: 'Milestones' },
   { to: '/growth', icon: '📈', label: 'Growth' },
   { to: '/log', icon: '🍼', label: 'Log' },
+  { to: '/trends', icon: '📊', label: 'By day' },
   { to: '/memories', icon: '💛', label: 'Memories' },
 ]
 
