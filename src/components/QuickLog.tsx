@@ -2,30 +2,85 @@ import { useState } from 'react'
 import { useNow } from '../hooks/useNow'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { BOTTLE_LABELS, NAPPY_LABELS, sleepMinutes } from '../lib/log'
-import { formatDuration, formatTime } from '../lib/format'
+import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes } from '../lib/log'
+import { dateFromTimeInput, formatDuration, formatTime, toTimeInput } from '../lib/format'
 import type { BottleContent, NappyKind } from '../lib/types'
 
-type Panel = 'nurse' | 'bottle' | 'nappy' | 'pump' | null
+type Panel = 'nurse' | 'bottle' | 'nappy' | 'sleep' | 'pump' | null
 
 /**
  * The logging surface used on Home and in the Daily log: one tap opens a small
  * panel, a second tap records the entry with the time it happened.
  */
 export function QuickLog() {
-  const { openSleep, runningNursing, nurse, toggleSleep, logNappy, logBottle, logPump } =
-    useQuickLog()
+  const {
+    openSleep,
+    runningNursing,
+    nurse,
+    logNursingMinutes,
+    startSleep,
+    endSleep,
+    logNappy,
+    logBottle,
+    logPump,
+  } = useQuickLog()
   const now = useNow(30_000)
   const [panel, setPanel] = useState<Panel>(null)
 
   const [contents, setContents] = useState<BottleContent>('formula')
   const [amount, setAmount] = useState('')
+  const [leftMinutes, setLeftMinutes] = useState('')
+  const [rightMinutes, setRightMinutes] = useState('')
   const [leftMl, setLeftMl] = useState('')
   const [rightMl, setRightMl] = useState('')
   const [pumpMinutes, setPumpMinutes] = useState('')
+  const [sleepTime, setSleepTime] = useState('')
+  const [sleepError, setSleepError] = useState<string | null>(null)
 
   function toggle(next: Exclude<Panel, null>) {
-    setPanel((p) => (p === next ? null : next))
+    setPanel((p) => {
+      if (p === next) return null
+      if (next === 'sleep') {
+        setSleepTime(toTimeInput(new Date()))
+        setSleepError(null)
+      }
+      return next
+    })
+  }
+
+  /** Log a nursing session from typed minutes, for when the timer was not started */
+  function saveNursingMinutes() {
+    const left = positiveNumber(leftMinutes)
+    const right = positiveNumber(rightMinutes)
+    if (!left && !right) return
+    logNursingMinutes(left, right)
+    setLeftMinutes('')
+    setRightMinutes('')
+    setPanel(null)
+  }
+
+  /** Record going down / waking, either now or at a time typed in */
+  function saveSleep(at: Date) {
+    if (openSleep) {
+      if (at.getTime() <= new Date(openSleep.time).getTime()) {
+        setSleepError(`She went down at ${formatTime(openSleep.time)} — waking must be after that.`)
+        return
+      }
+      endSleep(at)
+    } else {
+      startSleep(at)
+    }
+    setSleepError(null)
+    setPanel(null)
+  }
+
+  function saveSleepAtTypedTime() {
+    const at = dateFromTimeInput(sleepTime, new Date())
+    if (!at) {
+      setSleepError('That is not a time — use 24-hour form, like 19:45.')
+      return
+    }
+    saveSleep(at)
   }
 
   function saveBottle() {
@@ -63,10 +118,8 @@ export function QuickLog() {
         </button>
         <button
           className={`quick-btn${openSleep ? ' quick-btn-on' : ''}`}
-          onClick={() => {
-            toggleSleep()
-            setPanel(null)
-          }}
+          onClick={() => toggle('sleep')}
+          aria-expanded={panel === 'sleep'}
         >
           <span aria-hidden="true">{openSleep ? '☀️' : '😴'}</span>
           {openSleep ? 'Woke up' : 'Sleep'}
@@ -109,15 +162,57 @@ export function QuickLog() {
               Right
             </button>
           </div>
+
+          {!runningNursing && (
+            <>
+              <hr className="rule" />
+              <p className="tiny muted">Forgot to start the timer? Put the minutes in here.</p>
+              <div className="field-row">
+                <div className="field">
+                  <label htmlFor="quick-left-min">Left (minutes)</label>
+                  <input
+                    id="quick-left-min"
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    placeholder="15"
+                    value={leftMinutes}
+                    onChange={(e) => setLeftMinutes(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="quick-right-min">Right (minutes)</label>
+                  <input
+                    id="quick-right-min"
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    placeholder="10"
+                    value={rightMinutes}
+                    onChange={(e) => setRightMinutes(e.target.value)}
+                  />
+                </div>
+              </div>
+              <button
+                className="btn btn-primary btn-block"
+                onClick={saveNursingMinutes}
+                disabled={!positiveNumber(leftMinutes) && !positiveNumber(rightMinutes)}
+              >
+                Save feed
+              </button>
+            </>
+          )}
         </div>
       )}
 
       {panel === 'bottle' && (
         <div className="card stack quick-panel">
           <div className="seg" role="group" aria-label="What's in the bottle">
-            {(Object.keys(BOTTLE_LABELS) as BottleContent[]).map((c) => (
+            {BOTTLE_OPTIONS.map((c) => (
               <button key={c} type="button" className={contents === c ? 'on' : ''} onClick={() => setContents(c)}>
-                {c === 'mixed' ? 'Both' : BOTTLE_LABELS[c]}
+                {BOTTLE_LABELS[c]}
               </button>
             ))}
           </div>
@@ -158,6 +253,41 @@ export function QuickLog() {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {panel === 'sleep' && (
+        <div className="card stack quick-panel">
+          <p className="tiny muted">
+            {openSleep
+              ? `She went down at ${formatTime(openSleep.time)}. When did she wake?`
+              : 'When did she fall asleep?'}
+          </p>
+          <button className="btn btn-primary btn-block" onClick={() => saveSleep(new Date())}>
+            {openSleep ? 'Woke up just now' : 'Asleep now'}
+          </button>
+          <div className="row">
+            <div className="field grow">
+              <label htmlFor="quick-sleep-time">Or a time</label>
+              <input
+                id="quick-sleep-time"
+                type="time"
+                value={sleepTime}
+                onChange={(e) => {
+                  setSleepTime(e.target.value)
+                  setSleepError(null)
+                }}
+              />
+            </div>
+            <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={saveSleepAtTypedTime}>
+              Save
+            </button>
+          </div>
+          {sleepError ? (
+            <p className="tiny warn">{sleepError}</p>
+          ) : (
+            <p className="tiny faint">A time later than now is taken as yesterday evening.</p>
+          )}
         </div>
       )}
 

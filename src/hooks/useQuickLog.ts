@@ -37,11 +37,36 @@ export function useQuickLog() {
     if (runningNursing) updateLog(commitNursingSide(runningNursing, new Date()))
   }, [runningNursing, updateLog])
 
-  /** Put her down / note that she woke */
-  const toggleSleep = useCallback(() => {
-    if (openSleep) updateLog({ ...openSleep, endTime: new Date().toISOString() })
-    else addLog({ id: uid(), type: 'sleep', time: new Date().toISOString() })
-  }, [openSleep, addLog, updateLog])
+  /** Log a nursing session that was not timed — the minutes are typed in afterwards */
+  const logNursingMinutes = useCallback(
+    (leftMinutes?: number, rightMinutes?: number) => {
+      addLog({
+        id: uid(),
+        type: 'feed',
+        kind: 'nursing',
+        time: new Date().toISOString(),
+        leftMinutes,
+        rightMinutes,
+      })
+    },
+    [addLog],
+  )
+
+  /** She has gone down — `at` defaults to now, or set it if you are logging late */
+  const startSleep = useCallback(
+    (at: Date = new Date()) => {
+      addLog({ id: uid(), type: 'sleep', time: at.toISOString() })
+    },
+    [addLog],
+  )
+
+  /** She has woken — `at` defaults to now */
+  const endSleep = useCallback(
+    (at: Date = new Date()) => {
+      if (openSleep) updateLog({ ...openSleep, endTime: at.toISOString() })
+    },
+    [openSleep, updateLog],
+  )
 
   const logNappy = useCallback(
     (kind: NappyKind) => {
@@ -78,5 +103,16 @@ export function useQuickLog() {
     [addLog],
   )
 
-  return { openSleep, runningNursing, nurse, finishNursing, toggleSleep, logNappy, logBottle, logPump }
+  return {
+    openSleep,
+    runningNursing,
+    nurse,
+    finishNursing,
+    logNursingMinutes,
+    startSleep,
+    endSleep,
+    logNappy,
+    logBottle,
+    logPump,
+  }
 }

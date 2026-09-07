@@ -7,6 +7,7 @@ import type {
   PumpEntry,
   SleepEntry,
 } from './types'
+
 import { formatDuration, formatTime } from './format'
 
 const MS_PER_MINUTE = 60_000
@@ -17,11 +18,15 @@ export const NAPPY_LABELS: Record<NappyKind, string> = {
   mixed: 'Wet + poo',
 }
 
+/** Labels for every value that can appear in saved data, including older entries */
 export const BOTTLE_LABELS: Record<BottleContent, string> = {
   formula: 'Formula',
   expressed: 'Breast milk',
   mixed: 'Formula + breast milk',
 }
+
+/** What a bottle can be logged as now — 'mixed' is kept above so old entries still read correctly */
+export const BOTTLE_OPTIONS: BottleContent[] = ['formula', 'expressed']
 
 export const SIDE_LABELS: Record<BreastSide, string> = { left: 'Left', right: 'Right' }
 
@@ -57,8 +62,10 @@ export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
   return minutesBetween(entry.time, entry.endTime ?? now.toISOString())
 }
 
+/** What the session yielded — the sides when they were measured, else the combined amount */
 export function pumpTotalMl(entry: PumpEntry): number {
-  return (entry.leftMl ?? 0) + (entry.rightMl ?? 0)
+  const sides = (entry.leftMl ?? 0) + (entry.rightMl ?? 0)
+  return sides > 0 ? sides : (entry.totalMl ?? 0)
 }
 
 /** The sleep that has started but not ended, if the baby is asleep right now */
@@ -140,6 +147,8 @@ export interface DayTotals {
   pumpedLeftMl: number
   pumpedRightMl: number
   pumpedMl: number
+  /** Every dose given, in the order they were given */
+  medicines: Array<{ name: string; amount?: string; time: string }>
 }
 
 /** Roll a day's (or any slice's) entries up into the numbers parents actually compare */
@@ -164,6 +173,7 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
     pumpedLeftMl: 0,
     pumpedRightMl: 0,
     pumpedMl: 0,
+    medicines: [],
   }
 
   for (const entry of entries) {
@@ -191,6 +201,8 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
     } else if (entry.type === 'nappy') {
       totals.nappies[entry.kind] += 1
       totals.nappyTotal += 1
+    } else if (entry.type === 'medication') {
+      totals.medicines.push({ name: entry.name, amount: entry.amount, time: entry.time })
     } else {
       totals.pumpSessions += 1
       totals.pumpedLeftMl += entry.leftMl ?? 0
@@ -220,10 +232,15 @@ export function summarizeEntry(entry: LogEntry, now = new Date()): EntrySummary 
     }
     case 'nappy':
       return { title: `Nappy · ${NAPPY_LABELS[entry.kind]}`, detail: '' }
+    case 'medication': {
+      const previous = entry.amount ? entry.amount : ''
+      return { title: `${entry.name}${previous ? ` · ${previous}` : ''}`, detail: '' }
+    }
     case 'pump': {
       const parts = [
         entry.leftMl != null ? `L ${entry.leftMl} ml` : null,
         entry.rightMl != null ? `R ${entry.rightMl} ml` : null,
+        entry.leftMl == null && entry.rightMl == null && entry.totalMl != null ? 'both sides' : null,
         entry.durationMinutes ? formatDuration(entry.durationMinutes) : null,
       ].filter(Boolean)
       return { title: `Pumped ${pumpTotalMl(entry)} ml`, detail: parts.join(' · ') }
@@ -277,4 +294,25 @@ export function switchNursingSide(entry: FeedEntry, side: BreastSide, now = new 
 export function startNursingSession(id: string, side: BreastSide, now = new Date()): FeedEntry {
   const iso = now.toISOString()
   return { id, type: 'feed', kind: 'nursing', time: iso, activeSide: side, sideStartedAt: iso }
+}
+
+/**
+ * How long ago the last dose of the same medicine was given, for spacing doses.
+ * Names are matched loosely so "Panadol" and "panadol " count as the same thing.
+ */
+export function minutesSincePreviousDose(
+  log: LogEntry[],
+  entry: { id: string; name: string; time: string },
+): number | null {
+  const name = entry.name.trim().toLowerCase()
+  const previous = log
+    .filter(
+      (e): e is LogEntry & { type: 'medication' } =>
+        e.type === 'medication' &&
+        e.id !== entry.id &&
+        e.name.trim().toLowerCase() === name &&
+        e.time < entry.time,
+    )
+    .sort((a, b) => b.time.localeCompare(a.time))[0]
+  return previous ? minutesBetween(previous.time, entry.time) : null
 }

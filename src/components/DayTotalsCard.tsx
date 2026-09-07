@@ -33,11 +33,14 @@ export function DayTotalsCard({ totals }: { totals: DayTotals }) {
     pumped.push(`${totals.pumpSessions} session${totals.pumpSessions === 1 ? '' : 's'}`)
   }
 
+  const medicines = totals.medicines.map((m) => (m.amount ? `${m.name} ${m.amount}` : m.name))
+
   const rows: Array<[string, string[]]> = [
     ['Milk', milk],
     ['Nappies', nappies],
     ['Sleep', sleep],
     ['Pumped', pumped],
+    ['Medicine', medicines],
   ]
   const filled = rows.filter(([, values]) => values.length > 0)
   if (filled.length === 0) return null
@@ -48,8 +51,9 @@ export function DayTotalsCard({ totals }: { totals: DayTotals }) {
         <div className="totals-row" key={label}>
           <span className="totals-label">{label}</span>
           <span className="totals-values">
-            {values.map((v) => (
-              <span className="chip chip-neutral" key={v}>
+            {/* Two identical values in a day are normal — a repeat dose, say — so key on position */}
+            {values.map((v, i) => (
+              <span className="chip chip-neutral" key={`${label}-${i}`}>
                 {v}
               </span>
             ))}

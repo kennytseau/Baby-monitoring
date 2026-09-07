@@ -6,6 +6,7 @@ const TABS = [
   { to: '/growth', icon: '📈', label: 'Growth' },
   { to: '/log', icon: '🍼', label: 'Log' },
   { to: '/memories', icon: '💛', label: 'Memories' },
+  { to: '/medication', icon: '💊', label: 'Medicine' },
 ]
 
 export function TabBar() {

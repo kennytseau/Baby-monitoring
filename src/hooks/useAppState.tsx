@@ -7,7 +7,7 @@ import type {
   LogEntry,
   Memory,
 } from '../lib/types'
-import { clearState, exportStateJson, loadState, saveState } from '../lib/storage'
+import { clearState, exportStateJson, importStateJson, loadState, saveState } from '../lib/storage'
 import {
   allRecordKeys,
   applyLocalChange,
@@ -46,6 +46,7 @@ interface AppStateContextValue {
   updateMemory: (memory: Memory) => void
   deleteMemory: (id: string) => void
   exportData: () => void
+  importData: (raw: string) => { imported: number } | null
   resetAll: () => void
   sync: SyncView
   startSharing: (serverUrl: string) => Promise<void>
@@ -112,6 +113,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     a.download = `baby-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+  }, [])
+
+  /** Merge a backup file in, keeping whatever is already logged here */
+  const importData = useCallback((raw: string) => {
+    const result = importStateJson(raw, docRef.current)
+    if (!result) return null
+    setDoc(result.state)
+    return { imported: result.imported }
   }, [])
 
   const resetAll = useCallback(() => {
@@ -265,6 +274,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       updateMemory,
       deleteMemory,
       exportData,
+      importData,
       resetAll,
       sync,
       startSharing,
@@ -286,6 +296,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       updateMemory,
       deleteMemory,
       exportData,
+      importData,
       resetAll,
       sync,
       startSharing,

@@ -7,13 +7,14 @@ import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
 import { estimatePercentile, ordinal } from '../lib/percentiles'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
+import { RhythmCard } from '../components/RhythmCard'
 import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
 import { currentWakeMinutes, dayTotals, findOpenSleep, sleepMinutes, sortedByTime } from '../lib/log'
 
 export function Home() {
-  const { state, setProfile, exportData, resetAll, sync } = useAppState()
+  const { state, exportData, resetAll, sync } = useAppState()
   const profile = state.profile!
   const now = useNow(30_000)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -92,6 +93,8 @@ export function Home() {
           </p>
         )}
       </header>
+
+      <RhythmCard />
 
       <section className="card card-tinted">
         <div className="row-between">
@@ -223,6 +226,7 @@ export function Home() {
           <button className="btn" onClick={exportData}>
             Download backup (JSON)
           </button>
+          <RestoreBackup />
           {confirmReset ? (
             <div className="row">
               <button
@@ -258,48 +262,81 @@ export function Home() {
     </main>
   )
 
-  function EditProfile() {
-    const [name, setName] = useState(profile.name)
-    const [birthDate, setBirthDate] = useState(profile.birthDate)
-    const [dueDate, setDueDate] = useState(profile.dueDate ?? '')
-    const dirty =
-      name !== profile.name || birthDate !== profile.birthDate || dueDate !== (profile.dueDate ?? '')
-    return (
-      <div className="stack">
-        <div className="field-row">
-          <div className="field">
-            <label htmlFor="set-name">Name</label>
-            <input id="set-name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="field">
-            <label htmlFor="set-birth">Birth date</label>
-            <input
-              id="set-birth"
-              type="date"
-              max={todayISO()}
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-            />
-          </div>
+}
+
+function RestoreBackup() {
+  const { importData } = useAppState()
+  const [status, setStatus] = useState<string | null>(null)
+  return (
+    <div className="stack">
+      <label className="btn btn-block" style={{ textAlign: 'center', cursor: 'pointer' }}>
+        Restore from a backup file…
+        <input
+          type="file"
+          accept="application/json,.json"
+          style={{ display: 'none' }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (!file) return
+            setStatus('Reading…')
+            const result = importData(await file.text())
+            setStatus(
+              result
+                ? `Added ${result.imported} entries. Anything already here was kept.`
+                : 'That file was not a Little One backup.',
+            )
+          }}
+        />
+      </label>
+      {status && <p className="tiny muted">{status}</p>}
+    </div>
+  )
+}
+
+function EditProfile() {
+  const { state, setProfile } = useAppState()
+  const profile = state.profile!
+  const [name, setName] = useState(profile.name)
+  const [birthDate, setBirthDate] = useState(profile.birthDate)
+  const [dueDate, setDueDate] = useState(profile.dueDate ?? '')
+  const dirty =
+    name !== profile.name || birthDate !== profile.birthDate || dueDate !== (profile.dueDate ?? '')
+  return (
+    <div className="stack">
+      <div className="field-row">
+        <div className="field">
+          <label htmlFor="set-name">Name</label>
+          <input id="set-name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="set-due">Due date (for adjusted age)</label>
-          <input id="set-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <label htmlFor="set-birth">Birth date</label>
+          <input
+            id="set-birth"
+            type="date"
+            max={todayISO()}
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+          />
         </div>
-        {dirty && (
-          <button
-            className="btn btn-primary btn-sm"
-            disabled={!name.trim() || !birthDate}
-            onClick={() =>
-              setProfile({ ...profile, name: name.trim(), birthDate, dueDate: dueDate || undefined })
-            }
-          >
-            Save profile
-          </button>
-        )}
       </div>
-    )
-  }
+      <div className="field">
+        <label htmlFor="set-due">Due date (for adjusted age)</label>
+        <input id="set-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+      </div>
+      {dirty && (
+        <button
+          className="btn btn-primary btn-sm"
+          disabled={!name.trim() || !birthDate}
+          onClick={() =>
+            setProfile({ ...profile, name: name.trim(), birthDate, dueDate: dueDate || undefined })
+          }
+        >
+          Save profile
+        </button>
+      )}
+    </div>
+  )
 }
 
 function greeting(): string {

@@ -11,9 +11,10 @@ export function todayISO(): string {
   return toISODate(new Date())
 }
 
-/** "13:05" from an ISO datetime */
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+/** "13:05" from an ISO datetime or a Date */
+export function formatTime(at: string | Date): string {
+  const date = typeof at === 'string' ? new Date(at) : at
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
 /** Day portion (YYYY-MM-DD) of an ISO datetime or date */
@@ -77,4 +78,27 @@ export function formatAgo(iso: string, now: Date = new Date()): string {
 export function minutesIntoDay(iso: string): number {
   const d = new Date(iso)
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
+}
+
+/**
+ * Turn "HH:mm" from a time input into a real datetime, reading it as the most
+ * recent time that has actually happened. A 23:50 bedtime typed at 00:10 means
+ * last night, not tonight.
+ */
+export function dateFromTimeInput(value: string, now: Date = new Date()): Date | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim())
+  if (!match) return null
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  if (hours > 23 || minutes > 59) return null
+  const date = new Date(now)
+  date.setHours(hours, minutes, 0, 0)
+  if (date.getTime() > now.getTime()) date.setDate(date.getDate() - 1)
+  return date
+}
+
+/** "HH:mm" for a time input, defaulting its value to now */
+export function toTimeInput(date: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`
 }

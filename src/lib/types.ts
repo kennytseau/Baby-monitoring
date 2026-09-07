@@ -85,6 +85,19 @@ export interface NappyEntry extends SyncMeta {
   note?: string
 }
 
+/** A dose of medicine — what it was, how much, and when */
+export interface MedicationEntry extends SyncMeta {
+  id: string
+  type: 'medication'
+  /** ISO datetime the dose was given */
+  time: string
+  /** What was given, e.g. "Paracetamol" */
+  name: string
+  /** How much, as written on the syringe — "0.7 ml", "2.5 mg", "1 drop" */
+  amount?: string
+  note?: string
+}
+
 /** A pumping session — millilitres expressed from each breast */
 export interface PumpEntry extends SyncMeta {
   id: string
@@ -93,12 +106,14 @@ export interface PumpEntry extends SyncMeta {
   time: string
   leftMl?: number
   rightMl?: number
+  /** Combined amount, for sessions pumped into one bottle with no per-side split */
+  totalMl?: number
   /** How long the session took, in minutes */
   durationMinutes?: number
   note?: string
 }
 
-export type LogEntry = FeedEntry | SleepEntry | NappyEntry | PumpEntry
+export type LogEntry = FeedEntry | SleepEntry | NappyEntry | PumpEntry | MedicationEntry
 export type LogEntryType = LogEntry['type']
 
 export interface Memory extends SyncMeta {
