@@ -12,6 +12,7 @@ const MARK_CLASS: Record<Exclude<LogEntry['type'], 'sleep'>, string> = {
   feed: 'dt-feed',
   nappy: 'dt-nappy',
   pump: 'dt-pump',
+  medication: 'dt-medication',
 }
 
 /**

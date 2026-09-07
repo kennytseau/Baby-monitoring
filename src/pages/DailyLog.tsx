@@ -24,12 +24,19 @@ import {
 } from '../lib/log'
 import { dayOf, formatDayLabel, formatDuration, formatTime, nowLocalDatetime } from '../lib/format'
 
-const ICONS: Record<LogEntryType, string> = { feed: '🍼', sleep: '😴', nappy: '🧷', pump: '🥛' }
+const ICONS: Record<LogEntryType, string> = {
+  feed: '🍼',
+  sleep: '😴',
+  nappy: '🧷',
+  pump: '🥛',
+  medication: '💊',
+}
 const TYPE_LABELS: Record<LogEntryType, string> = {
   feed: 'Feed',
   sleep: 'Sleep',
   nappy: 'Nappy',
   pump: 'Pump',
+  medication: 'Medicine',
 }
 const FEED_KIND_LABELS: Record<FeedKind, string> = {
   nursing: 'Nursed',
@@ -65,6 +72,8 @@ export function DailyLog() {
   const [pumpLeft, setPumpLeft] = useState('')
   const [pumpRight, setPumpRight] = useState('')
   const [pumpMinutes, setPumpMinutes] = useState('')
+  const [medicineName, setMedicineName] = useState('')
+  const [medicineAmount, setMedicineAmount] = useState('')
   const [note, setNote] = useState('')
 
   const days = useMemo(() => {
@@ -112,6 +121,8 @@ export function DailyLog() {
     setPumpLeft('')
     setPumpRight('')
     setPumpMinutes('')
+    setMedicineName('')
+    setMedicineAmount('')
     setNote('')
   }
 
@@ -132,6 +143,9 @@ export function DailyLog() {
       setEndTime(entry.endTime ? toLocalInput(entry.endTime) : '')
     } else if (entry.type === 'nappy') {
       setNappyKind(entry.kind)
+    } else if (entry.type === 'medication') {
+      setMedicineName(entry.name)
+      setMedicineAmount(entry.amount ?? '')
     } else {
       setPumpLeft(entry.leftMl?.toString() ?? '')
       setPumpRight(entry.rightMl?.toString() ?? '')
@@ -174,6 +188,16 @@ export function DailyLog() {
       }
     } else if (type === 'nappy') {
       entry = { id, type: 'nappy', time: iso, kind: nappyKind, note: trimmedNote }
+    } else if (type === 'medication') {
+      if (!medicineName.trim()) return
+      entry = {
+        id,
+        type: 'medication',
+        time: iso,
+        name: medicineName.trim(),
+        amount: medicineAmount.trim() || undefined,
+        note: trimmedNote,
+      }
     } else {
       entry = {
         id,
@@ -364,6 +388,32 @@ export function DailyLog() {
             </div>
           )}
 
+          {type === 'medication' && (
+            <div className="field-row">
+              <div className="field" style={{ flex: 2 }}>
+                <label htmlFor="log-medicine">Medicine</label>
+                <input
+                  id="log-medicine"
+                  type="text"
+                  placeholder="Paracetamol"
+                  value={medicineName}
+                  onChange={(e) => setMedicineName(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="log-dose">Amount</label>
+                <input
+                  id="log-dose"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.7 ml"
+                  value={medicineAmount}
+                  onChange={(e) => setMedicineAmount(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="field">
             <label htmlFor="log-note">Note (optional)</label>
             <input
@@ -376,7 +426,11 @@ export function DailyLog() {
           </div>
 
           <div className="row">
-            <button type="submit" className="btn btn-primary" disabled={!time}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!time || (type === 'medication' && !medicineName.trim())}
+            >
               {editingId ? 'Save changes' : 'Add entry'}
             </button>
             <button type="button" className="btn" onClick={resetForm}>
