@@ -419,6 +419,37 @@ a { color: var(--accent-text); }
 .sync-banner .btn { padding: 2px 8px; }
 
 /* ---------- Quick logging ---------- */
+.time-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.time-strip-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.time-strip-chips { display: flex; gap: 4px; flex: 1; }
+.chip-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 5px 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 0;
+}
+.chip-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .quick-btn-on {
   border-color: var(--accent);
   background: var(--accent-soft);

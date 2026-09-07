@@ -102,3 +102,25 @@ export function toTimeInput(date: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
+
+/** How far back a quick-log entry is being recorded */
+export interface LogTimeChoice {
+  /** Minutes before now, for the one-tap offsets */
+  offsetMinutes: number
+  /** "HH:mm" typed in, which wins over the offset when set */
+  exactTime?: string
+}
+
+/**
+ * The moment a quick-log entry should be stamped with. Offsets are measured
+ * from the tap that saves it, not from when the offset was chosen, so taking a
+ * while to type an amount does not drag the time backwards with you.
+ */
+export function resolveLogTime(choice: LogTimeChoice, now: Date = new Date()): Date {
+  if (choice.exactTime) {
+    const exact = dateFromTimeInput(choice.exactTime, now)
+    if (exact) return exact
+  }
+  const offset = Number.isFinite(choice.offsetMinutes) ? Math.max(0, choice.offsetMinutes) : 0
+  return offset === 0 ? now : new Date(now.getTime() - offset * 60_000)
+}
