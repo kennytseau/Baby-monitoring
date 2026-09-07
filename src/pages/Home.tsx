@@ -109,16 +109,21 @@ export function Home() {
         </Link>
       </section>
 
-      <section>
-        <h2 className="section-title">Right now</h2>
-        <p className="small" style={{ marginTop: 4 }}>
+      <section className="card right-now">
+        <p className="rhythm-label">
+          <span aria-hidden="true">{openSleep ? '😴' : '👀'}</span> Right now
+        </p>
+        <p className="right-now-state">
           {openSleep
-            ? `Asleep since ${formatTime(openSleep.time)} — ${formatDuration(sleepMinutes(openSleep, now))} so far.`
+            ? `Asleep ${formatDuration(sleepMinutes(openSleep, now))}`
             : awakeMinutes == null
-              ? 'No sleep logged yet today.'
+              ? 'Awake'
               : awakeMinutes < 1
-                ? 'Just woke up.'
-                : `Awake for ${formatDuration(awakeMinutes)}.`}
+                ? 'Just woke up'
+                : `Awake ${formatDuration(awakeMinutes)}`}
+        </p>
+        <p className="small muted">
+          {openSleep ? `Went down at ${formatTime(openSleep.time)}.` : ''}
           {lastFeed ? ` Last feed ${formatAgo(lastFeed.time, now)}.` : ''}
         </p>
       </section>

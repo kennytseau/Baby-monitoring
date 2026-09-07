@@ -449,6 +449,70 @@ a { color: var(--accent-text); }
   margin-top: 2px;
 }
 
+/* ---------- Trend charts ---------- */
+/*
+ * One hue, two steps: the recessive step for past days and the stronger one for
+ * today. Both clear 3:1 against their surface and are 15.6 apart in OKLab for
+ * normal vision (17.8 in dark mode), checked with the palette validator rather
+ * than by eye.
+ */
+:root {
+  --chart-bar: #c96f4f;
+  --chart-bar-today: #96401f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-bar: #9c5c42;
+    --chart-bar-today: #e08b6d;
+  }
+}
+.trend-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.trend-title { font-size: 0.95rem; font-weight: 700; }
+.trend-headline { align-items: baseline; margin-top: 2px; }
+.trend-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.trend-svg { width: 100%; height: auto; display: block; margin-top: 6px; touch-action: pan-y; }
+.tc-bar { fill: var(--chart-bar); }
+.tc-bar-today { fill: var(--chart-bar-today); }
+.tc-axis { stroke: var(--border); stroke-width: 1; }
+.tc-usual { stroke: var(--text-faint); stroke-width: 1; stroke-dasharray: 3 3; }
+.tc-usual-label { fill: var(--text-faint); font-size: 9px; }
+.tc-day { fill: var(--text-faint); font-size: 10px; }
+.tc-value { fill: var(--text); font-size: 11px; font-weight: 700; }
+
+/* ---------- Right now ---------- */
+.right-now {
+  background: var(--surface-2);
+  border-color: transparent;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.right-now-state {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* ---------- Day cards ---------- */
+.day-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
+.day-card-today { border-color: var(--accent); }
+.day-line { font-size: 0.88rem; line-height: 1.45; }
+.day-key {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
 /* ---------- Sync ---------- */
 .sync-banner {
   position: sticky;
