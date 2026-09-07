@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNow } from '../hooks/useNow'
+import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes } from '../lib/log'
-import { dateFromTimeInput, formatDuration, formatTime, toTimeInput } from '../lib/format'
-import type { BottleContent, NappyKind } from '../lib/types'
+import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
+import { dateFromTimeInput, formatAgo, formatDuration, formatTime, toTimeInput } from '../lib/format'
+import type { BottleContent, MedicationEntry, NappyKind } from '../lib/types'
 
-type Panel = 'nurse' | 'bottle' | 'nappy' | 'sleep' | 'pump' | null
+type Panel = 'nurse' | 'bottle' | 'nappy' | 'sleep' | 'medicine' | 'pump' | null
 
 /**
  * The logging surface used on Home and in the Daily log: one tap opens a small
@@ -22,8 +23,10 @@ export function QuickLog() {
     endSleep,
     logNappy,
     logBottle,
+    logMedication,
     logPump,
   } = useQuickLog()
+  const { state } = useAppState()
   const now = useNow(30_000)
   const [panel, setPanel] = useState<Panel>(null)
 
@@ -36,6 +39,29 @@ export function QuickLog() {
   const [pumpMinutes, setPumpMinutes] = useState('')
   const [sleepTime, setSleepTime] = useState('')
   const [sleepError, setSleepError] = useState<string | null>(null)
+  const [medicineName, setMedicineName] = useState('')
+  const [medicineAmount, setMedicineAmount] = useState('')
+  const [medicineNote, setMedicineNote] = useState('')
+
+  const doses = useMemo(
+    () => sortedByTime(state.log.filter((e): e is MedicationEntry => e.type === 'medication')),
+    [state.log],
+  )
+  /** The last few medicines given, with the dose that went with them, so a repeat is one tap */
+  const recentMedicines = useMemo(() => {
+    const seen: MedicationEntry[] = []
+    for (const dose of doses) {
+      if (!seen.some((d) => d.name.toLowerCase() === dose.name.toLowerCase())) seen.push(dose)
+      if (seen.length === 4) break
+    }
+    return seen
+  }, [doses])
+  /** When this medicine was last given, which is what you want before giving it again */
+  const previousDose = useMemo(() => {
+    const name = medicineName.trim().toLowerCase()
+    if (!name) return undefined
+    return doses.find((d) => d.name.trim().toLowerCase() === name)
+  }, [doses, medicineName])
 
   function toggle(next: Exclude<Panel, null>) {
     setPanel((p) => {
@@ -89,6 +115,15 @@ export function QuickLog() {
     setPanel(null)
   }
 
+  function saveMedicine() {
+    if (!medicineName.trim()) return
+    logMedication(medicineName, medicineAmount, medicineNote)
+    setMedicineName('')
+    setMedicineAmount('')
+    setMedicineNote('')
+    setPanel(null)
+  }
+
   function savePump() {
     if (!positiveNumber(leftMl) && !positiveNumber(rightMl)) return
     logPump(positiveNumber(leftMl), positiveNumber(rightMl), positiveNumber(pumpMinutes))
@@ -102,7 +137,7 @@ export function QuickLog() {
     <div className="stack">
       <NursingTimer />
 
-      <div className="quick-btns quick-btns-5">
+      <div className="quick-btns quick-btns-6">
         <button
           className={`quick-btn${runningNursing ? ' quick-btn-on' : ''}`}
           onClick={() => toggle('nurse')}
@@ -126,6 +161,13 @@ export function QuickLog() {
         </button>
         <button className="quick-btn" onClick={() => toggle('pump')} aria-expanded={panel === 'pump'}>
           <span aria-hidden="true">🥛</span> Pump
+        </button>
+        <button
+          className="quick-btn"
+          onClick={() => toggle('medicine')}
+          aria-expanded={panel === 'medicine'}
+        >
+          <span aria-hidden="true">💊</span> Medicine
         </button>
       </div>
 
@@ -288,6 +330,77 @@ export function QuickLog() {
           ) : (
             <p className="tiny faint">A time later than now is taken as yesterday evening.</p>
           )}
+        </div>
+      )}
+
+      {panel === 'medicine' && (
+        <div className="card stack quick-panel">
+          {recentMedicines.length > 0 && (
+            <div className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {recentMedicines.map((recent) => (
+                <button
+                  key={recent.id}
+                  className="btn btn-sm"
+                  onClick={() => {
+                    setMedicineName(recent.name)
+                    // the same medicine is nearly always the same dose
+                    if (recent.amount) setMedicineAmount(recent.amount)
+                  }}
+                >
+                  {recent.name}
+                  {recent.amount ? ` · ${recent.amount}` : ''}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="field-row">
+            <div className="field" style={{ flex: 2 }}>
+              <label htmlFor="quick-medicine">Medication</label>
+              <input
+                id="quick-medicine"
+                type="text"
+                autoCapitalize="words"
+                placeholder="Paracetamol"
+                value={medicineName}
+                onChange={(e) => setMedicineName(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="quick-dose">Amount</label>
+              <input
+                id="quick-dose"
+                type="text"
+                inputMode="decimal"
+                placeholder="0.7 ml"
+                value={medicineAmount}
+                onChange={(e) => setMedicineAmount(e.target.value)}
+              />
+            </div>
+          </div>
+          {previousDose && (
+            <p className="tiny muted">
+              Last {previousDose.name}
+              {previousDose.amount ? ` (${previousDose.amount})` : ''} was{' '}
+              {formatAgo(previousDose.time, now)}.
+            </p>
+          )}
+          <div className="field">
+            <label htmlFor="quick-med-note">Notes</label>
+            <textarea
+              id="quick-med-note"
+              rows={2}
+              placeholder="e.g. after her jabs, she was warm"
+              value={medicineNote}
+              onChange={(e) => setMedicineNote(e.target.value)}
+            />
+          </div>
+          <button
+            className="btn btn-primary btn-block"
+            onClick={saveMedicine}
+            disabled={!medicineName.trim()}
+          >
+            Save dose
+          </button>
         </div>
       )}
 

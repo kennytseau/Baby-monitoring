@@ -89,6 +89,20 @@ export function useQuickLog() {
     [addLog],
   )
 
+  const logMedication = useCallback(
+    (name: string, amount?: string, note?: string) => {
+      addLog({
+        id: uid(),
+        type: 'medication',
+        time: new Date().toISOString(),
+        name: name.trim(),
+        amount: amount?.trim() || undefined,
+        note: note?.trim() || undefined,
+      })
+    },
+    [addLog],
+  )
+
   const logPump = useCallback(
     (leftMl?: number, rightMl?: number, durationMinutes?: number) => {
       addLog({
@@ -113,6 +127,7 @@ export function useQuickLog() {
     endSleep,
     logNappy,
     logBottle,
+    logMedication,
     logPump,
   }
 }
