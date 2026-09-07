@@ -4,10 +4,13 @@ import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
 import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
-import { dateFromTimeInput, formatAgo, formatDuration, formatTime, toTimeInput } from '../lib/format'
+import { formatAgo, formatDuration, formatTime, resolveLogTime, toTimeInput } from '../lib/format'
 import type { BottleContent, MedicationEntry, NappyKind } from '../lib/types'
 
 type Panel = 'nurse' | 'bottle' | 'nappy' | 'sleep' | 'medicine' | 'pump' | null
+
+/** The one-tap "a few minutes ago" offsets, in minutes */
+const QUICK_OFFSETS = [5, 10, 15, 30]
 
 /**
  * The logging surface used on Home and in the Daily log: one tap opens a small
@@ -37,8 +40,11 @@ export function QuickLog() {
   const [leftMl, setLeftMl] = useState('')
   const [rightMl, setRightMl] = useState('')
   const [pumpMinutes, setPumpMinutes] = useState('')
-  const [sleepTime, setSleepTime] = useState('')
   const [sleepError, setSleepError] = useState<string | null>(null)
+  /** How far back the next entry is being logged: 0 is now */
+  const [offsetMinutes, setOffsetMinutes] = useState(0)
+  const [exactTime, setExactTime] = useState('')
+  const [pickingTime, setPickingTime] = useState(false)
   const [medicineName, setMedicineName] = useState('')
   const [medicineAmount, setMedicineAmount] = useState('')
   const [medicineNote, setMedicineNote] = useState('')
@@ -63,13 +69,27 @@ export function QuickLog() {
     return doses.find((d) => d.name.trim().toLowerCase() === name)
   }, [doses, medicineName])
 
+  /** The moment the next entry is stamped with, worked out at the tap that saves it */
+  function logAt(): Date {
+    return resolveLogTime({ offsetMinutes, exactTime: exactTime || undefined })
+  }
+
+  /**
+   * Back to "now" after every entry. Leaving it set is how you end up logging a
+   * whole evening ten minutes in the past without noticing.
+   */
+  function resetTime() {
+    setOffsetMinutes(0)
+    setExactTime('')
+    setPickingTime(false)
+  }
+
+  const backdated = offsetMinutes > 0 || !!exactTime
+
   function toggle(next: Exclude<Panel, null>) {
     setPanel((p) => {
       if (p === next) return null
-      if (next === 'sleep') {
-        setSleepTime(toTimeInput(new Date()))
-        setSleepError(null)
-      }
+      if (next === 'sleep') setSleepError(null)
       return next
     })
   }
@@ -79,14 +99,16 @@ export function QuickLog() {
     const left = positiveNumber(leftMinutes)
     const right = positiveNumber(rightMinutes)
     if (!left && !right) return
-    logNursingMinutes(left, right)
+    logNursingMinutes(left, right, logAt())
     setLeftMinutes('')
     setRightMinutes('')
     setPanel(null)
+    resetTime()
   }
 
-  /** Record going down / waking, either now or at a time typed in */
-  function saveSleep(at: Date) {
+  /** Record going down or waking, at whatever the time strip says */
+  function saveSleep() {
+    const at = logAt()
     if (openSleep) {
       if (at.getTime() <= new Date(openSleep.time).getTime()) {
         setSleepError(`She went down at ${formatTime(openSleep.time)} — waking must be after that.`)
@@ -98,44 +120,107 @@ export function QuickLog() {
     }
     setSleepError(null)
     setPanel(null)
-  }
-
-  function saveSleepAtTypedTime() {
-    const at = dateFromTimeInput(sleepTime, new Date())
-    if (!at) {
-      setSleepError('That is not a time — use 24-hour form, like 19:45.')
-      return
-    }
-    saveSleep(at)
+    resetTime()
   }
 
   function saveBottle() {
-    logBottle(contents, positiveNumber(amount))
+    logBottle(contents, positiveNumber(amount), logAt())
     setAmount('')
     setPanel(null)
+    resetTime()
   }
 
   function saveMedicine() {
     if (!medicineName.trim()) return
-    logMedication(medicineName, medicineAmount, medicineNote)
+    logMedication(medicineName, medicineAmount, medicineNote, logAt())
     setMedicineName('')
     setMedicineAmount('')
     setMedicineNote('')
     setPanel(null)
+    resetTime()
   }
 
   function savePump() {
     if (!positiveNumber(leftMl) && !positiveNumber(rightMl)) return
-    logPump(positiveNumber(leftMl), positiveNumber(rightMl), positiveNumber(pumpMinutes))
+    logPump(positiveNumber(leftMl), positiveNumber(rightMl), positiveNumber(pumpMinutes), logAt())
     setLeftMl('')
     setRightMl('')
     setPumpMinutes('')
     setPanel(null)
+    resetTime()
   }
 
   return (
     <div className="stack">
       <NursingTimer />
+
+      {/* One time control for all six actions: tap an offset, then tap what happened */}
+      <div className="time-strip">
+        <span className="time-strip-label">Logging</span>
+        <div className="time-strip-chips">
+          <button
+            className={`chip-btn${!backdated ? ' on' : ''}`}
+            onClick={resetTime}
+            aria-pressed={!backdated}
+          >
+            now
+          </button>
+          {QUICK_OFFSETS.map((minutes) => (
+            <button
+              key={minutes}
+              className={`chip-btn${!exactTime && offsetMinutes === minutes ? ' on' : ''}`}
+              aria-pressed={!exactTime && offsetMinutes === minutes}
+              onClick={() => {
+                setOffsetMinutes(minutes)
+                setExactTime('')
+                setPickingTime(false)
+              }}
+            >
+              −{minutes}m
+            </button>
+          ))}
+          <button
+            className={`chip-btn${exactTime ? ' on' : ''}`}
+            aria-pressed={!!exactTime}
+            aria-label="Set an exact time"
+            onClick={() => {
+              setPickingTime((open) => !open)
+              if (!exactTime) setExactTime(toTimeInput(new Date()))
+            }}
+          >
+            🕑
+          </button>
+        </div>
+      </div>
+
+      {pickingTime && (
+        <div className="row">
+          <div className="field grow">
+            <label htmlFor="quick-at">Time it happened</label>
+            <input
+              id="quick-at"
+              type="time"
+              value={exactTime}
+              onChange={(e) => {
+                setExactTime(e.target.value)
+                setOffsetMinutes(0)
+              }}
+            />
+          </div>
+          <button className="btn btn-sm" style={{ alignSelf: 'flex-end' }} onClick={resetTime}>
+            Back to now
+          </button>
+        </div>
+      )}
+
+      {backdated && (
+        <p className="tiny warn" role="status">
+          Logging at {formatTime(logAt())} — {formatDuration(
+            Math.max(1, (now.getTime() - logAt().getTime()) / 60_000),
+          )}{' '}
+          ago. Back to now after it saves.
+        </p>
+      )}
 
       <div className="quick-btns quick-btns-6">
         <button
@@ -188,8 +273,9 @@ export function QuickLog() {
             <button
               className="btn btn-primary grow"
               onClick={() => {
-                nurse('left')
+                nurse('left', logAt())
                 setPanel(null)
+                resetTime()
               }}
             >
               Left
@@ -197,8 +283,9 @@ export function QuickLog() {
             <button
               className="btn btn-primary grow"
               onClick={() => {
-                nurse('right')
+                nurse('right', logAt())
                 setPanel(null)
+                resetTime()
               }}
             >
               Right
@@ -287,8 +374,9 @@ export function QuickLog() {
                 key={k}
                 className="btn btn-primary grow"
                 onClick={() => {
-                  logNappy(k)
+                  logNappy(k, logAt())
                   setPanel(null)
+                  resetTime()
                 }}
               >
                 {NAPPY_LABELS[k]}
@@ -302,34 +390,13 @@ export function QuickLog() {
         <div className="card stack quick-panel">
           <p className="tiny muted">
             {openSleep
-              ? `She went down at ${formatTime(openSleep.time)}. When did she wake?`
-              : 'When did she fall asleep?'}
+              ? `She went down at ${formatTime(openSleep.time)}. Set the time above if she woke earlier.`
+              : 'Set the time above if she went down a while ago.'}
           </p>
-          <button className="btn btn-primary btn-block" onClick={() => saveSleep(new Date())}>
-            {openSleep ? 'Woke up just now' : 'Asleep now'}
+          <button className="btn btn-primary btn-block" onClick={saveSleep}>
+            {openSleep ? 'Woke up' : 'Asleep'} {backdated ? `at ${formatTime(logAt())}` : 'now'}
           </button>
-          <div className="row">
-            <div className="field grow">
-              <label htmlFor="quick-sleep-time">Or a time</label>
-              <input
-                id="quick-sleep-time"
-                type="time"
-                value={sleepTime}
-                onChange={(e) => {
-                  setSleepTime(e.target.value)
-                  setSleepError(null)
-                }}
-              />
-            </div>
-            <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={saveSleepAtTypedTime}>
-              Save
-            </button>
-          </div>
-          {sleepError ? (
-            <p className="tiny warn">{sleepError}</p>
-          ) : (
-            <p className="tiny faint">A time later than now is taken as yesterday evening.</p>
-          )}
+          {sleepError && <p className="tiny warn">{sleepError}</p>}
         </div>
       )}
 

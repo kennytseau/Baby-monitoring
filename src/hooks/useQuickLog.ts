@@ -19,16 +19,19 @@ export function useQuickLog() {
   const openSleep = useMemo(() => findOpenSleep(state.log), [state.log])
   const runningNursing = useMemo(() => findRunningNursing(state.log), [state.log])
 
-  /** Start nursing on a side — or switch sides if a session is already running */
+  /**
+   * Start nursing on a side — or switch sides if a session is already running.
+   * `at` lets a feed be logged after the fact, and the timer then opens with
+   * that time already on the clock.
+   */
   const nurse = useCallback(
-    (side: BreastSide) => {
-      const now = new Date()
+    (side: BreastSide, at: Date = new Date()) => {
       if (!runningNursing) {
-        addLog(startNursingSession(uid(), side, now))
+        addLog(startNursingSession(uid(), side, at))
         return
       }
       if (runningNursing.activeSide === side) return
-      updateLog(switchNursingSide(runningNursing, side, now))
+      updateLog(switchNursingSide(runningNursing, side, at))
     },
     [runningNursing, addLog, updateLog],
   )
@@ -39,12 +42,12 @@ export function useQuickLog() {
 
   /** Log a nursing session that was not timed — the minutes are typed in afterwards */
   const logNursingMinutes = useCallback(
-    (leftMinutes?: number, rightMinutes?: number) => {
+    (leftMinutes?: number, rightMinutes?: number, at: Date = new Date()) => {
       addLog({
         id: uid(),
         type: 'feed',
         kind: 'nursing',
-        time: new Date().toISOString(),
+        time: at.toISOString(),
         leftMinutes,
         rightMinutes,
       })
@@ -69,19 +72,19 @@ export function useQuickLog() {
   )
 
   const logNappy = useCallback(
-    (kind: NappyKind) => {
-      addLog({ id: uid(), type: 'nappy', time: new Date().toISOString(), kind })
+    (kind: NappyKind, at: Date = new Date()) => {
+      addLog({ id: uid(), type: 'nappy', time: at.toISOString(), kind })
     },
     [addLog],
   )
 
   const logBottle = useCallback(
-    (contents: BottleContent, amountMl?: number) => {
+    (contents: BottleContent, amountMl?: number, at: Date = new Date()) => {
       addLog({
         id: uid(),
         type: 'feed',
         kind: 'bottle',
-        time: new Date().toISOString(),
+        time: at.toISOString(),
         contents,
         amountMl,
       })
@@ -90,11 +93,11 @@ export function useQuickLog() {
   )
 
   const logMedication = useCallback(
-    (name: string, amount?: string, note?: string) => {
+    (name: string, amount?: string, note?: string, at: Date = new Date()) => {
       addLog({
         id: uid(),
         type: 'medication',
-        time: new Date().toISOString(),
+        time: at.toISOString(),
         name: name.trim(),
         amount: amount?.trim() || undefined,
         note: note?.trim() || undefined,
@@ -104,11 +107,11 @@ export function useQuickLog() {
   )
 
   const logPump = useCallback(
-    (leftMl?: number, rightMl?: number, durationMinutes?: number) => {
+    (leftMl?: number, rightMl?: number, durationMinutes?: number, at: Date = new Date()) => {
       addLog({
         id: uid(),
         type: 'pump',
-        time: new Date().toISOString(),
+        time: at.toISOString(),
         leftMl,
         rightMl,
         durationMinutes,

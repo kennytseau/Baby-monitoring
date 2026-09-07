@@ -219,7 +219,7 @@ export function DailyLog() {
       <header>
         <h1 className="page-title">Daily log</h1>
         <p className="page-subtitle">
-          Milk, nappies, sleep and pumping — tap it in as it happens, or add it later.
+          Milk, nappies, sleep, pumping and medicine — log it as it happens, or set the time it did.
         </p>
       </header>
 
