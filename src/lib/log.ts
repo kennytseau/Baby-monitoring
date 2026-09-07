@@ -40,9 +40,27 @@ export function isNursing(entry: LogEntry): entry is FeedEntry {
   return entry.type === 'feed' && entry.kind === 'nursing'
 }
 
+/**
+ * A nursing session's state lives in two fields it already had:
+ *   activeSide + sideStartedAt -> the clock is running
+ *   activeSide, no sideStartedAt -> paused on that side
+ *   no activeSide -> finished
+ * So a feed logged before pausing existed reads as finished, as it should.
+ */
+
 /** A nursing session with a side still being timed */
 export function isNursingRunning(entry: LogEntry): entry is FeedEntry {
   return isNursing(entry) && !!entry.activeSide && !!entry.sideStartedAt
+}
+
+/** Started, not finished, and not counting right now */
+export function isNursingPaused(entry: LogEntry): entry is FeedEntry {
+  return isNursing(entry) && !!entry.activeSide && !entry.sideStartedAt
+}
+
+/** Started and not finished, whether or not the clock is moving */
+export function isNursingInProgress(entry: LogEntry): entry is FeedEntry {
+  return isNursingRunning(entry) || isNursingPaused(entry)
 }
 
 /** Minutes on one side, including the live side while the timer runs */
@@ -76,6 +94,11 @@ export function findOpenSleep(log: LogEntry[]): SleepEntry | undefined {
 /** The nursing session with a running timer, if any */
 export function findRunningNursing(log: LogEntry[]): FeedEntry | undefined {
   return log.find(isNursingRunning)
+}
+
+/** The nursing session that has been started and not finished, running or paused */
+export function findOpenNursing(log: LogEntry[]): FeedEntry | undefined {
+  return log.find(isNursingInProgress)
 }
 
 export function sortedByTime<T extends { time: string }>(
@@ -275,7 +298,9 @@ export function commitNursingSide(entry: FeedEntry, now = new Date()): FeedEntry
   if (!entry.activeSide || !entry.sideStartedAt) return entry
   const minutes = minutesBetween(entry.sideStartedAt, now.toISOString())
   const banked = (entry.activeSide === 'left' ? entry.leftMinutes : entry.rightMinutes) ?? 0
-  const total = Math.round((banked + minutes) * 10) / 10
+  // Kept to hundredths of a minute: enough to tidy float noise, fine enough that
+  // pausing does not visibly nudge the clock, and it survives several pauses.
+  const total = Math.round((banked + minutes) * 100) / 100
   return {
     ...entry,
     leftMinutes: entry.activeSide === 'left' ? total : entry.leftMinutes,
@@ -288,6 +313,27 @@ export function commitNursingSide(entry: FeedEntry, now = new Date()): FeedEntry
 /** Bank the current side and start timing the other one */
 export function switchNursingSide(entry: FeedEntry, side: BreastSide, now = new Date()): FeedEntry {
   return { ...commitNursingSide(entry, now), activeSide: side, sideStartedAt: now.toISOString() }
+}
+
+/**
+ * Stop the clock but keep the session open, banking what the side has run up so
+ * far. The side is remembered, so resuming carries on where it left off.
+ */
+export function pauseNursing(entry: FeedEntry, now = new Date()): FeedEntry {
+  if (!isNursingRunning(entry)) return entry
+  const side = entry.activeSide
+  return { ...commitNursingSide(entry, now), activeSide: side, sideStartedAt: undefined }
+}
+
+/** Start the clock again on the side it was paused on */
+export function resumeNursing(entry: FeedEntry, now = new Date()): FeedEntry {
+  if (!isNursingPaused(entry)) return entry
+  return { ...entry, sideStartedAt: now.toISOString() }
+}
+
+/** Bank whatever is running and close the session for good */
+export function finishNursing(entry: FeedEntry, now = new Date()): FeedEntry {
+  return { ...commitNursingSide(entry, now), activeSide: undefined, sideStartedAt: undefined }
 }
 
 /** A fresh nursing session with the timer already running on `side` */

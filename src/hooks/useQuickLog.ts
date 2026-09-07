@@ -2,9 +2,12 @@ import { useCallback, useMemo } from 'react'
 import { useAppState } from './useAppState'
 import { uid } from '../lib/storage'
 import {
-  commitNursingSide,
+  findOpenNursing,
   findOpenSleep,
-  findRunningNursing,
+  finishNursing as finishNursingSession,
+  isNursingRunning,
+  pauseNursing as pauseNursingSession,
+  resumeNursing as resumeNursingSession,
   startNursingSession,
   switchNursingSide,
 } from '../lib/log'
@@ -17,7 +20,12 @@ import type { BottleContent, BreastSide, NappyKind } from '../lib/types'
 export function useQuickLog() {
   const { state, addLog, updateLog } = useAppState()
   const openSleep = useMemo(() => findOpenSleep(state.log), [state.log])
-  const runningNursing = useMemo(() => findRunningNursing(state.log), [state.log])
+  /** Started and not finished — the timer card follows this, running or paused */
+  const openNursing = useMemo(() => findOpenNursing(state.log), [state.log])
+  const runningNursing = useMemo(
+    () => (openNursing && isNursingRunning(openNursing) ? openNursing : undefined),
+    [openNursing],
+  )
 
   /**
    * Start nursing on a side — or switch sides if a session is already running.
@@ -26,19 +34,29 @@ export function useQuickLog() {
    */
   const nurse = useCallback(
     (side: BreastSide, at: Date = new Date()) => {
-      if (!runningNursing) {
+      if (!openNursing) {
         addLog(startNursingSession(uid(), side, at))
         return
       }
-      if (runningNursing.activeSide === side) return
-      updateLog(switchNursingSide(runningNursing, side, at))
+      // Tapping the side she is already on does nothing; tapping it while
+      // paused starts the clock again rather than opening a second feed.
+      if (openNursing.activeSide === side && isNursingRunning(openNursing)) return
+      updateLog(switchNursingSide(openNursing, side, at))
     },
-    [runningNursing, addLog, updateLog],
+    [openNursing, addLog, updateLog],
   )
 
-  const finishNursing = useCallback(() => {
-    if (runningNursing) updateLog(commitNursingSide(runningNursing, new Date()))
+  const pauseNursing = useCallback(() => {
+    if (runningNursing) updateLog(pauseNursingSession(runningNursing, new Date()))
   }, [runningNursing, updateLog])
+
+  const resumeNursing = useCallback(() => {
+    if (openNursing) updateLog(resumeNursingSession(openNursing, new Date()))
+  }, [openNursing, updateLog])
+
+  const finishNursing = useCallback(() => {
+    if (openNursing) updateLog(finishNursingSession(openNursing, new Date()))
+  }, [openNursing, updateLog])
 
   /** Log a nursing session that was not timed — the minutes are typed in afterwards */
   const logNursingMinutes = useCallback(
@@ -122,8 +140,11 @@ export function useQuickLog() {
 
   return {
     openSleep,
+    openNursing,
     runningNursing,
     nurse,
+    pauseNursing,
+    resumeNursing,
     finishNursing,
     logNursingMinutes,
     startSleep,

@@ -19,6 +19,7 @@ const QUICK_OFFSETS = [5, 10, 15, 30]
 export function QuickLog() {
   const {
     openSleep,
+    openNursing,
     runningNursing,
     nurse,
     logNursingMinutes,
@@ -224,7 +225,7 @@ export function QuickLog() {
 
       <div className="quick-btns quick-btns-6">
         <button
-          className={`quick-btn${runningNursing ? ' quick-btn-on' : ''}`}
+          className={`quick-btn${openNursing ? ' quick-btn-on' : ''}`}
           onClick={() => toggle('nurse')}
           aria-expanded={panel === 'nurse'}
         >
@@ -267,7 +268,11 @@ export function QuickLog() {
       {panel === 'nurse' && (
         <div className="card stack quick-panel">
           <p className="tiny muted">
-            {runningNursing ? 'Switch sides — the timer keeps running.' : 'Which side is she on?'}
+            {runningNursing
+              ? 'Switch sides — the timer keeps running.'
+              : openNursing
+                ? 'Tap a side to start the clock again.'
+                : 'Which side is she on?'}
           </p>
           <div className="row">
             <button
@@ -292,7 +297,7 @@ export function QuickLog() {
             </button>
           </div>
 
-          {!runningNursing && (
+          {!openNursing && (
             <>
               <hr className="rule" />
               <p className="tiny muted">Forgot to start the timer? Put the minutes in here.</p>
