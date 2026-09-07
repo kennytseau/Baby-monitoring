@@ -17,11 +17,15 @@ export const NAPPY_LABELS: Record<NappyKind, string> = {
   mixed: 'Wet + poo',
 }
 
+/** Labels for every value that can appear in saved data, including older entries */
 export const BOTTLE_LABELS: Record<BottleContent, string> = {
   formula: 'Formula',
   expressed: 'Breast milk',
   mixed: 'Formula + breast milk',
 }
+
+/** What a bottle can be logged as now — 'mixed' is kept above so old entries still read correctly */
+export const BOTTLE_OPTIONS: BottleContent[] = ['formula', 'expressed']
 
 export const SIDE_LABELS: Record<BreastSide, string> = { left: 'Left', right: 'Right' }
 

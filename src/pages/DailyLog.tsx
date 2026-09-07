@@ -13,7 +13,15 @@ import type {
   NappyKind,
 } from '../lib/types'
 import { uid } from '../lib/storage'
-import { BOTTLE_LABELS, NAPPY_LABELS, dayTotals, sortedByTime, summarizeEntry, wakeWindows } from '../lib/log'
+import {
+  BOTTLE_LABELS,
+  BOTTLE_OPTIONS,
+  NAPPY_LABELS,
+  dayTotals,
+  sortedByTime,
+  summarizeEntry,
+  wakeWindows,
+} from '../lib/log'
 import { dayOf, formatDayLabel, formatDuration, formatTime, nowLocalDatetime } from '../lib/format'
 
 const ICONS: Record<LogEntryType, string> = { feed: '🍼', sleep: '😴', nappy: '🧷', pump: '🥛' }
@@ -265,9 +273,9 @@ export function DailyLog() {
               {feedKind === 'bottle' && (
                 <div className="stack">
                   <div className="seg" role="group" aria-label="What's in the bottle">
-                    {(Object.keys(BOTTLE_LABELS) as BottleContent[]).map((c) => (
+                    {BOTTLE_OPTIONS.map((c) => (
                       <button key={c} type="button" className={contents === c ? 'on' : ''} onClick={() => setContents(c)}>
-                        {c === 'mixed' ? 'Both' : BOTTLE_LABELS[c]}
+                        {BOTTLE_LABELS[c]}
                       </button>
                     ))}
                   </div>
