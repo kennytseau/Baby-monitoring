@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppState } from '../hooks/useAppState'
-import { adjustedAgeInDays, ageInMonthsFloat, correctionDays, formatAge, parseISODate, DAYS_PER_MONTH } from '../lib/age'
+import { correctionDays, developmentalAgeMonths, formatAge, parseISODate, usesAdjustedAge } from '../lib/age'
 import { bandForAgeMonths, findMilestone, nextBand } from '../data/milestones'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
@@ -17,12 +17,8 @@ export function Home() {
   const now = useNow(30_000)
   const [confirmReset, setConfirmReset] = useState(false)
 
-  const corrDays = correctionDays(profile)
-  const usesAdjusted = corrDays >= 14
-  const ageMonths = usesAdjusted
-    ? adjustedAgeInDays(profile) / DAYS_PER_MONTH
-    : ageInMonthsFloat(profile.birthDate)
-  const band = bandForAgeMonths(ageMonths)
+  const usesAdjusted = usesAdjustedAge(profile)
+  const band = bandForAgeMonths(developmentalAgeMonths(profile))
   const upcoming = nextBand(band)
 
   const achievedSet = useMemo(
@@ -57,7 +53,7 @@ export function Home() {
         </h1>
         {usesAdjusted && (
           <p className="tiny muted">
-            Born {Math.round(corrDays / 7)} weeks early — milestones use her adjusted age.
+            Born {Math.round(correctionDays(profile) / 7)} weeks early — milestones use her adjusted age.
           </p>
         )}
         {sync.paired && (

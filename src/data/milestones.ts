@@ -1186,4 +1186,3 @@ export function findMilestone(id: string): { milestone: MilestoneDef; band: AgeB
   return milestoneIndex.get(id)
 }
 
-export const TOTAL_MILESTONES = milestoneIndex.size

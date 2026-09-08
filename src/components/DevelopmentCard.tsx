@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAppState } from '../hooks/useAppState'
-import { adjustedAgeInDays, ageInMonthsFloat, correctionDays, DAYS_PER_MONTH } from '../lib/age'
+import { developmentalAgeMonths } from '../lib/age'
 import { bandForAgeMonths } from '../data/milestones'
 
 /**
@@ -11,12 +11,7 @@ import { bandForAgeMonths } from '../data/milestones'
 export function DevelopmentCard() {
   const { state } = useAppState()
   const profile = state.profile!
-  const corrDays = correctionDays(profile)
-  const ageMonths =
-    corrDays >= 14
-      ? adjustedAgeInDays(profile) / DAYS_PER_MONTH
-      : ageInMonthsFloat(profile.birthDate)
-  const band = bandForAgeMonths(ageMonths)
+  const band = bandForAgeMonths(developmentalAgeMonths(profile))
 
   return (
     <section className="card card-tinted">

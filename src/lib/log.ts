@@ -28,8 +28,6 @@ export const BOTTLE_LABELS: Record<BottleContent, string> = {
 /** What a bottle can be logged as now — 'mixed' is kept above so old entries still read correctly */
 export const BOTTLE_OPTIONS: BottleContent[] = ['formula', 'expressed']
 
-export const SIDE_LABELS: Record<BreastSide, string> = { left: 'Left', right: 'Right' }
-
 /** Minutes elapsed between two ISO datetimes, never negative */
 export function minutesBetween(fromIso: string, toIso: string): number {
   const mins = (new Date(toIso).getTime() - new Date(fromIso).getTime()) / MS_PER_MINUTE
@@ -89,11 +87,6 @@ export function pumpTotalMl(entry: PumpEntry): number {
 /** The sleep that has started but not ended, if the baby is asleep right now */
 export function findOpenSleep(log: LogEntry[]): SleepEntry | undefined {
   return log.find((e): e is SleepEntry => e.type === 'sleep' && !e.endTime)
-}
-
-/** The nursing session with a running timer, if any */
-export function findRunningNursing(log: LogEntry[]): FeedEntry | undefined {
-  return log.find(isNursingRunning)
 }
 
 /** The nursing session that has been started and not finished, running or paused */
@@ -340,25 +333,4 @@ export function finishNursing(entry: FeedEntry, now = new Date()): FeedEntry {
 export function startNursingSession(id: string, side: BreastSide, now = new Date()): FeedEntry {
   const iso = now.toISOString()
   return { id, type: 'feed', kind: 'nursing', time: iso, activeSide: side, sideStartedAt: iso }
-}
-
-/**
- * How long ago the last dose of the same medicine was given, for spacing doses.
- * Names are matched loosely so "Panadol" and "panadol " count as the same thing.
- */
-export function minutesSincePreviousDose(
-  log: LogEntry[],
-  entry: { id: string; name: string; time: string },
-): number | null {
-  const name = entry.name.trim().toLowerCase()
-  const previous = log
-    .filter(
-      (e): e is LogEntry & { type: 'medication' } =>
-        e.type === 'medication' &&
-        e.id !== entry.id &&
-        e.name.trim().toLowerCase() === name &&
-        e.time < entry.time,
-    )
-    .sort((a, b) => b.time.localeCompare(a.time))[0]
-  return previous ? minutesBetween(previous.time, entry.time) : null
 }
