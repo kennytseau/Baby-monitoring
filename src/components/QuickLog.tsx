@@ -155,7 +155,42 @@ export function QuickLog() {
     <div className="stack">
       <NursingTimer />
 
-      {/* One time control for all six actions: tap an offset, then tap what happened */}
+      <div className="quick-btns quick-btns-6">
+        <button
+          className={`quick-btn${openNursing ? ' quick-btn-on' : ''}`}
+          onClick={() => toggle('nurse')}
+          aria-expanded={panel === 'nurse'}
+        >
+          <span aria-hidden="true">🤱</span> Nurse
+        </button>
+        <button className="quick-btn" onClick={() => toggle('bottle')} aria-expanded={panel === 'bottle'}>
+          <span aria-hidden="true">🍼</span> Bottle
+        </button>
+        <button className="quick-btn" onClick={() => toggle('nappy')} aria-expanded={panel === 'nappy'}>
+          <span aria-hidden="true">🧷</span> Nappy
+        </button>
+        <button
+          className={`quick-btn${openSleep ? ' quick-btn-on' : ''}`}
+          onClick={() => toggle('sleep')}
+          aria-expanded={panel === 'sleep'}
+        >
+          <span aria-hidden="true">{openSleep ? '☀️' : '😴'}</span>
+          {openSleep ? 'Woke up' : 'Sleep'}
+        </button>
+        <button className="quick-btn" onClick={() => toggle('pump')} aria-expanded={panel === 'pump'}>
+          <span aria-hidden="true">🥛</span> Pump
+        </button>
+        <button
+          className="quick-btn"
+          onClick={() => toggle('medicine')}
+          aria-expanded={panel === 'medicine'}
+        >
+          <span aria-hidden="true">💊</span> Medicine
+        </button>
+      </div>
+
+      {/* The time control sits under the actions: the actions are what get tapped,
+          and the time only matters when you are logging after the fact. */}
       <div className="time-strip">
         <span className="time-strip-label">Logging</span>
         <div className="time-strip-chips">
@@ -222,40 +257,6 @@ export function QuickLog() {
           ago. Back to now after it saves.
         </p>
       )}
-
-      <div className="quick-btns quick-btns-6">
-        <button
-          className={`quick-btn${openNursing ? ' quick-btn-on' : ''}`}
-          onClick={() => toggle('nurse')}
-          aria-expanded={panel === 'nurse'}
-        >
-          <span aria-hidden="true">🤱</span> Nurse
-        </button>
-        <button className="quick-btn" onClick={() => toggle('bottle')} aria-expanded={panel === 'bottle'}>
-          <span aria-hidden="true">🍼</span> Bottle
-        </button>
-        <button className="quick-btn" onClick={() => toggle('nappy')} aria-expanded={panel === 'nappy'}>
-          <span aria-hidden="true">🧷</span> Nappy
-        </button>
-        <button
-          className={`quick-btn${openSleep ? ' quick-btn-on' : ''}`}
-          onClick={() => toggle('sleep')}
-          aria-expanded={panel === 'sleep'}
-        >
-          <span aria-hidden="true">{openSleep ? '☀️' : '😴'}</span>
-          {openSleep ? 'Woke up' : 'Sleep'}
-        </button>
-        <button className="quick-btn" onClick={() => toggle('pump')} aria-expanded={panel === 'pump'}>
-          <span aria-hidden="true">🥛</span> Pump
-        </button>
-        <button
-          className="quick-btn"
-          onClick={() => toggle('medicine')}
-          aria-expanded={panel === 'medicine'}
-        >
-          <span aria-hidden="true">💊</span> Medicine
-        </button>
-      </div>
 
       {openSleep && (
         <p className="tiny muted" role="status">
