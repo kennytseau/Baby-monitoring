@@ -4,7 +4,14 @@ import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
 import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
-import { formatAgo, formatDuration, formatTime, resolveLogTime, toTimeInput } from '../lib/format'
+import {
+  formatAgo,
+  formatDuration,
+  formatTime,
+  positiveNumber,
+  resolveLogTime,
+  toTimeInput,
+} from '../lib/format'
 import type { BottleContent, MedicationEntry, NappyKind } from '../lib/types'
 
 type Panel = 'nurse' | 'bottle' | 'nappy' | 'sleep' | 'medicine' | 'pump' | null
@@ -532,9 +539,4 @@ export function QuickLog() {
       )}
     </div>
   )
-}
-
-function positiveNumber(value: string): number | undefined {
-  const n = Number(value)
-  return value.trim() && Number.isFinite(n) && n > 0 ? n : undefined
 }

@@ -22,7 +22,15 @@ import {
   summarizeEntry,
   wakeWindows,
 } from '../lib/log'
-import { dayOf, formatDayLabel, formatDuration, formatTime, nowLocalDatetime } from '../lib/format'
+import {
+  dayOf,
+  formatDayLabel,
+  formatDuration,
+  formatTime,
+  nowLocalDatetime,
+  positiveNumber,
+  toDatetimeInput,
+} from '../lib/format'
 
 const ICONS: Record<LogEntryType, string> = {
   feed: '🍼',
@@ -131,7 +139,7 @@ export function DailyLog() {
     setFormOpen(true)
     setEditingId(entry.id)
     setType(entry.type)
-    setTime(toLocalInput(entry.time))
+    setTime(toDatetimeInput(entry.time))
     setNote(entry.note ?? '')
     if (entry.type === 'feed') {
       setFeedKind(entry.kind)
@@ -140,7 +148,7 @@ export function DailyLog() {
       setContents(entry.contents ?? 'formula')
       setAmount(entry.amountMl?.toString() ?? '')
     } else if (entry.type === 'sleep') {
-      setEndTime(entry.endTime ? toLocalInput(entry.endTime) : '')
+      setEndTime(entry.endTime ? toDatetimeInput(entry.endTime) : '')
     } else if (entry.type === 'nappy') {
       setNappyKind(entry.kind)
     } else if (entry.type === 'medication') {
@@ -169,13 +177,13 @@ export function DailyLog() {
         type: 'feed',
         time: iso,
         kind: feedKind,
-        leftMinutes: feedKind === 'nursing' ? num(leftMinutes) : undefined,
-        rightMinutes: feedKind === 'nursing' ? num(rightMinutes) : undefined,
+        leftMinutes: feedKind === 'nursing' ? positiveNumber(leftMinutes) : undefined,
+        rightMinutes: feedKind === 'nursing' ? positiveNumber(rightMinutes) : undefined,
         // keep a running timer alive when its session is edited
         activeSide: existing?.type === 'feed' ? existing.activeSide : undefined,
         sideStartedAt: existing?.type === 'feed' ? existing.sideStartedAt : undefined,
         contents: feedKind === 'bottle' ? contents : undefined,
-        amountMl: feedKind === 'bottle' ? num(amount) : undefined,
+        amountMl: feedKind === 'bottle' ? positiveNumber(amount) : undefined,
         note: trimmedNote,
       }
     } else if (type === 'sleep') {
@@ -203,9 +211,9 @@ export function DailyLog() {
         id,
         type: 'pump',
         time: iso,
-        leftMl: num(pumpLeft),
-        rightMl: num(pumpRight),
-        durationMinutes: num(pumpMinutes),
+        leftMl: positiveNumber(pumpLeft),
+        rightMl: positiveNumber(pumpRight),
+        durationMinutes: positiveNumber(pumpMinutes),
         note: trimmedNote,
       }
     }
@@ -504,15 +512,4 @@ function LogRow({
       </button>
     </div>
   )
-}
-
-function num(value: string): number | undefined {
-  const n = Number(value)
-  return value.trim() && Number.isFinite(n) && n > 0 ? n : undefined
-}
-
-function toLocalInput(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
