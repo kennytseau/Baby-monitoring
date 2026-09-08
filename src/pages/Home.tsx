@@ -97,19 +97,6 @@ export function Home() {
 
       <RhythmCard />
 
-      <section className="card card-tinted">
-        <div className="row-between">
-          <h2 className="item-title">What {profile.name} is likely doing now</h2>
-          <span className="chip chip-neutral">{band.shortLabel}</span>
-        </div>
-        <p className="small" style={{ marginTop: 8 }}>
-          {band.overview}
-        </p>
-        <Link to="/milestones" className="btn btn-ghost btn-sm" style={{ marginLeft: -12 }}>
-          See her milestones →
-        </Link>
-      </section>
-
       <section>
         <h2 className="section-title">Quick log</h2>
         <div style={{ marginTop: 8 }}>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
+import { DevelopmentCard } from '../components/DevelopmentCard'
 import { GrowthChart } from '../components/GrowthChart'
 import type { ChartPoint } from '../components/GrowthChart'
 import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
@@ -115,24 +116,7 @@ export function Growth() {
         </p>
       </header>
 
-      {latest.length > 0 && (
-        <section className="card growth-latest">
-          <p className="rhythm-label">Latest</p>
-          {latest.map((item) => (
-            <button
-              key={item.measure}
-              className="growth-latest-row"
-              onClick={() => setMeasure(item.measure)}
-            >
-              <span className="growth-latest-key">{item.label}</span>
-              <span className="growth-latest-value">{item.text}</span>
-              <span className="tiny muted">
-                {ordinal(item.percentile)} percentile · {formatDate(item.date)}
-              </span>
-            </button>
-          ))}
-        </section>
-      )}
+      <DevelopmentCard />
 
       <div className="seg" role="group" aria-label="Measurement type">
         {MEASURES.map((m) => (
@@ -238,6 +222,25 @@ export function Growth() {
                 Delete
               </button>
             </div>
+          ))}
+        </section>
+      )}
+
+      {latest.length > 0 && (
+        <section className="card growth-latest">
+          <p className="rhythm-label">Latest</p>
+          {latest.map((item) => (
+            <button
+              key={item.measure}
+              className="growth-latest-row"
+              onClick={() => setMeasure(item.measure)}
+            >
+              <span className="growth-latest-key">{item.label}</span>
+              <span className="growth-latest-value">{item.text}</span>
+              <span className="tiny muted">
+                {ordinal(item.percentile)} percentile · {formatDate(item.date)}
+              </span>
+            </button>
           ))}
         </section>
       )}
