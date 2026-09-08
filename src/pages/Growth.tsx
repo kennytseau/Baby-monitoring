@@ -8,7 +8,7 @@ import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
 import type { Measure } from '../data/who-growth'
 import { estimatePercentile, ordinal } from '../lib/percentiles'
 import { ageInMonthsFloat, parseISODate } from '../lib/age'
-import { formatDate, todayISO } from '../lib/format'
+import { formatDate, positiveNumber, todayISO } from '../lib/format'
 import type { GrowthEntry, Sex } from '../lib/types'
 import { uid } from '../lib/storage'
 
@@ -79,9 +79,9 @@ export function Growth() {
   }
 
   const parsed = {
-    weightKg: parseNum(weight),
-    lengthCm: parseNum(length),
-    headCm: parseNum(head),
+    weightKg: positiveNumber(weight),
+    lengthCm: positiveNumber(length),
+    headCm: positiveNumber(head),
   }
   const canSave =
     date.length > 0 &&
@@ -243,12 +243,6 @@ export function Growth() {
       </p>
     </main>
   )
-}
-
-function parseNum(s: string): number | undefined {
-  if (!s.trim()) return undefined
-  const n = Number(s)
-  return Number.isFinite(n) && n > 0 ? n : undefined
 }
 
 interface Reading {

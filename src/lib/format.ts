@@ -1,10 +1,25 @@
 import { parseISODate, toISODate } from './age'
 
-/** Current local time formatted for a datetime-local input (YYYY-MM-DDTHH:mm) */
-export function nowLocalDatetime(): string {
-  const d = new Date()
+/** A moment formatted for a datetime-local input (YYYY-MM-DDTHH:mm), in local time */
+export function toDatetimeInput(at: string | Date = new Date()): string {
+  const d = typeof at === 'string' ? new Date(at) : at
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** Current local time for a datetime-local input */
+export function nowLocalDatetime(): string {
+  return toDatetimeInput()
+}
+
+/**
+ * A number typed into a form, or nothing. Blank, nonsense and zero-or-less all
+ * come back undefined, which is what every amount field in the app wants:
+ * a feed of 0 ml is not a feed, it is an empty box.
+ */
+export function positiveNumber(value: string): number | undefined {
+  const n = Number(value)
+  return value.trim() && Number.isFinite(n) && n > 0 ? n : undefined
 }
 
 export function todayISO(): string {

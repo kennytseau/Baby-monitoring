@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { dateFromTimeInput, resolveLogTime, toTimeInput } from './format'
+import {
+  dateFromTimeInput,
+  positiveNumber,
+  resolveLogTime,
+  toDatetimeInput,
+  toTimeInput,
+} from './format'
 
 const NOW = new Date(2026, 8, 7, 8, 30)
 
@@ -55,5 +61,35 @@ describe('resolveLogTime', () => {
 
   it('never stamps an entry in the future', () => {
     expect(resolveLogTime({ offsetMinutes: -30 }, NOW).getTime()).toBe(NOW.getTime())
+  })
+})
+
+describe('positiveNumber', () => {
+  it('reads a number typed into a form', () => {
+    expect(positiveNumber('90')).toBe(90)
+    expect(positiveNumber('0.7')).toBe(0.7)
+    expect(positiveNumber(' 120 ')).toBe(120)
+  })
+
+  it('treats blank, nonsense and zero-or-less as nothing entered', () => {
+    for (const bad of ['', '   ', 'abc', '0', '-5', 'NaN']) {
+      expect(positiveNumber(bad)).toBeUndefined()
+    }
+  })
+})
+
+describe('toDatetimeInput', () => {
+  it('formats a moment for a datetime-local field', () => {
+    expect(toDatetimeInput(new Date(2026, 8, 7, 9, 5))).toBe('2026-09-07T09:05')
+  })
+
+  it('accepts an ISO string as well as a Date', () => {
+    const iso = new Date(2026, 8, 7, 19, 45).toISOString()
+    expect(toDatetimeInput(iso)).toBe('2026-09-07T19:45')
+  })
+
+  it('round-trips: the value it produces parses back to the same minute', () => {
+    const at = new Date(2026, 8, 7, 23, 59)
+    expect(new Date(toDatetimeInput(at)).getTime()).toBe(at.getTime())
   })
 })
