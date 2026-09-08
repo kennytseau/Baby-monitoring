@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   commitNursingSide,
   currentWakeMinutes,
+  findOpenNursing,
+  finishNursing,
+  isNursingInProgress,
+  isNursingPaused,
+  isNursingRunning,
+  pauseNursing,
+  resumeNursing,
   dayTotals,
   nursingMinutes,
   sideMinutes,
@@ -214,5 +221,86 @@ describe('medication', () => {
       detail: '',
     })
     expect(summarizeEntry(dose('d2', 'Vitamin D', at('06:00'))).title).toBe('Vitamin D')
+  })
+})
+
+describe('pausing and resuming a nursing session', () => {
+  it('banks the time so far and holds the clock', () => {
+    const started = startNursingSession('f1', 'left', new Date(at('10:00')))
+    const paused = pauseNursing(started, new Date(at('10:12')))
+    expect(paused.leftMinutes).toBe(12)
+    expect(isNursingPaused(paused)).toBe(true)
+    expect(isNursingRunning(paused)).toBe(false)
+    expect(isNursingInProgress(paused)).toBe(true)
+    // and the clock really is stopped — ten minutes later it still reads 12
+    expect(nursingMinutes(paused, new Date(at('10:22')))).toBe(12)
+  })
+
+  it('carries on from where it stopped', () => {
+    let feed = startNursingSession('f2', 'left', new Date(at('10:00')))
+    feed = pauseNursing(feed, new Date(at('10:12')))
+    feed = resumeNursing(feed, new Date(at('10:30')))
+    expect(isNursingRunning(feed)).toBe(true)
+    expect(feed.activeSide).toBe('left')
+    // 12 banked plus 5 since resuming — the 18-minute break is not counted
+    expect(nursingMinutes(feed, new Date(at('10:35')))).toBe(17)
+  })
+
+  it('survives several pauses on both sides', () => {
+    let feed = startNursingSession('f3', 'left', new Date(at('10:00')))
+    feed = pauseNursing(feed, new Date(at('10:10')))
+    feed = resumeNursing(feed, new Date(at('10:20')))
+    feed = switchNursingSide(feed, 'right', new Date(at('10:25')))
+    feed = pauseNursing(feed, new Date(at('10:33')))
+    feed = finishNursing(feed, new Date(at('10:40')))
+    expect(feed.leftMinutes).toBe(15)
+    expect(feed.rightMinutes).toBe(8)
+    expect(isNursingInProgress(feed)).toBe(false)
+  })
+
+  it('finishes cleanly from paused as well as from running', () => {
+    const running = startNursingSession('f4', 'right', new Date(at('11:00')))
+    const finishedRunning = finishNursing(running, new Date(at('11:09')))
+    expect(finishedRunning.rightMinutes).toBe(9)
+    expect(isNursingInProgress(finishedRunning)).toBe(false)
+
+    const paused = pauseNursing(startNursingSession('f5', 'left', new Date(at('11:00'))), new Date(at('11:06')))
+    const finishedPaused = finishNursing(paused, new Date(at('11:30')))
+    expect(finishedPaused.leftMinutes).toBe(6)
+    expect(isNursingInProgress(finishedPaused)).toBe(false)
+  })
+
+  it('leaves a feed logged before pausing existed reading as finished', () => {
+    const old = nursing({ id: 'old', time: at('06:00'), leftMinutes: 14, rightMinutes: 9 })
+    expect(isNursingInProgress(old)).toBe(false)
+    expect(isNursingPaused(old)).toBe(false)
+  })
+
+  it('finds the open session whether it is running or paused', () => {
+    const running = startNursingSession('r', 'left', new Date(at('10:00')))
+    expect(findOpenNursing([running])?.id).toBe('r')
+    expect(findOpenNursing([pauseNursing(running, new Date(at('10:05')))])?.id).toBe('r')
+    expect(findOpenNursing([finishNursing(running, new Date(at('10:05')))])).toBeUndefined()
+  })
+})
+
+describe('pausing does not distort the total', () => {
+  it('keeps enough precision that a pause does not move the clock', () => {
+    const started = startNursingSession('p1', 'left', new Date('2026-09-07T10:00:00.000Z'))
+    // Pause after 3.2 seconds — the readout should not jump to 6
+    const paused = pauseNursing(started, new Date('2026-09-07T10:00:03.200Z'))
+    expect(nursingMinutes(paused) * 60).toBeCloseTo(3.2, 0)
+  })
+
+  it('stays accurate across many pauses', () => {
+    let feed = startNursingSession('p2', 'left', new Date('2026-09-07T10:00:00.000Z'))
+    // Ten one-minute stints, each separated by a pause
+    for (let i = 0; i < 10; i += 1) {
+      const start = new Date(`2026-09-07T10:${String(i * 2).padStart(2, '0')}:00.000Z`)
+      const stop = new Date(`2026-09-07T10:${String(i * 2 + 1).padStart(2, '0')}:00.000Z`)
+      feed = { ...feed, sideStartedAt: start.toISOString() }
+      feed = pauseNursing(feed, stop)
+    }
+    expect(nursingMinutes(feed)).toBe(10)
   })
 })

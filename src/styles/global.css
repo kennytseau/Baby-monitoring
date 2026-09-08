@@ -593,6 +593,9 @@ a { color: var(--accent-text); }
   color: var(--text-muted);
 }
 .timer-sides .on { color: var(--accent-text); }
+/* A paused timer should not look like a running one at a glance */
+.timer-paused { background: var(--surface-2); }
+.timer-paused .timer-readout { color: var(--text-muted); }
 
 /* ---------- Day totals ---------- */
 .totals-card { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
