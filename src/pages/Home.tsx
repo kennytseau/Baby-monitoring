@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAppState } from '../hooks/useAppState'
 import { adjustedAgeInDays, ageInMonthsFloat, correctionDays, formatAge, parseISODate, DAYS_PER_MONTH } from '../lib/age'
 import { bandForAgeMonths, findMilestone, nextBand } from '../data/milestones'
-import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
-import { estimatePercentile, ordinal } from '../lib/percentiles'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
@@ -50,22 +48,6 @@ export function Home() {
   const lastFeed = sortedByTime(state.log.filter((e) => e.type === 'feed'))[0]
   const milkToday = totals.bottleMl
 
-  const latestGrowth = useMemo(() => {
-    const entries = [...state.growth].sort((a, b) => b.date.localeCompare(a.date))
-    for (const entry of entries) {
-      if (entry.weightKg != null) {
-        const rows = GROWTH_CURVES[profile.sex].weight
-        const at = ageInMonthsFloat(profile.birthDate, parseISODate(entry.date))
-        return {
-          entry,
-          text: `${entry.weightKg} ${MEASURE_INFO.weight.unit}`,
-          pct: estimatePercentile(rows, at, entry.weightKg),
-        }
-      }
-    }
-    return null
-  }, [state.growth, profile.sex, profile.birthDate])
-
   return (
     <main className="page">
       <header>
@@ -94,21 +76,6 @@ export function Home() {
         )}
       </header>
 
-      <RhythmCard />
-
-      <section className="card card-tinted">
-        <div className="row-between">
-          <h2 className="item-title">What {profile.name} is likely doing now</h2>
-          <span className="chip chip-neutral">{band.shortLabel}</span>
-        </div>
-        <p className="small" style={{ marginTop: 8 }}>
-          {band.overview}
-        </p>
-        <Link to="/milestones" className="btn btn-ghost btn-sm" style={{ marginLeft: -12 }}>
-          See her milestones →
-        </Link>
-      </section>
-
       <section className="card right-now">
         <p className="rhythm-label">
           <span aria-hidden="true">{openSleep ? '😴' : '👀'}</span> Right now
@@ -126,6 +93,21 @@ export function Home() {
           {openSleep ? `Went down at ${formatTime(openSleep.time)}.` : ''}
           {lastFeed ? ` Last feed ${formatAgo(lastFeed.time, now)}.` : ''}
         </p>
+      </section>
+
+      <RhythmCard />
+
+      <section className="card card-tinted">
+        <div className="row-between">
+          <h2 className="item-title">What {profile.name} is likely doing now</h2>
+          <span className="chip chip-neutral">{band.shortLabel}</span>
+        </div>
+        <p className="small" style={{ marginTop: 8 }}>
+          {band.overview}
+        </p>
+        <Link to="/milestones" className="btn btn-ghost btn-sm" style={{ marginLeft: -12 }}>
+          See her milestones →
+        </Link>
       </section>
 
       <section>
@@ -202,22 +184,6 @@ export function Home() {
               <span className="chip chip-good">done</span>
             </div>
           ))}
-        </section>
-      )}
-
-      {latestGrowth && (
-        <section className="card">
-          <div className="row-between">
-            <div>
-              <h2 className="item-title">Latest weight</h2>
-              <p className="item-sub">
-                {latestGrowth.text} — around the {ordinal(latestGrowth.pct)} percentile
-              </p>
-            </div>
-            <Link to="/growth" className="btn btn-ghost btn-sm">
-              Charts →
-            </Link>
-          </div>
         </section>
       )}
 

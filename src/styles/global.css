@@ -500,6 +500,30 @@ a { color: var(--accent-text); }
   line-height: 1.2;
 }
 
+/* ---------- Growth summary ---------- */
+.growth-latest { padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.growth-latest-row {
+  display: grid;
+  grid-template-columns: 68px auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.growth-latest-row:last-child { border-bottom: none; }
+.growth-latest-key {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.growth-latest-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 /* ---------- Day cards ---------- */
 .day-card { padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
 .day-card-today { border-color: var(--accent); }

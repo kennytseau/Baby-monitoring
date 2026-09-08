@@ -33,6 +33,30 @@ export function Growth() {
     [state.growth],
   )
 
+  /**
+   * The most recent reading of each measurement with the percentile it sits at.
+   * This used to be a weight-only line on Home; it belongs here, where the
+   * charts behind it are one tap away.
+   */
+  const latest = useMemo(
+    () =>
+      MEASURES.map((m) => {
+        const measureInfo = MEASURE_INFO[m]
+        const entry = [...sorted].reverse().find((e) => e[measureInfo.field] != null)
+        if (!entry) return null
+        const value = entry[measureInfo.field]!
+        const ageMonths = ageInMonthsFloat(profile.birthDate, parseISODate(entry.date))
+        return {
+          measure: m,
+          label: measureInfo.shortLabel,
+          text: `${value} ${measureInfo.unit}`,
+          date: entry.date,
+          percentile: estimatePercentile(GROWTH_CURVES[profile.sex][m], ageMonths, value),
+        }
+      }).filter((x): x is NonNullable<typeof x> => x !== null),
+    [sorted, profile.sex, profile.birthDate],
+  )
+
   const points: ChartPoint[] = useMemo(
     () =>
       sorted
@@ -90,6 +114,25 @@ export function Growth() {
           {profile.sex === 'female' ? 'girls' : 'boys'}, 0–24 months).
         </p>
       </header>
+
+      {latest.length > 0 && (
+        <section className="card growth-latest">
+          <p className="rhythm-label">Latest</p>
+          {latest.map((item) => (
+            <button
+              key={item.measure}
+              className="growth-latest-row"
+              onClick={() => setMeasure(item.measure)}
+            >
+              <span className="growth-latest-key">{item.label}</span>
+              <span className="growth-latest-value">{item.text}</span>
+              <span className="tiny muted">
+                {ordinal(item.percentile)} percentile · {formatDate(item.date)}
+              </span>
+            </button>
+          ))}
+        </section>
+      )}
 
       <div className="seg" role="group" aria-label="Measurement type">
         {MEASURES.map((m) => (
