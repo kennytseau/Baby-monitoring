@@ -4,6 +4,7 @@ import { AGE_BANDS, CATEGORY_LABELS, bandForAgeMonths } from '../data/milestones
 import type { AgeBand, MilestoneDef } from '../data/milestones'
 import { developmentalAgeMonths } from '../lib/age'
 import { formatDate, todayISO } from '../lib/format'
+import { RecentWins } from '../components/RecentWins'
 
 export function Milestones() {
   const { state } = useAppState()
@@ -37,6 +38,8 @@ export function Milestones() {
           for ideas; tap the circle when she does it.
         </p>
       </header>
+
+      <RecentWins />
 
       {AGE_BANDS.map((band) => (
         <BandCard
