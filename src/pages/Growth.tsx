@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
+import { DevelopmentCard } from '../components/DevelopmentCard'
 import { GrowthChart } from '../components/GrowthChart'
 import type { ChartPoint } from '../components/GrowthChart'
 import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
@@ -8,7 +9,7 @@ import type { Measure } from '../data/who-growth'
 import { estimatePercentile, ordinal } from '../lib/percentiles'
 import { ageInMonthsFloat, parseISODate } from '../lib/age'
 import { formatDate, todayISO } from '../lib/format'
-import type { GrowthEntry } from '../lib/types'
+import type { GrowthEntry, Sex } from '../lib/types'
 import { uid } from '../lib/storage'
 
 const MEASURES: Measure[] = ['weight', 'length', 'head']
@@ -31,6 +32,22 @@ export function Growth() {
   const sorted = useMemo(
     () => [...state.growth].sort((a, b) => a.date.localeCompare(b.date)),
     [state.growth],
+  )
+  const newestFirst = useMemo(() => [...sorted].reverse(), [sorted])
+
+  /**
+   * The most recent reading of each measurement with the percentile it sits at.
+   * This used to be a weight-only line on Home; it belongs here, where the
+   * charts behind it are one tap away.
+   */
+  const latest = useMemo(
+    () =>
+      MEASURES.flatMap((measure) => {
+        const entry = newestFirst.find((e) => e[MEASURE_INFO[measure].field] != null)
+        const value = entry && reading(entry, measure, profile.sex, profile.birthDate)
+        return value ? [{ ...value, date: entry!.date }] : []
+      }),
+    [newestFirst, profile.sex, profile.birthDate],
   )
 
   const points: ChartPoint[] = useMemo(
@@ -90,6 +107,8 @@ export function Growth() {
           {profile.sex === 'female' ? 'girls' : 'boys'}, 0–24 months).
         </p>
       </header>
+
+      <DevelopmentCard />
 
       <div className="seg" role="group" aria-label="Measurement type">
         {MEASURES.map((m) => (
@@ -182,7 +201,7 @@ export function Growth() {
       {sorted.length > 0 && (
         <section className="card">
           <h2 className="item-title">History</h2>
-          {[...sorted].reverse().map((entry) => (
+          {newestFirst.map((entry) => (
             <div className="list-item" key={entry.id}>
               <div className="grow">
                 <div className="item-title">{formatDate(entry.date)}</div>
@@ -195,6 +214,25 @@ export function Growth() {
                 Delete
               </button>
             </div>
+          ))}
+        </section>
+      )}
+
+      {latest.length > 0 && (
+        <section className="card growth-latest">
+          <p className="rhythm-label">Latest</p>
+          {latest.map((item) => (
+            <button
+              key={item.measure}
+              className="growth-latest-row"
+              onClick={() => setMeasure(item.measure)}
+            >
+              <span className="growth-latest-key">{item.label}</span>
+              <span className="growth-latest-value">{item.text}</span>
+              <span className="tiny muted">
+                {ordinal(item.percentile)} percentile · {formatDate(item.date)}
+              </span>
+            </button>
           ))}
         </section>
       )}
@@ -213,16 +251,36 @@ function parseNum(s: string): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined
 }
 
-function describeEntry(entry: GrowthEntry, sex: 'female' | 'male', birthDate: string): string {
-  const at = ageInMonthsFloat(birthDate, parseISODate(entry.date))
-  const parts: string[] = []
-  for (const measure of MEASURES) {
-    const info = MEASURE_INFO[measure]
-    const value = entry[info.field]
-    if (value != null) {
-      const pct = estimatePercentile(GROWTH_CURVES[sex][measure], at, value)
-      parts.push(`${info.shortLabel.toLowerCase()} ${value} ${info.unit} (~${ordinal(pct)})`)
-    }
+interface Reading {
+  measure: Measure
+  label: string
+  /** The value with its unit, e.g. "5.2 kg" */
+  text: string
+  percentile: number
+}
+
+/** One measurement off an entry with the percentile it sits at, or nothing if it was not taken */
+function reading(
+  entry: GrowthEntry,
+  measure: Measure,
+  sex: Sex,
+  birthDate: string,
+): Reading | null {
+  const info = MEASURE_INFO[measure]
+  const value = entry[info.field]
+  if (value == null) return null
+  const ageMonths = ageInMonthsFloat(birthDate, parseISODate(entry.date))
+  return {
+    measure,
+    label: info.shortLabel,
+    text: `${value} ${info.unit}`,
+    percentile: estimatePercentile(GROWTH_CURVES[sex][measure], ageMonths, value),
   }
-  return parts.join(' · ')
+}
+
+function describeEntry(entry: GrowthEntry, sex: Sex, birthDate: string): string {
+  return MEASURES.flatMap((measure) => {
+    const item = reading(entry, measure, sex, birthDate)
+    return item ? [`${item.label.toLowerCase()} ${item.text} (~${ordinal(item.percentile)})`] : []
+  }).join(' · ')
 }

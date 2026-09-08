@@ -2,17 +2,14 @@ import { useMemo, useState } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import { AGE_BANDS, CATEGORY_LABELS, bandForAgeMonths } from '../data/milestones'
 import type { AgeBand, MilestoneDef } from '../data/milestones'
-import { adjustedAgeInDays, ageInMonthsFloat, correctionDays, DAYS_PER_MONTH } from '../lib/age'
+import { developmentalAgeMonths } from '../lib/age'
 import { formatDate, todayISO } from '../lib/format'
 
 export function Milestones() {
   const { state } = useAppState()
   const profile = state.profile!
 
-  const corrDays = correctionDays(profile)
-  const ageMonths =
-    corrDays >= 14 ? adjustedAgeInDays(profile) / DAYS_PER_MONTH : ageInMonthsFloat(profile.birthDate)
-  const currentBand = bandForAgeMonths(ageMonths)
+  const currentBand = bandForAgeMonths(developmentalAgeMonths(profile))
 
   const achieved = useMemo(() => {
     const map = new Map<string, string>()

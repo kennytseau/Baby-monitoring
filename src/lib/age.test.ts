@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  adjustedAgeInDays,
-  ageInCalendarMonths,
-  ageInDays,
-  correctionDays,
-  daysBetween,
-  formatAge,
-  parseISODate,
-  toISODate,
-} from './age'
+import { DAYS_PER_MONTH, adjustedAgeInDays, ageInCalendarMonths, ageInDays, ageInMonthsFloat, correctionDays, daysBetween, developmentalAgeMonths, formatAge, parseISODate, toISODate, usesAdjustedAge } from './age'
 
 describe('parseISODate / toISODate', () => {
   it('round-trips a date', () => {
@@ -71,5 +62,41 @@ describe('adjusted age for premature babies', () => {
   })
   it('ignores due dates before birth (born late)', () => {
     expect(correctionDays({ ...profile, dueDate: '2026-05-01' })).toBe(0)
+  })
+})
+
+describe('developmentalAgeMonths', () => {
+  const born = (birthDate: string, dueDate?: string) => ({
+    name: 'Madison',
+    birthDate,
+    sex: 'female' as const,
+    dueDate,
+  })
+  const on = new Date(2026, 8, 8)
+
+  it('uses her actual age when she was not early', () => {
+    const profile = born('2026-07-15')
+    expect(developmentalAgeMonths(profile, on)).toBeCloseTo(ageInMonthsFloat('2026-07-15', on), 6)
+    expect(usesAdjustedAge(profile)).toBe(false)
+  })
+
+  it('ignores a correction under a fortnight, which is not worth applying', () => {
+    const profile = born('2026-07-15', '2026-07-25') // ten days early
+    expect(usesAdjustedAge(profile)).toBe(false)
+    expect(developmentalAgeMonths(profile, on)).toBeCloseTo(ageInMonthsFloat('2026-07-15', on), 6)
+  })
+
+  it('reads a properly early baby at her adjusted age', () => {
+    const profile = born('2026-07-15', '2026-08-15') // a month early
+    expect(usesAdjustedAge(profile)).toBe(true)
+    const actual = ageInMonthsFloat('2026-07-15', on)
+    const adjusted = developmentalAgeMonths(profile, on)
+    expect(adjusted).toBeLessThan(actual)
+    expect(actual - adjusted).toBeCloseTo(31 / DAYS_PER_MONTH, 6)
+  })
+
+  it('applies the threshold exactly at the boundary', () => {
+    expect(usesAdjustedAge(born('2026-07-15', '2026-07-28'))).toBe(false) // 13 days
+    expect(usesAdjustedAge(born('2026-07-15', '2026-07-29'))).toBe(true) // 14 days
   })
 })

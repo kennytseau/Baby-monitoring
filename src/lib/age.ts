@@ -82,6 +82,12 @@ export function formatAge(birthDate: string, on: Date = new Date()): string {
 }
 
 /**
+ * Born this many days early or more and her development is read at her adjusted
+ * age. Two weeks is the usual clinical cut-off for bothering to correct at all.
+ */
+export const ADJUSTED_AGE_FROM_DAYS_EARLY = 14
+
+/**
  * Days of prematurity correction (0 if born on/after the due date, or no due date).
  * Only meaningful when born more than ~2 weeks early.
  */
@@ -98,4 +104,20 @@ export function adjustedAgeInDays(profile: BabyProfile, on: Date = new Date()): 
 
 function plural(n: number, word: string): string {
   return n === 1 ? word : `${word}s`
+}
+
+/** Whether her milestones and developmental band are read at her adjusted age */
+export function usesAdjustedAge(profile: BabyProfile): boolean {
+  return correctionDays(profile) >= ADJUSTED_AGE_FROM_DAYS_EARLY
+}
+
+/**
+ * The age her development is read at: adjusted if she arrived early enough,
+ * otherwise her actual age. One place decides this, so the rule cannot drift
+ * between the screens that show milestones.
+ */
+export function developmentalAgeMonths(profile: BabyProfile, on: Date = new Date()): number {
+  return usesAdjustedAge(profile)
+    ? adjustedAgeInDays(profile, on) / DAYS_PER_MONTH
+    : ageInMonthsFloat(profile.birthDate, on)
 }

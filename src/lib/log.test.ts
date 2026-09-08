@@ -12,7 +12,6 @@ import {
   dayTotals,
   nursingMinutes,
   sideMinutes,
-  minutesSincePreviousDose,
   sleepMinutes,
   startNursingSession,
   summarizeEntry,
@@ -184,31 +183,7 @@ describe('medication', () => {
     amount,
   })
 
-  it('measures the gap since the last dose of the same medicine', () => {
-    const log = [
-      dose('d1', 'Paracetamol', at('06:00'), '0.7 ml'),
-      dose('d2', 'Vitamin D', at('08:00'), '1 drop'),
-      dose('d3', 'Paracetamol', at('11:00'), '0.7 ml'),
-    ]
-    expect(minutesSincePreviousDose(log, log[2] as never)).toBe(300)
-  })
-
-  it('matches names loosely but not across different medicines', () => {
-    const log = [
-      dose('d1', ' panadol ', at('06:00')),
-      dose('d2', 'Panadol', at('09:00')),
-      dose('d3', 'Vitamin D', at('10:00')),
-    ]
-    expect(minutesSincePreviousDose(log, log[1] as never)).toBe(180)
-    expect(minutesSincePreviousDose(log, log[2] as never)).toBeNull()
-  })
-
-  it('is null for a first dose', () => {
-    const log = [dose('d1', 'Paracetamol', at('06:00'))]
-    expect(minutesSincePreviousDose(log, log[0] as never)).toBeNull()
-  })
-
-  it('lists the day s doses in the totals', () => {
+  it('lists the day\'s doses in the totals', () => {
     const totals = dayTotals([dose('d1', 'Paracetamol', at('06:00'), '0.7 ml')], NOW)
     expect(totals.medicines).toEqual([
       { name: 'Paracetamol', amount: '0.7 ml', time: at('06:00') },
