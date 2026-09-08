@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAppState } from '../hooks/useAppState'
-import { correctionDays, developmentalAgeMonths, formatAge, parseISODate, usesAdjustedAge } from '../lib/age'
-import { bandForAgeMonths, findMilestone, nextBand } from '../data/milestones'
+import { correctionDays, developmentalAgeMonths, formatAge, usesAdjustedAge } from '../lib/age'
+import { bandForAgeMonths, nextBand } from '../data/milestones'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
@@ -23,15 +23,6 @@ export function Home() {
 
   const achievedSet = useMemo(
     () => new Set(state.milestones.map((m) => m.milestoneId)),
-    [state.milestones],
-  )
-  const recentWins = useMemo(
-    () =>
-      [...state.milestones]
-        .sort((a, b) => b.achievedOn.localeCompare(a.achievedOn))
-        .slice(0, 3)
-        .map((rec) => ({ rec, def: findMilestone(rec.milestoneId) }))
-        .filter((x) => x.def),
     [state.milestones],
   )
   const nextInBand = band.milestones.filter((m) => !achievedSet.has(m.id)).slice(0, 3)
@@ -150,23 +141,6 @@ export function Home() {
               {upcoming.milestones[1]?.title.toLowerCase()}…
             </p>
           )}
-        </section>
-      )}
-
-      {recentWins.length > 0 && (
-        <section className="card">
-          <h2 className="item-title">Recent wins 🎉</h2>
-          {recentWins.map(({ rec, def }) => (
-            <div className="list-item" key={rec.milestoneId}>
-              <div className="grow">
-                <div className="item-title">{def!.milestone.title}</div>
-                <div className="item-sub">
-                  {formatAge(profile.birthDate, parseISODate(rec.achievedOn)).replace(' old', '')}
-                </div>
-              </div>
-              <span className="chip chip-good">done</span>
-            </div>
-          ))}
         </section>
       )}
 
