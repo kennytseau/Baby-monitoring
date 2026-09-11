@@ -7,3 +7,8 @@ compatibility_date = "2025-01-01"
 binding = "DB"
 database_name = "baby-log"
 database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# Drives the lock-screen timer notifications: every minute the Worker checks
+# whether a sleep or nursing timer is running and refreshes the notification.
+[triggers]
+crons = ["* * * * *"]

@@ -44,6 +44,9 @@ still with no accounts and nothing sold or tracked.
   the other joins with it, and from then on both see the same day. Entries you
   make with no signal queue up and go across as soon as you have one. See
   *Sharing between two phones* below.
+- **Timer on the lock screen** — while a sleep or nursing timer is running,
+  your phone can show how long it has been going without unlocking it. See
+  *Timer on the lock screen* below.
 - **Backup** — download all data as JSON from *Settings & data* on the Home
   screen.
 
@@ -112,6 +115,40 @@ one-off, but you can bake it into the deployed site instead — either way works
 The URL is not a secret — it ends up in the built JavaScript either way, and
 it is the family code that protects the log.
 
+## Timer on the lock screen
+
+A sleep or nursing timer can show its count on the phone's lock screen while
+the phone is locked.
+
+It is worth knowing what this is and is not. iOS keeps live, ticking counters
+(Live Activities, the Dynamic Island) to native apps, and it freezes a web
+app's service worker whenever the app is not in front — so a web page cannot
+run a stopwatch on the lock screen no matter how it is written. What it can do
+is show a **notification the sync server keeps up to date**: roughly every five
+minutes while a timer runs, your Worker sends the new count, and the phone
+replaces the notification in place rather than stacking up a new one. You see
+"Asleep for 45m", then "Asleep for 50m", and one closing line — "Slept 1h 20m"
+— when the timer stops.
+
+It needs the shared log (the updates come from your own Worker), and on an
+iPhone it needs the app added to the Home Screen, because iOS only offers
+notifications to an installed web app:
+
+1. Set up the shared log first — see above.
+2. Add the cron trigger to your Worker: `npm run deploy` from `worker/` does
+   it, or in the Cloudflare dashboard it is Step 8 of
+   [SETUP-WITHOUT-A-TERMINAL.md](worker/SETUP-WITHOUT-A-TERMINAL.md).
+3. On the phone, open the site in **Safari** → Share → **Add to Home Screen**,
+   and open the app from the new icon.
+4. **Settings & data → Timer on the lock screen → Turn on lock-screen
+   updates**, and allow notifications.
+
+Do it on each phone that wants it — the setting belongs to the phone, not to
+the shared log. Nothing is sent when no timer is running.
+
+Notification text is encrypted to the phone before it leaves your Worker
+(RFC 8291), so Apple's push service carries it without being able to read it.
+
 ## If the published site stops working
 
 If `https://kennytseau.github.io/Baby-monitoring/` shows GitHub's "There isn't a
@@ -147,7 +184,10 @@ deployment keeps serving until a new one succeeds.
   (tombstones for deletes, a pending queue for changes made offline). The
   server (`worker/`) is a dependency-free Cloudflare Worker over D1
 - A running nursing session is just a log entry with the side and its start
-  time on it, so the timer survives a reload (and a flat battery)
+  time on it, so the timer survives a reload (and a flat battery) — and it is
+  what the Worker reads to know a timer is running
+- `public/sw.js` is a notifications-only service worker: it shows what the
+  Worker pushes and nothing else, so it cannot change how the app loads
 
 ```
 src/
@@ -158,8 +198,10 @@ src/
   hooks/      app state provider, quick-log actions, ticking clock
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Memories
   components/ TabBar, GrowthChart, QuickLog, NursingTimer, DayTimeline,
-              DayTotalsCard, SharingPanel, SyncBanner
-worker/       sync server: Cloudflare Worker + D1 schema
+              DayTotalsCard, SharingPanel, SyncBanner, LockScreenTimer
+public/sw.js  service worker: lock-screen timer notifications only
+worker/       sync server: Cloudflare Worker + D1 schema, and the cron that
+              pushes the running timer to the lock screen
 ```
 
 ## Data & privacy
@@ -180,8 +222,8 @@ from *Settings & data* before clearing or switching devices.
 - JSON backup **import** to restore/move devices
 - Per-entry attribution ("logged by Mum") now that two devices share a log
 - Pruning old tombstones so a long-running log stays small
-- Reminders (tummy time, vitamin D drops), a service worker for full offline
-  installs, sleep/feed pattern charts
+- Reminders (tummy time, vitamin D drops), offline caching in the service
+  worker (today it only handles notifications), sleep/feed pattern charts
 
 ## A note on the data sources
 

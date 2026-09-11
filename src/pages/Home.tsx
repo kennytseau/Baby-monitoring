@@ -7,6 +7,7 @@ import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/f
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
 import { SharingPanel } from '../components/SharingPanel'
+import { LockScreenTimer } from '../components/LockScreenTimer'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
 import { currentWakeMinutes, dayTotals, findOpenSleep, sleepMinutes, sortedByTime } from '../lib/log'
@@ -150,6 +151,8 @@ export function Home() {
           <EditProfile />
           <hr className="rule" />
           <SharingPanel />
+          <hr className="rule" />
+          <LockScreenTimer />
           <hr className="rule" />
           <button className="btn" onClick={exportData}>
             Download backup (JSON)

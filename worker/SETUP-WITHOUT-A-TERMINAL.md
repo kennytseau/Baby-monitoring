@@ -46,8 +46,21 @@ This is where the log is stored.
    CREATE INDEX IF NOT EXISTS records_by_seq ON records (household_id, seq);
    ```
 
-   Each should report success. You have just created two empty tables and an
-   index — nothing else happens yet.
+   ```sql
+   CREATE TABLE IF NOT EXISTS push_subscriptions (household_id TEXT NOT NULL, endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at TEXT NOT NULL, last_state TEXT, last_sent_at TEXT);
+   ```
+
+   ```sql
+   CREATE INDEX IF NOT EXISTS push_by_household ON push_subscriptions (household_id);
+   ```
+
+   ```sql
+   CREATE TABLE IF NOT EXISTS server_keys (name TEXT PRIMARY KEY, value TEXT NOT NULL, created_at TEXT NOT NULL);
+   ```
+
+   Each should report success. You have just created four empty tables and two
+   indexes — nothing else happens yet. (The last three are for the lock-screen
+   timer in Step 8; making them now saves coming back.)
 
    > **"The request is malformed: Requests without any query are not
    > supported."** means the console got nothing to run: the box was empty, the
@@ -163,6 +176,41 @@ up as soon as there is some.
 Keep the family code somewhere safe (a password manager, or written down).
 Anyone who has it can read and add to the log, and if you both lose it there is
 no way back into that log.
+
+## Step 8 — Optional: the timer on the lock screen
+
+This is what lets your phone show "Asleep for 45m" while it is locked. Skip it
+if you do not want notifications.
+
+1. On the Worker's page go to **Settings → Triggers** (older layouts:
+   **Triggers** as its own tab).
+2. Under **Cron Triggers** click **Add Cron Trigger**.
+3. Choose **Cron expression** and type exactly:
+
+   ```
+   * * * * *
+   ```
+
+   That means "every minute" — it is how often the Worker checks whether a
+   timer is running. It only sends a notification when the count has actually
+   moved on, so nothing is sent while nobody is nursing or sleeping.
+4. Click **Add** / **Save**.
+
+Then on each phone:
+
+1. Open the app in **Safari** and tap the Share button → **Add to Home
+   Screen**. iOS only offers notifications to a web app that lives on the Home
+   Screen, so this step is not optional on an iPhone.
+2. Open Little One from the new Home Screen icon (not from Safari).
+3. Go to **Settings & data → Timer on the lock screen** and tap **Turn on
+   lock-screen updates**. Say **Allow** when iOS asks about notifications.
+
+Start a sleep or a nursing timer and lock the phone. Within a few minutes a
+notification appears, and it updates itself in place rather than stacking up.
+When the timer stops you get one last line — "Slept 1h 20m" — and then silence.
+
+Turn it on separately on each phone: the setting belongs to the phone, not to
+the shared log.
 
 ---
 
