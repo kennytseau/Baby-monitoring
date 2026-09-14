@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { QuickLog } from '../components/QuickLog'
+import { BottleContentsPicker, MedicineFields } from '../components/LogFields'
 import { DayTimeline } from '../components/DayTimeline'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import type {
@@ -14,8 +15,6 @@ import type {
 } from '../lib/types'
 import { uid } from '../lib/storage'
 import {
-  BOTTLE_LABELS,
-  BOTTLE_OPTIONS,
   NAPPY_LABELS,
   dayTotals,
   sortedByTime,
@@ -304,13 +303,7 @@ export function DailyLog() {
 
               {feedKind === 'bottle' && (
                 <div className="stack">
-                  <div className="seg" role="group" aria-label="What's in the bottle">
-                    {BOTTLE_OPTIONS.map((c) => (
-                      <button key={c} type="button" className={contents === c ? 'on' : ''} onClick={() => setContents(c)}>
-                        {BOTTLE_LABELS[c]}
-                      </button>
-                    ))}
-                  </div>
+                  <BottleContentsPicker value={contents} onChange={setContents} />
                   <div className="field">
                     <label htmlFor="log-amount">Amount (ml)</label>
                     <input
@@ -397,29 +390,13 @@ export function DailyLog() {
           )}
 
           {type === 'medication' && (
-            <div className="field-row">
-              <div className="field" style={{ flex: 2 }}>
-                <label htmlFor="log-medicine">Medicine</label>
-                <input
-                  id="log-medicine"
-                  type="text"
-                  placeholder="Paracetamol"
-                  value={medicineName}
-                  onChange={(e) => setMedicineName(e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="log-dose">Amount</label>
-                <input
-                  id="log-dose"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.7 ml"
-                  value={medicineAmount}
-                  onChange={(e) => setMedicineAmount(e.target.value)}
-                />
-              </div>
-            </div>
+            <MedicineFields
+              idPrefix="log"
+              name={medicineName}
+              amount={medicineAmount}
+              onName={setMedicineName}
+              onAmount={setMedicineAmount}
+            />
           )}
 
           <div className="field">
