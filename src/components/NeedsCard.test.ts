@@ -6,11 +6,13 @@ function need(kind: Need['kind'], state: Need['state'], over: Partial<Need> = {}
   return {
     kind,
     state,
+    at: new Date('2026-09-11T14:00:00'),
+    dueIn: -10,
     since: 120,
     usual: 110,
     shortest: 80,
     longest: 150,
-    dueIn: -10,
+    serving: kind === 'feed' ? { unit: 'ml', value: 70 } : undefined,
     approximate: false,
     ...over,
   }
@@ -19,30 +21,41 @@ const lines = (forecast: Partial<NeedsForecast>) =>
   needLines({ asleep: false, ...forecast }).map((line) => line.replace(/ /g, ' '))
 
 describe('what the card says', () => {
-  it('answers the two questions with the evidence behind them', () => {
-    expect(lines({ feed: need('feed', 'due'), nappy: need('nappy', 'settled', { since: 25 }) })).toEqual([
-      'Probably ready for a feed — 2 h since the last one · usually 1 h 20 m–2 h 30 m',
-      'Changed 25 min ago — Usually about 1 h 50 m between changes at this hour',
+  it('leads with what is coming and how much, then the evidence', () => {
+    expect(
+      lines({
+        feed: need('feed', 'settled', { dueIn: 95, since: 15 }),
+        nappy: need('nappy', 'settled', { dueIn: 40, since: 70 }),
+      }),
+    ).toEqual([
+      'About 70 ml in about 1 h 35 m — Last feed 15 min ago · usually 1 h 20 m–2 h 30 m apart',
+      'A change in about 40 min — Last change 1 h 10 m ago · usually 1 h 20 m–2 h 30 m apart',
     ])
   })
 
-  it('counts down while there is still time', () => {
-    expect(lines({ feed: need('feed', 'soon', { dueIn: 15, since: 95 }) })[0]).toBe(
-      'Feed likely in about 15 min — 1 h 35 m since the last one · usually 1 h 20 m–2 h 30 m',
+  it('says "about now" once the stretch has run out, and how late it is after that', () => {
+    expect(lines({ feed: need('feed', 'due') })[0]).toMatch(/^About 70 ml, about now/)
+    expect(lines({ feed: need('feed', 'late', { dueIn: -40 }) })[0]).toMatch(
+      /^About 70 ml, due 40 min ago/,
+    )
+  })
+
+  it('offers minutes at the breast to a baby who nurses', () => {
+    expect(
+      lines({ feed: need('feed', 'soon', { dueIn: 15, serving: { unit: 'min', value: 20 } }) })[0],
+    ).toMatch(/^About 20 min nursing in about 15 min/)
+  })
+
+  it('drops the amount rather than guessing it', () => {
+    expect(lines({ feed: need('feed', 'soon', { dueIn: 15, serving: undefined }) })[0]).toMatch(
+      /^A feed in about 15 min/,
     )
   })
 
   it('does not tell you to wake a sleeping baby', () => {
     expect(lines({ asleep: true, feed: need('feed', 'late'), nappy: need('nappy', 'due') })).toEqual([
-      'Hungry when she wakes — 2 h since the last one · usually 1 h 20 m–2 h 30 m',
-      'A change due when she wakes — 2 h since the last one · usually 1 h 20 m–2 h 30 m',
-    ])
-  })
-
-  it('says it plainly when she is awake and past her usual stretch', () => {
-    expect(lines({ feed: need('feed', 'late'), nappy: need('nappy', 'late') }).map((l) => l.split(' — ')[0])).toEqual([
-      'Probably hungry',
-      'Worth a nappy check',
+      'About 70 ml when she wakes — Last feed 2 h ago · usually 1 h 20 m–2 h 30 m apart',
+      'A change when she wakes — Last change 2 h ago · usually 1 h 20 m–2 h 30 m apart',
     ])
   })
 })

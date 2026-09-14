@@ -5,14 +5,13 @@ import { formatDuration } from '../lib/format'
 
 /** "1 h 53 m" is one word to a reader, so do not let it wrap across two lines */
 function duration(minutes: number): string {
-  return formatDuration(minutes).replace(/ /g, '\u00a0')
+  return formatDuration(minutes).replace(/ /g, ' ')
 }
 
 /**
- * The two questions a parent actually asks between logs: should I feed her,
- * should I change her. Both answers are read off how long she has been going
- * lately at this hour of the day, so they move with her as she grows rather
- * than against a chart of what a baby "should" do.
+ * What is coming next: when the next feed and the next change are likely, and
+ * how much she will probably take. Read off her own recent log rather than a
+ * chart of what a baby that age should do, so it keeps up as she grows.
  */
 export function NeedsCard() {
   const { state } = useAppState()
@@ -36,8 +35,9 @@ export function NeedsCard() {
       {forecast.feed && <NeedRow need={forecast.feed} asleep={forecast.asleep} />}
       {forecast.nappy && <NeedRow need={forecast.nappy} asleep={forecast.asleep} />}
       <p className="tiny faint" style={{ marginTop: 8 }}>
-        From her own last fortnight at this time of day, so it moves as she grows — a guide, not a
-        schedule.{rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
+        From her own last fortnight — how long she goes at this hour, and how much she has been
+        taking — so it moves as she grows. A guide, not a schedule.
+        {rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
       </p>
     </section>
   )
@@ -63,30 +63,34 @@ function NeedRow({ need, asleep }: { need: Need; asleep: boolean }) {
   )
 }
 
+/** What is coming — the amount if there is one, and when */
 function title(need: Need, asleep: boolean): string {
-  const feed = need.kind === 'feed'
+  const what =
+    need.kind === 'nappy'
+      ? 'A change'
+      : need.serving
+        ? need.serving.unit === 'ml'
+          ? `About ${need.serving.value} ml`
+          : `About ${duration(need.serving.value)} nursing`
+        : 'A feed'
+
+  if (asleep && (need.state === 'due' || need.state === 'late')) return `${what} when she wakes`
   switch (need.state) {
     case 'late':
-      if (asleep) return feed ? 'Hungry when she wakes' : 'Worth a check when she wakes'
-      return feed ? 'Probably hungry' : 'Worth a nappy check'
+      return `${what}, due ${duration(-need.dueIn)} ago`
     case 'due':
-      if (asleep) return feed ? 'A feed due when she wakes' : 'A change due when she wakes'
-      return feed ? 'Probably ready for a feed' : 'Probably ready for a change'
-    case 'soon':
-      return `${feed ? 'Feed' : 'Change'} likely in about ${duration(need.dueIn)}`
-    case 'settled':
-      return `${feed ? 'Fed' : 'Changed'} ${duration(need.since)} ago`
+      return `${what}, about now`
+    default:
+      return `${what} in about ${duration(need.dueIn)}`
   }
 }
 
+/** Why it says that: the last one, and how far apart they usually fall */
 function evidence(need: Need): string {
-  const thing = need.kind === 'feed' ? 'feeds' : 'changes'
-  if (need.state === 'settled') {
-    return `Usually about ${duration(need.usual)} between ${thing} at this hour`
-  }
-  return `${duration(need.since)} since the last one · usually ${duration(need.shortest)}–${duration(
+  const last = need.kind === 'feed' ? 'Last feed' : 'Last change'
+  return `${last} ${duration(need.since)} ago · usually ${duration(need.shortest)}–${duration(
     need.longest,
-  )}`
+  )} apart`
 }
 
 /** Exported for tests: the exact line the card puts in front of a tired parent */

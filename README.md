@@ -117,35 +117,44 @@ it is the family code that protects the log.
 
 ## Reading her rhythm
 
-Four things on Home are predicted rather than recorded: when she'll wake, when
-she'll be ready for sleep, whether she's about due a feed, and whether she's
-about due a change.
+Five things on Home are predicted rather than recorded: when she'll wake, when
+she'll be ready for sleep, when the next feed is due and roughly how much it
+will be, and when the next change is due.
 
-All four work the same way, because babies turn out to be far more predictable
-by **time of day** than on average. Her last fortnight or three weeks of logs
-are bucketed by the hour each stretch began, the bucket is widened until there
-are at least five of them, and the median is the estimate — with the quartiles
-either side shown as the range, which is the honest way to say "around 8pm"
-without pretending to a precision that isn't there.
+**Timings** work on the fact that babies are far more predictable by **time of
+day** than on average. Her last fortnight or three weeks of logs are bucketed
+by the hour each stretch began, the bucket is widened until there are at least
+five of them, and the median is the estimate — with the quartiles either side
+shown as the range, which is the honest way to say "around 8pm" without
+pretending to a precision that isn't there.
 
-Backtested against eight weeks of real logs, that beats a single overall
-average by a wide margin:
+**Amounts** work differently, because the backtest said so: a bottle is the
+same size at 3am as at 3pm, so bucketing by hour changes nothing and the
+estimate is simply her recent median. Whichever way she's been fed most often
+lately decides the unit — millilitres from a bottle, or minutes at the breast.
 
-| Prediction | Typical stretch | Median error | vs. a flat average |
+Backtested against eight weeks of real logs:
+
+| Prediction | Typical value | Median error | vs. a flat average |
 | --- | --- | --- | --- |
 | Wake window | — | 16 min | 24 min |
 | Nap length | — | 21 min | 55 min |
 | Between feeds | 1 h 50 m | 37 min | 53 min |
 | Between changes | 3 h | 44 min | 53 min |
+| Size of a bottle | 50 ml | 13 ml | no better |
+| Minutes nursing | 20 min | 5 min | no better |
 
 Two consequences worth knowing. It only ever learns from the **last two or
-three weeks**, so as her stretches change with age the estimates move with them
-— nothing is hard-coded about what a ten-week-old does. And a feed logged as a
-top-up within 45 minutes of the last one counts as the same feed, so a cluster
-feed doesn't teach it that she eats every ten minutes.
+three weeks**, so as she grows the estimates move with her — over those eight
+weeks her bottles went from 25 ml to 70 ml and her feeds spread out and drew
+back in again, and nothing about a ten-week-old is hard-coded. And a feed
+logged as a top-up within 45 minutes of the last one counts as the same feed,
+so a cluster feed doesn't teach it that she eats every ten minutes.
 
 It stays quiet until there's something to learn from: a handful of logged
-stretches for each, and it says so plainly until then.
+stretches for each, and it says so plainly until then. While she's asleep, a
+feed or change that's fallen due reads "when she wakes" rather than telling you
+to wake her.
 
 ## If the published site stops working
 

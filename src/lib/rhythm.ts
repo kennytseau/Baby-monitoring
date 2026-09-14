@@ -1,6 +1,6 @@
 import type { LogEntry } from './types'
 import { sleepsIn, sortedByTime } from './log'
-import { estimate, MS_PER_MINUTE, type Estimate, type Sample } from './patterns'
+import { estimateByHour, MS_PER_MINUTE, type Estimate, type Sample } from './patterns'
 
 /**
  * Predicting the next wake-up and the next wind-down, from her own sleeps at
@@ -90,7 +90,7 @@ function wakeWindowSamples(blocks: SleepBlock[]): Sample[] {
     const next = blocks[i + 1]
     const minutes = (next.start.getTime() - woke.end.getTime()) / MS_PER_MINUTE
     if (minutes <= 0 || minutes > MAX_WAKE_WINDOW_MINUTES) continue
-    samples.push({ at: woke.end, minutes })
+    samples.push({ at: woke.end, value: minutes })
   }
   return samples
 }
@@ -99,15 +99,15 @@ function wakeWindowSamples(blocks: SleepBlock[]): Sample[] {
 function sleepLengthSamples(blocks: SleepBlock[]): Sample[] {
   return blocks
     .filter((b) => !b.open && b.minutes >= MIN_BLOCK_MINUTES)
-    .map((b) => ({ at: b.start, minutes: b.minutes }))
+    .map((b) => ({ at: b.start, value: b.minutes }))
 }
 
 function toPrediction(from: Date, estimated: Estimate): Prediction {
-  const at = new Date(from.getTime() + estimated.minutes * MS_PER_MINUTE)
+  const at = new Date(from.getTime() + estimated.value * MS_PER_MINUTE)
   return {
     at,
-    earliest: new Date(from.getTime() + estimated.lowMinutes * MS_PER_MINUTE),
-    latest: new Date(from.getTime() + estimated.highMinutes * MS_PER_MINUTE),
+    earliest: new Date(from.getTime() + estimated.low * MS_PER_MINUTE),
+    latest: new Date(from.getTime() + estimated.high * MS_PER_MINUTE),
     samples: estimated.samples,
     approximate: estimated.approximate,
   }
@@ -127,7 +127,7 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   }
 
   if (asleep) {
-    const estimated = estimate(sleepLengthSamples(blocks), current.start, SLEEP_LENGTH_HISTORY_DAYS)
+    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, SLEEP_LENGTH_HISTORY_DAYS)
     if (!estimated) {
       return { asleep, reason: 'Not enough sleeps logged yet to guess when she will wake.' }
     }
@@ -135,7 +135,7 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   }
 
   const lastWoke = current.end
-  const estimated = estimate(wakeWindowSamples(blocks), lastWoke, WAKE_WINDOW_HISTORY_DAYS)
+  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, WAKE_WINDOW_HISTORY_DAYS)
   if (!estimated) {
     return { asleep, reason: 'Not enough sleeps logged yet to guess her next wind-down.' }
   }
