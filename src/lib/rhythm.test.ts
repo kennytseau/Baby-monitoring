@@ -83,8 +83,26 @@ describe('forecastRhythm', () => {
     }
     log.push(sleep(at(0, 13, 0), null))
     const { wakeUp } = forecastRhythm(log, NOW)
-    expect(wakeUp!.earliest.getTime()).toBeLessThan(wakeUp!.at.getTime())
-    expect(wakeUp!.latest.getTime()).toBeGreaterThan(wakeUp!.at.getTime())
+    expect(wakeUp!.earliest.getTime()).toBeLessThan(wakeUp!.latest.getTime())
+  })
+
+  it('counts the sleep she has already had, so the guess moves out as it runs on', () => {
+    // Naps of 40 to 80 minutes. An hour in, the 40s and 50s can no longer happen.
+    const history: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 40 + (day % 5) * 10))
+    const open = sleep(at(0, 13, 0), null)
+    const atStart = forecastRhythm([...history, open], at(0, 13, 1))
+    const anHourIn = forecastRhythm([...history, open], at(0, 14, 0))
+    expect(anHourIn.wakeUp!.at.getTime()).toBeGreaterThan(atStart.wakeUp!.at.getTime())
+  })
+
+  it('never says she will wake at a time that has already passed', () => {
+    const history: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 60))
+    // Still asleep two hours into a nap she usually finishes in one.
+    const now = at(0, 15, 0)
+    const { wakeUp } = forecastRhythm([...history, sleep(at(0, 13, 0), null)], now)
+    expect(wakeUp!.at.getTime()).toBeGreaterThanOrEqual(now.getTime())
   })
 
   it('uses the hour of day, so a morning nap is not predicted from evening ones', () => {

@@ -3,6 +3,9 @@ import { useNow } from '../hooks/useNow'
 import { forecastRhythm } from '../lib/rhythm'
 import { formatDuration, formatTime } from '../lib/format'
 
+/** Closer than this and "in about 3 minutes" is a precision the data does not have */
+const IMMINENT_MINUTES = 5
+
 /**
  * The next thing to expect, at the top of Home: when she is likely to wake, or
  * when she is likely to be ready to go down. Both are read off her own logged
@@ -26,8 +29,10 @@ export function RhythmCard() {
   const prediction = forecast.wakeUp ?? forecast.windDown
   if (!prediction) return null
 
-  const overdue = prediction.at.getTime() < now.getTime()
-  const minutesAway = Math.abs(prediction.at.getTime() - now.getTime()) / 60_000
+  // The estimate counts the time she has already been down or awake, so it
+  // only lands in the past when the log has not been kept up.
+  const minutesAway = (prediction.at.getTime() - now.getTime()) / 60_000
+  const overdue = minutesAway <= -IMMINENT_MINUTES
 
   return (
     <section className="card rhythm-card" aria-live="polite">
@@ -43,9 +48,11 @@ export function RhythmCard() {
       <p className="small">
         {overdue
           ? forecast.asleep
-            ? `Any time now — ${formatDuration(minutesAway)} past her usual`
-            : `Wind-down window opened ${formatDuration(minutesAway)} ago`
-          : `in about ${formatDuration(minutesAway)}`}
+            ? `Any time now — ${formatDuration(-minutesAway)} past her usual`
+            : `Wind-down window opened ${formatDuration(-minutesAway)} ago`
+          : minutesAway < IMMINENT_MINUTES
+            ? 'any time now'
+            : `in about ${formatDuration(minutesAway)}`}
       </p>
       <p className="tiny faint">
         Usually {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}, from{' '}
