@@ -3,7 +3,8 @@ import { useNow } from '../hooks/useNow'
 import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { BOTTLE_LABELS, BOTTLE_OPTIONS, NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
+import { NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
+import { BottleContentsPicker, MedicineFields } from './LogFields'
 import {
   formatAgo,
   formatDuration,
@@ -351,13 +352,7 @@ export function QuickLog() {
 
       {panel === 'bottle' && (
         <div className="card stack quick-panel">
-          <div className="seg" role="group" aria-label="What's in the bottle">
-            {BOTTLE_OPTIONS.map((c) => (
-              <button key={c} type="button" className={contents === c ? 'on' : ''} onClick={() => setContents(c)}>
-                {BOTTLE_LABELS[c]}
-              </button>
-            ))}
-          </div>
+          <BottleContentsPicker value={contents} onChange={setContents} />
           <div className="row">
             <div className="field grow">
               <label htmlFor="quick-amount">Amount (ml)</label>
@@ -433,30 +428,13 @@ export function QuickLog() {
               ))}
             </div>
           )}
-          <div className="field-row">
-            <div className="field" style={{ flex: 2 }}>
-              <label htmlFor="quick-medicine">Medication</label>
-              <input
-                id="quick-medicine"
-                type="text"
-                autoCapitalize="words"
-                placeholder="Paracetamol"
-                value={medicineName}
-                onChange={(e) => setMedicineName(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="quick-dose">Amount</label>
-              <input
-                id="quick-dose"
-                type="text"
-                inputMode="decimal"
-                placeholder="0.7 ml"
-                value={medicineAmount}
-                onChange={(e) => setMedicineAmount(e.target.value)}
-              />
-            </div>
-          </div>
+          <MedicineFields
+            idPrefix="quick"
+            name={medicineName}
+            amount={medicineAmount}
+            onName={setMedicineName}
+            onAmount={setMedicineAmount}
+          />
           {previousDose && (
             <p className="tiny muted">
               Last {previousDose.name}

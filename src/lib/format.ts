@@ -90,8 +90,8 @@ export function formatAgo(iso: string, now: Date = new Date()): string {
 }
 
 /** Minutes past local midnight, used to place entries on a 24-hour strip */
-export function minutesIntoDay(iso: string): number {
-  const d = new Date(iso)
+export function minutesIntoDay(at: string | Date): number {
+  const d = typeof at === 'string' ? new Date(at) : at
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
 }
 

@@ -84,6 +84,11 @@ export function pumpTotalMl(entry: PumpEntry): number {
   return sides > 0 ? sides : (entry.totalMl ?? 0)
 }
 
+/** The sleeps in a log, in the order they were logged */
+export function sleepsIn(log: LogEntry[]): SleepEntry[] {
+  return log.filter((e): e is SleepEntry => e.type === 'sleep')
+}
+
 /** The sleep that has started but not ended, if the baby is asleep right now */
 export function findOpenSleep(log: LogEntry[]): SleepEntry | undefined {
   return log.find((e): e is SleepEntry => e.type === 'sleep' && !e.endTime)
@@ -117,10 +122,7 @@ export interface WakeWindow {
  * Sleeps are read in start order; an unfinished sleep closes the list.
  */
 export function wakeWindows(log: LogEntry[], now = new Date()): WakeWindow[] {
-  const sleeps = sortedByTime(
-    log.filter((e): e is SleepEntry => e.type === 'sleep'),
-    'asc',
-  )
+  const sleeps = sortedByTime(sleepsIn(log), 'asc')
   const windows: WakeWindow[] = []
   for (let i = 0; i < sleeps.length; i += 1) {
     const woke = sleeps[i].endTime
@@ -136,7 +138,7 @@ export function wakeWindows(log: LogEntry[], now = new Date()): WakeWindow[] {
 /** How long the baby has been awake right now, or null if she's asleep */
 export function currentWakeMinutes(log: LogEntry[], now = new Date()): number | null {
   if (findOpenSleep(log)) return null
-  const lastWoke = sortedByTime(log.filter((e): e is SleepEntry => e.type === 'sleep'))
+  const lastWoke = sortedByTime(sleepsIn(log))
     .map((e) => e.endTime)
     .find((t): t is string => !!t)
   if (!lastWoke) return null

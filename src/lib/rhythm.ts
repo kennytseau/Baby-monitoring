@@ -1,5 +1,5 @@
-import type { LogEntry, SleepEntry } from './types'
-import { sortedByTime } from './log'
+import type { LogEntry } from './types'
+import { sleepsIn, sortedByTime } from './log'
 import { estimate, MS_PER_MINUTE, type Estimate, type Sample } from './patterns'
 
 /**
@@ -58,10 +58,7 @@ export interface SleepBlock {
  * and restarts within a quarter of an hour is one sleep, not two.
  */
 export function sleepBlocks(log: LogEntry[], now = new Date()): SleepBlock[] {
-  const sleeps = sortedByTime(
-    log.filter((e): e is SleepEntry => e.type === 'sleep'),
-    'asc',
-  )
+  const sleeps = sortedByTime(sleepsIn(log), 'asc')
   const blocks: SleepBlock[] = []
   for (const sleep of sleeps) {
     const start = new Date(sleep.time)

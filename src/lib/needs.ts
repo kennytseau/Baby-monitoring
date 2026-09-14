@@ -33,9 +33,7 @@ export type NeedState = 'settled' | 'soon' | 'due' | 'late'
 export interface Need {
   kind: NeedKind
   state: NeedState
-  /** When the last one was logged */
-  lastAt: Date
-  /** Minutes since it */
+  /** Minutes since the last one was logged */
   since: number
   /** Her usual stretch at this hour, with the quartiles either side of it */
   usual: number
@@ -43,8 +41,6 @@ export interface Need {
   longest: number
   /** Minutes until it is due; negative once it is past */
   dueIn: number
-  /** How many past stretches this was drawn from */
-  samples: number
   /** True when the hour bucket had to be widened — a rougher guess */
   approximate: boolean
 }
@@ -77,13 +73,11 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
     kind,
     state:
       dueIn > SOON_MINUTES ? 'settled' : dueIn > 0 ? 'soon' : dueIn > -LATE_MINUTES ? 'due' : 'late',
-    lastAt,
     since,
     usual: estimated.minutes,
     shortest: estimated.lowMinutes,
     longest: estimated.highMinutes,
     dueIn,
-    samples: estimated.samples,
     approximate: estimated.approximate,
   }
 }

@@ -6,13 +6,11 @@ function need(kind: Need['kind'], state: Need['state'], over: Partial<Need> = {}
   return {
     kind,
     state,
-    lastAt: new Date('2026-09-11T12:00:00'),
     since: 120,
     usual: 110,
     shortest: 80,
     longest: 150,
     dueIn: -10,
-    samples: 12,
     approximate: false,
     ...over,
   }

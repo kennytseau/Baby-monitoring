@@ -1,7 +1,7 @@
 import type { LogEntry, SleepEntry } from './types'
 import { dayTotals, sleepMinutes } from './log'
 import type { DayTotals } from './log'
-import { dayOf } from './format'
+import { dayOf, minutesIntoDay } from './format'
 import { toISODate } from './age'
 
 /** A daytime sleep counts as a nap; the rest is night sleep */
@@ -44,11 +44,6 @@ export interface TrendSeries {
 function isNap(entry: SleepEntry): boolean {
   const hour = new Date(entry.time).getHours()
   return hour >= NAP_START_HOUR && hour < NAP_END_HOUR
-}
-
-/** Minutes from midnight to the given moment */
-function minutesIntoDay(at: Date): number {
-  return at.getHours() * 60 + at.getMinutes()
 }
 
 /**
