@@ -78,9 +78,27 @@ describe('forecastNeeds', () => {
     expect(forecastNeeds(log, NOW).feed!.serving).toBeUndefined()
   })
 
-  it('moves through settled, soon, due and late as the stretch runs out', () => {
+  it('moves through settled, soon and due as the stretch runs out', () => {
     const states = [30, 170, 190, 240].map((since) => forecastNeeds(history(180, since), NOW).feed!.state)
-    expect(states).toEqual(['settled', 'soon', 'due', 'late'])
+    expect(states).toEqual(['settled', 'soon', 'due', 'due'])
+  })
+
+  it('counts the time already waited, so the guess moves out rather than going stale', () => {
+    // Gaps of two to four hours. Three hours in, the short ones are ruled out.
+    const log: LogEntry[] = []
+    let t = NOW.getTime() - 40 * 60_000
+    for (let i = 0; i < 60; i += 1) {
+      log.push(feed(new Date(t)))
+      t -= (120 + (i % 5) * 30) * 60_000
+    }
+    const fresh = forecastNeeds(log, NOW).feed!
+    const waited = forecastNeeds(log, new Date(NOW.getTime() + 180 * 60_000)).feed!
+    expect(waited.usual).toBeGreaterThan(fresh.usual)
+    expect(waited.dueIn).toBeGreaterThanOrEqual(0)
+  })
+
+  it('calls it late only once the log has plainly not been kept up', () => {
+    expect(forecastNeeds(history(180, 9 * 60), NOW).feed!.state).toBe('late')
   })
 
   it('follows the recent fortnight, not the whole history', () => {

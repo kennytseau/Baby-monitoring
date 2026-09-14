@@ -17,6 +17,8 @@ const RESETTLE_GAP_MINUTES = 15
 const MIN_BLOCK_MINUTES = 10
 /** A gap longer than this is not a wake window, it is missing data */
 const MAX_WAKE_WINDOW_MINUTES = 8 * 60
+/** Past this, a sleep was left open by mistake rather than actually running */
+const MAX_OPEN_SLEEP_MINUTES = 14 * 60
 /** How far back each prediction looks — chosen by backtest, they differ */
 const WAKE_WINDOW_HISTORY_DAYS = 21
 const SLEEP_LENGTH_HISTORY_DAYS = 14
@@ -127,7 +129,14 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   }
 
   if (asleep) {
-    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, SLEEP_LENGTH_HISTORY_DAYS)
+    // How long she has been down already is the strongest thing we know.
+    const soFar = Math.min(current.minutes, MAX_OPEN_SLEEP_MINUTES)
+    const estimated = estimateByHour(
+      sleepLengthSamples(blocks),
+      current.start,
+      SLEEP_LENGTH_HISTORY_DAYS,
+      soFar,
+    )
     if (!estimated) {
       return { asleep, reason: 'Not enough sleeps logged yet to guess when she will wake.' }
     }
@@ -135,7 +144,13 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   }
 
   const lastWoke = current.end
-  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, WAKE_WINDOW_HISTORY_DAYS)
+  const awake = Math.min((now.getTime() - lastWoke.getTime()) / MS_PER_MINUTE, MAX_WAKE_WINDOW_MINUTES)
+  const estimated = estimateByHour(
+    wakeWindowSamples(blocks),
+    lastWoke,
+    WAKE_WINDOW_HISTORY_DAYS,
+    awake,
+  )
   if (!estimated) {
     return { asleep, reason: 'Not enough sleeps logged yet to guess her next wind-down.' }
   }

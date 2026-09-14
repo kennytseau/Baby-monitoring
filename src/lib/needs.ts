@@ -31,6 +31,8 @@ const MAX_GAP_MINUTES = 8 * 60
 const HISTORY_DAYS = 14
 /** Within this much of her usual stretch, it is coming up rather than a while off */
 const SOON_MINUTES = 20
+/** This close, "in about 4 minutes" is a false precision; it is simply about now */
+const DUE_MINUTES = 5
 /** Past her usual stretch by this much, "about now" becomes overdue */
 const LATE_MINUTES = 30
 /** Amounts are rounded to this, the way a bottle is actually made up */
@@ -84,15 +86,23 @@ function needFor(kind: NeedKind, times: string[], now: Date, serving?: Serving):
   if (samples.length < MIN_SAMPLES) return null
 
   const lastAt = new Date(Math.max(...parsed))
-  const estimated = estimateByHour(samples, lastAt, HISTORY_DAYS)
+  const since = (now.getTime() - lastAt.getTime()) / MS_PER_MINUTE
+  // How long she has already gone narrows it down; beyond the cap the log has
+  // simply not been kept up, and there is nothing sensible left to condition on.
+  const estimated = estimateByHour(samples, lastAt, HISTORY_DAYS, Math.min(since, MAX_GAP_MINUTES))
   if (!estimated) return null
 
-  const since = (now.getTime() - lastAt.getTime()) / MS_PER_MINUTE
   const dueIn = estimated.value - since
   return {
     kind,
     state:
-      dueIn > SOON_MINUTES ? 'settled' : dueIn > 0 ? 'soon' : dueIn > -LATE_MINUTES ? 'due' : 'late',
+      dueIn > SOON_MINUTES
+        ? 'settled'
+        : dueIn > DUE_MINUTES
+          ? 'soon'
+          : dueIn > -LATE_MINUTES
+            ? 'due'
+            : 'late',
     at: new Date(lastAt.getTime() + estimated.value * MS_PER_MINUTE),
     dueIn,
     since,

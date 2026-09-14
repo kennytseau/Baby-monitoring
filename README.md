@@ -121,28 +121,35 @@ Five things on Home are predicted rather than recorded: when she'll wake, when
 she'll be ready for sleep, when the next feed is due and roughly how much it
 will be, and when the next change is due.
 
-**Timings** work on the fact that babies are far more predictable by **time of
-day** than on average. Her last fortnight or three weeks of logs are bucketed
-by the hour each stretch began, the bucket is widened until there are at least
-five of them, and the median is the estimate — with the quartiles either side
-shown as the range, which is the honest way to say "around 8pm" without
-pretending to a precision that isn't there.
+Three ideas do the work, and each one was kept only because a backtest against
+eight weeks of real logs said it earned its place.
 
-**Amounts** work differently, because the backtest said so: a bottle is the
-same size at 3am as at 3pm, so bucketing by hour changes nothing and the
-estimate is simply her recent median. Whichever way she's been fed most often
-lately decides the unit — millilitres from a bottle, or minutes at the breast.
+**Time of day.** Babies are far more predictable by the hour than on average.
+Past stretches are bucketed by the hour they began, the bucket widened until
+there are at least five, and the median taken.
 
-Backtested against eight weeks of real logs:
+**Time already served.** This matters more than anything else. Once she has
+been asleep fifty minutes, "how long does she nap at 2pm?" is the wrong
+question — the right one is "how long do the 2pm naps that got past fifty
+minutes last?", which is a different and longer answer. Only the past stretches
+that got at least this far are counted, so the estimate moves out as you wait
+instead of going stale, and it can never point at a time that has already
+passed.
 
-| Prediction | Typical value | Median error | vs. a flat average |
+**Amounts are different.** A bottle is the same size at 3am as at 3pm —
+bucketing by hour changes nothing — so how much she takes is simply her recent
+median. Whichever way she's been fed most often lately decides the unit.
+
+Scored the way the card is actually read — re-asked every quarter hour of every
+wait, against what happened next:
+
+| Prediction | Median error | Within 30 min | Before time-served was counted |
 | --- | --- | --- | --- |
-| Wake window | — | 16 min | 24 min |
-| Nap length | — | 21 min | 55 min |
-| Between feeds | 1 h 50 m | 37 min | 53 min |
-| Between changes | 3 h | 44 min | 53 min |
-| Size of a bottle | 50 ml | 13 ml | no better |
-| Minutes nursing | 20 min | 5 min | no better |
+| When she'll wake | 22 min | 63% | 26 min |
+| Next wind-down | 15 min | 80% | 17.5 min |
+| Next feed | 30 min | 51% | 41 min |
+| Next change | 38 min | 41% | 45 min |
+| Size of a bottle | 10 ml | 83% (within 30 ml) | — |
 
 Two consequences worth knowing. It only ever learns from the **last two or
 three weeks**, so as she grows the estimates move with her — over those eight
@@ -155,6 +162,28 @@ It stays quiet until there's something to learn from: a handful of logged
 stretches for each, and it says so plainly until then. While she's asleep, a
 feed or change that's fallen due reads "when she wakes" rather than telling you
 to wake her.
+
+### Things that were tried and didn't help
+
+Worth recording so they aren't tried again. None of these beat the model above
+on the same backtest:
+
+- **Smooth kernel weighting** by hour and recency instead of hard buckets — no
+  better, on any bandwidth or half-life.
+- **The size of the last feed** predicting how long she'd go. Raw correlation
+  looked promising (r = 0.36) but it vanishes once you condition on the hour,
+  and every weighting made the error worse.
+- **The sleep before a wake window, or the wake window before a sleep**
+  (r = −0.09 and −0.11 — essentially nothing).
+- **A growth trend line** (Theil–Sen) for bottle size instead of the median —
+  identical error at every window length.
+- **Predicting changes from feeds.** 71% of changes happen within 15 minutes of
+  a feed, but she's fed about twice as often as she's changed, so "the next
+  feed" is a much worse guess (163 min vs 44) and snapping the gap estimate to
+  a predicted feed is worse still (59 min vs 38).
+- **Tuning the history window, bucket width and minimum sample count.** The
+  differences across ninety-odd combinations were around a minute — noise at
+  this sample size — so the defaults stayed put.
 
 ## If the published site stops working
 
