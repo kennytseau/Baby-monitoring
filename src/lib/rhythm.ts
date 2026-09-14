@@ -1,19 +1,14 @@
 import type { LogEntry, SleepEntry } from './types'
 import { sortedByTime } from './log'
+import { estimate, MS_PER_MINUTE, type Estimate, type Sample } from './patterns'
 
 /**
- * Predicting the next wake-up and the next wind-down.
+ * Predicting the next wake-up and the next wind-down, from her own sleeps at
+ * this time of day — see `patterns.ts` for how the estimate is made.
  *
- * Both come from the same idea: a baby's sleep is far more predictable by time
- * of day than on average. Backtested against eight weeks of real logs, taking
- * the median of past events in the same hour-of-day bucket roughly halves the
- * error against a single overall average — about 16 minutes off for a wake
- * window and 21 for a nap length, versus 24 and 55.
- *
- * So: bucket past events by the hour they happened, widen the bucket until
- * there are enough of them, and take the median. The quartiles of the same
- * bucket give the range shown alongside, which is the honest way to say
- * "around 3pm" without pretending to a precision that is not there.
+ * Backtested against eight weeks of real logs, that beats a single overall
+ * average by about half: roughly 16 minutes off for a wake window and 21 for a
+ * nap length, versus 24 and 55.
  */
 
 /** Sleeps closer together than this are one sleep — she stirred and resettled */
@@ -25,9 +20,6 @@ const MAX_WAKE_WINDOW_MINUTES = 8 * 60
 /** How far back each prediction looks — chosen by backtest, they differ */
 const WAKE_WINDOW_HISTORY_DAYS = 21
 const SLEEP_LENGTH_HISTORY_DAYS = 14
-/** Fewest samples in a bucket before it is trusted */
-const MIN_SAMPLES = 5
-const MS_PER_MINUTE = 60_000
 
 export interface Prediction {
   /** When it is expected to happen */
@@ -92,12 +84,6 @@ export function sleepBlocks(log: LogEntry[], now = new Date()): SleepBlock[] {
   return blocks
 }
 
-interface Sample {
-  /** When the event started, used for its hour-of-day bucket and its recency */
-  at: Date
-  minutes: number
-}
-
 /** How long she stayed awake between one sleep and the next */
 function wakeWindowSamples(blocks: SleepBlock[]): Sample[] {
   const samples: Sample[] = []
@@ -117,66 +103,6 @@ function sleepLengthSamples(blocks: SleepBlock[]): Sample[] {
   return blocks
     .filter((b) => !b.open && b.minutes >= MIN_BLOCK_MINUTES)
     .map((b) => ({ at: b.start, minutes: b.minutes }))
-}
-
-/** Smallest number of hours between two hours of the day, going either way round the clock */
-function hoursApart(a: number, b: number): number {
-  const diff = Math.abs(a - b) % 24
-  return Math.min(diff, 24 - diff)
-}
-
-function quantile(sorted: number[], fraction: number): number {
-  if (sorted.length === 1) return sorted[0]
-  const position = (sorted.length - 1) * fraction
-  const low = Math.floor(position)
-  const high = Math.ceil(position)
-  return sorted[low] + (sorted[high] - sorted[low]) * (position - low)
-}
-
-interface Estimate {
-  minutes: number
-  lowMinutes: number
-  highMinutes: number
-  samples: number
-  approximate: boolean
-}
-
-/**
- * The median of past events near this hour of the day, widening the bucket and
- * then dropping it altogether rather than refusing to answer.
- */
-function estimate(samples: Sample[], from: Date, historyDays: number): Estimate | null {
-  const cutoff = from.getTime() - historyDays * 24 * 60 * MS_PER_MINUTE
-  const recent = samples.filter((s) => s.at.getTime() >= cutoff && s.at.getTime() <= from.getTime())
-  const pool = recent.length > 0 ? recent : samples.filter((s) => s.at.getTime() <= from.getTime())
-  if (pool.length === 0) return null
-
-  const hour = from.getHours()
-  for (const [width, approximate] of [
-    [1, false],
-    [2, true],
-  ] as const) {
-    const near = pool.filter((s) => hoursApart(s.at.getHours(), hour) <= width)
-    if (near.length >= MIN_SAMPLES) {
-      const sorted = near.map((s) => s.minutes).sort((a, b) => a - b)
-      return {
-        minutes: quantile(sorted, 0.5),
-        lowMinutes: quantile(sorted, 0.25),
-        highMinutes: quantile(sorted, 0.75),
-        samples: near.length,
-        approximate: approximate || recent.length === 0,
-      }
-    }
-  }
-
-  const sorted = pool.map((s) => s.minutes).sort((a, b) => a - b)
-  return {
-    minutes: quantile(sorted, 0.5),
-    lowMinutes: quantile(sorted, 0.25),
-    highMinutes: quantile(sorted, 0.75),
-    samples: pool.length,
-    approximate: true,
-  }
 }
 
 function toPrediction(from: Date, estimated: Estimate): Prediction {

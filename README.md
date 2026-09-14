@@ -13,9 +13,12 @@ still with no accounts and nothing sold or tracked.
 ## Features
 
 - **Home ("Today")** — her exact age (with adjusted age for babies born early),
-  a summary of what she's likely doing in her current developmental window,
   one-tap quick logging, whether she's asleep or how long she's been awake, and
   today's milk / sleep / nappy totals at a glance.
+- **What's next** — when she's likely to wake, or to be ready for sleep, and
+  whether a feed or a change is about due. All four are read off *her own*
+  recent log at this time of day, so they follow her as she grows rather than
+  telling you what a baby "should" do. See *Reading her rhythm* below.
 - **Milestones** — checklists for 0–24 months based on the CDC
   "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
   age), organised by age band with her current band highlighted. Every
@@ -112,6 +115,38 @@ one-off, but you can bake it into the deployed site instead — either way works
 The URL is not a secret — it ends up in the built JavaScript either way, and
 it is the family code that protects the log.
 
+## Reading her rhythm
+
+Four things on Home are predicted rather than recorded: when she'll wake, when
+she'll be ready for sleep, whether she's about due a feed, and whether she's
+about due a change.
+
+All four work the same way, because babies turn out to be far more predictable
+by **time of day** than on average. Her last fortnight or three weeks of logs
+are bucketed by the hour each stretch began, the bucket is widened until there
+are at least five of them, and the median is the estimate — with the quartiles
+either side shown as the range, which is the honest way to say "around 8pm"
+without pretending to a precision that isn't there.
+
+Backtested against eight weeks of real logs, that beats a single overall
+average by a wide margin:
+
+| Prediction | Typical stretch | Median error | vs. a flat average |
+| --- | --- | --- | --- |
+| Wake window | — | 16 min | 24 min |
+| Nap length | — | 21 min | 55 min |
+| Between feeds | 1 h 50 m | 37 min | 53 min |
+| Between changes | 3 h | 44 min | 53 min |
+
+Two consequences worth knowing. It only ever learns from the **last two or
+three weeks**, so as her stretches change with age the estimates move with them
+— nothing is hard-coded about what a ten-week-old does. And a feed logged as a
+top-up within 45 minutes of the last one counts as the same feed, so a cluster
+feed doesn't teach it that she eats every ten minutes.
+
+It stays quiet until there's something to learn from: a handful of logged
+stretches for each, and it says so plainly until then.
+
 ## If the published site stops working
 
 If `https://kennytseau.github.io/Baby-monitoring/` shows GitHub's "There isn't a
@@ -148,17 +183,21 @@ deployment keeps serving until a new one succeeds.
   server (`worker/`) is a dependency-free Cloudflare Worker over D1
 - A running nursing session is just a log entry with the side and its start
   time on it, so the timer survives a reload (and a flat battery)
+- Every prediction shares one estimator (`src/lib/patterns.ts`) — recent
+  samples, bucketed by hour of day, median and quartiles — so sleep, feeds and
+  nappies cannot drift apart in how they are worked out
 
 ```
 src/
   lib/        age math, storage + schema migrations, log maths (durations,
-              wake windows, day totals), sync merge + client, percentiles,
-              formatting
+              wake windows, day totals), the shared hour-of-day estimator and
+              the sleep / feed / nappy predictions built on it, sync merge +
+              client, percentiles, formatting
   data/       milestone dataset (CDC-based) + growth curve tables (WHO-based)
   hooks/      app state provider, quick-log actions, ticking clock
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Memories
   components/ TabBar, GrowthChart, QuickLog, NursingTimer, DayTimeline,
-              DayTotalsCard, SharingPanel, SyncBanner
+              DayTotalsCard, RhythmCard, NeedsCard, SharingPanel, SyncBanner
 worker/       sync server: Cloudflare Worker + D1 schema
 ```
 

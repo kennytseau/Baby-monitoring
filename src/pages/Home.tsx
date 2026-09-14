@@ -6,6 +6,7 @@ import { bandForAgeMonths, nextBand } from '../data/milestones'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
+import { NeedsCard } from '../components/NeedsCard'
 import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
@@ -83,6 +84,8 @@ export function Home() {
       </section>
 
       <RhythmCard />
+
+      <NeedsCard />
 
       <section>
         <h2 className="section-title">Quick log</h2>
