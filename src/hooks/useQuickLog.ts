@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useAppState } from './useAppState'
+import { useNow } from './useNow'
 import { uid } from '../lib/storage'
 import {
   findOpenNursing,
@@ -19,7 +20,10 @@ import type { BottleContent, BreastSide, NappyKind } from '../lib/types'
  */
 export function useQuickLog() {
   const { state, addLog, updateLog } = useAppState()
-  const openSleep = useMemo(() => findOpenSleep(state.log), [state.log])
+  // A sleep timed for later is not one she is in yet, so this has to follow the
+  // clock as well as the log: at its start time the button turns into "woke up".
+  const now = useNow(30_000)
+  const openSleep = useMemo(() => findOpenSleep(state.log, now), [state.log, now])
   /** Started and not finished — the timer card follows this, running or paused */
   const openNursing = useMemo(() => findOpenNursing(state.log), [state.log])
   const runningNursing = useMemo(

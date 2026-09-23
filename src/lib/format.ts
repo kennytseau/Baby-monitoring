@@ -96,9 +96,15 @@ export function minutesIntoDay(at: string | Date): number {
 }
 
 /**
- * Turn "HH:mm" from a time input into a real datetime, reading it as the most
- * recent time that has actually happened. A 23:50 bedtime typed at 00:10 means
- * last night, not tonight.
+ * Turn "HH:mm" from a time input into a real datetime: the occurrence of that
+ * clock time nearest to now, which may be either side of it.
+ *
+ * Both directions come up. A 23:50 bedtime typed at 00:10 means last night —
+ * twenty minutes ago, not twenty-three hours away. A 00:10 feed typed at 23:50
+ * means twenty minutes from now. Taking the nearest occurrence gets both right
+ * without a rule about which way time is allowed to run, and it lets a time be
+ * set a little ahead on purpose: the app simply treats that entry as not yet
+ * having happened until it does.
  */
 export function dateFromTimeInput(value: string, now: Date = new Date()): Date | null {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim())
@@ -106,10 +112,14 @@ export function dateFromTimeInput(value: string, now: Date = new Date()): Date |
   const hours = Number(match[1])
   const minutes = Number(match[2])
   if (hours > 23 || minutes > 59) return null
-  const date = new Date(now)
-  date.setHours(hours, minutes, 0, 0)
-  if (date.getTime() > now.getTime()) date.setDate(date.getDate() - 1)
-  return date
+
+  const today = new Date(now)
+  today.setHours(hours, minutes, 0, 0)
+  const shifted = new Date(today)
+  shifted.setDate(shifted.getDate() + (today.getTime() > now.getTime() ? -1 : 1))
+  return Math.abs(today.getTime() - now.getTime()) <= Math.abs(shifted.getTime() - now.getTime())
+    ? today
+    : shifted
 }
 
 /** "HH:mm" for a time input, defaulting its value to now */

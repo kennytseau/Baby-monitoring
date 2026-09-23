@@ -10,7 +10,14 @@ import { NeedsCard } from '../components/NeedsCard'
 import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
-import { currentWakeMinutes, dayTotals, findOpenSleep, sleepMinutes, sortedByTime } from '../lib/log'
+import {
+  currentWakeMinutes,
+  dayTotals,
+  findOpenSleep,
+  hasHappened,
+  sleepMinutes,
+  sortedByTime,
+} from '../lib/log'
 
 export function Home() {
   const { state, exportData, resetAll, sync } = useAppState()
@@ -31,9 +38,11 @@ export function Home() {
   const today = todayISO()
   const todayLog = useMemo(() => state.log.filter((e) => dayOf(e.time) === today), [state.log, today])
   const totals = dayTotals(todayLog, now)
-  const openSleep = findOpenSleep(state.log)
+  const openSleep = findOpenSleep(state.log, now)
   const awakeMinutes = currentWakeMinutes(state.log, now)
-  const lastFeed = sortedByTime(state.log.filter((e) => e.type === 'feed'))[0]
+  const lastFeed = sortedByTime(
+    state.log.filter((e) => e.type === 'feed' && hasHappened(e, now)),
+  )[0]
   const milkToday = totals.bottleMl
 
   return (

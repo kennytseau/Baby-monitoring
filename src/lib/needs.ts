@@ -93,7 +93,7 @@ export function forecastNeeds(log: LogEntry[], now = new Date()): NeedsForecast 
     log.filter((e) => e.type === 'nappy').map((e) => e.time),
     now,
   )
-  const asleep = Boolean(findOpenSleep(log))
+  const asleep = Boolean(findOpenSleep(log, now))
 
   if (!feed && !nappy) {
     return {

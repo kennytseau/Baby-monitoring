@@ -23,6 +23,25 @@ describe('dateFromTimeInput', () => {
     expect(parsed?.getHours()).toBe(23)
   })
 
+  it('reads a time a little ahead as meaning later today, not yesterday', () => {
+    const parsed = dateFromTimeInput('10:30', NOW)
+    expect(parsed?.getDate()).toBe(7)
+    expect(parsed?.getHours()).toBe(10)
+    expect(parsed!.getTime()).toBeGreaterThan(NOW.getTime())
+  })
+
+  it('reads a time just after midnight typed late at night as tonight', () => {
+    const parsed = dateFromTimeInput('00:10', new Date(2026, 8, 7, 23, 50))
+    expect(parsed?.getDate()).toBe(8)
+    expect(parsed?.getHours()).toBe(0)
+  })
+
+  it('takes whichever occurrence of the clock time is nearer', () => {
+    // At 08:30 the tipping point is 20:30, half a day away in both directions.
+    expect(dateFromTimeInput('20:00', NOW)?.getDate()).toBe(7)
+    expect(dateFromTimeInput('21:00', NOW)?.getDate()).toBe(6)
+  })
+
   it('accepts now itself', () => {
     expect(dateFromTimeInput('08:30', NOW)?.getTime()).toBe(NOW.getTime())
   })

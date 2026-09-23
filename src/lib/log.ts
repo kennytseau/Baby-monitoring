@@ -73,9 +73,29 @@ export function nursingMinutes(entry: FeedEntry, now = new Date()): number {
   return sideMinutes(entry, 'left', now) + sideMinutes(entry, 'right', now)
 }
 
-/** Minutes asleep; an open sleep counts up to `now` */
+/**
+ * How far past a screen's clock an entry may be stamped and still count.
+ *
+ * Screens read the time every thirty seconds rather than continuously, so an
+ * entry saved this very second can land a moment beyond the `now` the screen
+ * is holding. Without a little slack, tapping Nappy would leave today's total
+ * unchanged until the next tick.
+ */
+const CLOCK_SLACK_MS = 45_000
+
+/**
+ * True once an entry's time has arrived. A time set ahead of now — a sleep you
+ * have lined up for later, or a clock running fast on the other phone — has
+ * not happened yet, and nothing should count it until it has.
+ */
+export function hasHappened(entry: { time: string }, now = new Date()): boolean {
+  return Date.parse(entry.time) <= now.getTime() + CLOCK_SLACK_MS
+}
+
+/** Minutes asleep so far; a sleep still running counts up to `now` */
 export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
-  return minutesBetween(entry.time, entry.endTime ?? now.toISOString())
+  const ended = entry.endTime && Date.parse(entry.endTime) <= now.getTime()
+  return minutesBetween(entry.time, ended ? entry.endTime! : now.toISOString())
 }
 
 /** What the session yielded — the sides when they were measured, else the combined amount */
@@ -89,9 +109,19 @@ export function sleepsIn(log: LogEntry[]): SleepEntry[] {
   return log.filter((e): e is SleepEntry => e.type === 'sleep')
 }
 
-/** The sleep that has started but not ended, if the baby is asleep right now */
-export function findOpenSleep(log: LogEntry[]): SleepEntry | undefined {
-  return log.find((e): e is SleepEntry => e.type === 'sleep' && !e.endTime)
+/** The sleeps that have actually begun, oldest first */
+export function startedSleeps(log: LogEntry[], now = new Date()): SleepEntry[] {
+  return sortedByTime(sleepsIn(log).filter((e) => hasHappened(e, now)), 'asc')
+}
+
+/**
+ * The sleep she is in right now: begun, and not yet ended. A sleep logged to
+ * start later is not one she is in, however recently it was typed.
+ */
+export function findOpenSleep(log: LogEntry[], now = new Date()): SleepEntry | undefined {
+  return sleepsIn(log).find(
+    (e) => hasHappened(e, now) && (!e.endTime || Date.parse(e.endTime) > now.getTime()),
+  )
 }
 
 /** The nursing session that has been started and not finished, running or paused */
@@ -122,7 +152,7 @@ export interface WakeWindow {
  * Sleeps are read in start order; an unfinished sleep closes the list.
  */
 export function wakeWindows(log: LogEntry[], now = new Date()): WakeWindow[] {
-  const sleeps = sortedByTime(sleepsIn(log), 'asc')
+  const sleeps = startedSleeps(log, now)
   const windows: WakeWindow[] = []
   for (let i = 0; i < sleeps.length; i += 1) {
     const woke = sleeps[i].endTime
@@ -137,10 +167,10 @@ export function wakeWindows(log: LogEntry[], now = new Date()): WakeWindow[] {
 
 /** How long the baby has been awake right now, or null if she's asleep */
 export function currentWakeMinutes(log: LogEntry[], now = new Date()): number | null {
-  if (findOpenSleep(log)) return null
-  const lastWoke = sortedByTime(sleepsIn(log))
+  if (findOpenSleep(log, now)) return null
+  const lastWoke = sortedByTime(startedSleeps(log, now))
     .map((e) => e.endTime)
-    .find((t): t is string => !!t)
+    .find((t): t is string => !!t && Date.parse(t) <= now.getTime())
   if (!lastWoke) return null
   return minutesBetween(lastWoke, now.toISOString())
 }
@@ -195,6 +225,8 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
   }
 
   for (const entry of entries) {
+    // An entry timed for later in the day has not happened yet.
+    if (!hasHappened(entry, now)) continue
     if (entry.type === 'feed') {
       totals.feeds += 1
       if (entry.kind === 'nursing') {
