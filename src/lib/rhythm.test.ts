@@ -83,8 +83,26 @@ describe('forecastRhythm', () => {
     }
     log.push(sleep(at(0, 13, 0), null))
     const { wakeUp } = forecastRhythm(log, NOW)
-    expect(wakeUp!.earliest.getTime()).toBeLessThan(wakeUp!.at.getTime())
-    expect(wakeUp!.latest.getTime()).toBeGreaterThan(wakeUp!.at.getTime())
+    expect(wakeUp!.earliest.getTime()).toBeLessThan(wakeUp!.latest.getTime())
+  })
+
+  it('counts the sleep she has already had, so the guess moves out as it runs on', () => {
+    // Naps of 40 to 80 minutes. An hour in, the 40s and 50s can no longer happen.
+    const history: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 40 + (day % 5) * 10))
+    const open = sleep(at(0, 13, 0), null)
+    const atStart = forecastRhythm([...history, open], at(0, 13, 1))
+    const anHourIn = forecastRhythm([...history, open], at(0, 14, 0))
+    expect(anHourIn.wakeUp!.at.getTime()).toBeGreaterThan(atStart.wakeUp!.at.getTime())
+  })
+
+  it('never says she will wake at a time that has already passed', () => {
+    const history: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 60))
+    // Still asleep two hours into a nap she usually finishes in one.
+    const now = at(0, 15, 0)
+    const { wakeUp } = forecastRhythm([...history, sleep(at(0, 13, 0), null)], now)
+    expect(wakeUp!.at.getTime()).toBeGreaterThanOrEqual(now.getTime())
   })
 
   it('uses the hour of day, so a morning nap is not predicted from evening ones', () => {
@@ -113,5 +131,20 @@ describe('forecastRhythm', () => {
     expect(asleep).toBe(true)
     // still measured from 13:00, the start of the whole sleep
     expect(wakeUp?.at.getHours()).toBe(14)
+  })
+})
+
+describe('only what has happened', () => {
+  it('ignores a sleep set for later when predicting', () => {
+    const log = [...steadyHistory(), sleep(at(0, 13, 0), 60)]
+    const withPlanned = [...log, sleep(at(0, 16, 0), null)] // NOW is 14:00
+    expect(forecastRhythm(withPlanned, NOW)).toEqual(forecastRhythm(log, NOW))
+  })
+
+  it('keeps her asleep when her wake-up has been set for later', () => {
+    const open = sleep(at(0, 13, 0), 90) // "woke" at 14:30, but NOW is 14:00
+    const forecast = forecastRhythm([...steadyHistory(), open], NOW)
+    expect(forecast.asleep).toBe(true)
+    expect(forecast.wakeUp).toBeDefined()
   })
 })

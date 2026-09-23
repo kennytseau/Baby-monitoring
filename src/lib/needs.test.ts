@@ -6,8 +6,11 @@ const DAY = 24 * 60 * 60_000
 const NOW = new Date('2026-09-11T14:00:00')
 
 let counter = 0
-function feed(at: Date): LogEntry {
-  return { id: `f${counter++}`, type: 'feed', time: at.toISOString(), kind: 'bottle', amountMl: 90 }
+function feed(at: Date, amountMl = 90): LogEntry {
+  return { id: `f${counter++}`, type: 'feed', time: at.toISOString(), kind: 'bottle', amountMl }
+}
+function nursed(at: Date, minutes: number): LogEntry {
+  return { id: `f${counter++}`, type: 'feed', time: at.toISOString(), kind: 'nursing', leftMinutes: minutes }
 }
 function nappy(at: Date): LogEntry {
   return { id: `n${counter++}`, type: 'nappy', time: at.toISOString(), kind: 'wet' }
@@ -32,20 +35,70 @@ describe('forecastNeeds', () => {
   it('says nothing until there is a shape to her day', () => {
     const forecast = forecastNeeds([feed(minutesAgo(30)), nappy(minutesAgo(45))], NOW)
     expect(forecast.feed).toBeUndefined()
-    expect(forecast.reason).toMatch(/start learning/)
+    expect(forecast.reason).toMatch(/what is coming next/)
   })
 
-  it('learns her usual stretch and counts down to the next one', () => {
+  it('learns her usual stretch and says when the next one is due', () => {
     const forecast = forecastNeeds(history(180, 30), NOW)
     expect(forecast.feed!.usual).toBeCloseTo(180, 0)
     expect(forecast.feed!.since).toBeCloseTo(30, 0)
     expect(forecast.feed!.dueIn).toBeCloseTo(150, 0)
+    expect(forecast.feed!.at.getTime()).toBeCloseTo(NOW.getTime() + 150 * 60_000, -3)
     expect(forecast.feed!.state).toBe('settled')
   })
 
-  it('moves through settled, soon, due and late as the stretch runs out', () => {
+  it('predicts how much, rounded the way a bottle is made up', () => {
+    const log = history(180, 30).map((e, i) => (e.type === 'feed' ? feed(new Date(e.time), i % 2 ? 68 : 72) : e))
+    expect(forecastNeeds(log, NOW).feed!.serving).toEqual({ unit: 'ml', value: 70 })
+  })
+
+  it('follows the recent fortnight for the amount too, so growth shows', () => {
+    const log: LogEntry[] = []
+    for (let day = 0; day < 7; day += 1) {
+      for (let i = 0; i < 8; i += 1) log.push(feed(new Date(NOW.getTime() - day * DAY - i * 180 * 60_000), 70))
+    }
+    for (let day = 20; day < 40; day += 1) {
+      for (let i = 0; i < 8; i += 1) log.push(feed(new Date(NOW.getTime() - day * DAY - i * 180 * 60_000), 25))
+    }
+    expect(forecastNeeds(log, NOW).feed!.serving).toEqual({ unit: 'ml', value: 70 })
+  })
+
+  it('offers minutes at the breast, not millilitres, to a baby who mostly nurses', () => {
+    const log: LogEntry[] = []
+    for (let day = 0; day < 7; day += 1) {
+      for (let i = 0; i < 8; i += 1) log.push(nursed(new Date(NOW.getTime() - day * DAY - i * 180 * 60_000), 22))
+    }
+    expect(forecastNeeds(log, NOW).feed!.serving).toEqual({ unit: 'min', value: 20 })
+  })
+
+  it('says nothing about the amount until there is enough to go on', () => {
+    const log = history(180, 30).map((e) =>
+      e.type === 'feed' ? { ...e, amountMl: undefined, kind: 'solids' as const } : e,
+    )
+    expect(forecastNeeds(log, NOW).feed!.serving).toBeUndefined()
+  })
+
+  it('moves through settled, soon and due as the stretch runs out', () => {
     const states = [30, 170, 190, 240].map((since) => forecastNeeds(history(180, since), NOW).feed!.state)
-    expect(states).toEqual(['settled', 'soon', 'due', 'late'])
+    expect(states).toEqual(['settled', 'soon', 'due', 'due'])
+  })
+
+  it('counts the time already waited, so the guess moves out rather than going stale', () => {
+    // Gaps of two to four hours. Three hours in, the short ones are ruled out.
+    const log: LogEntry[] = []
+    let t = NOW.getTime() - 40 * 60_000
+    for (let i = 0; i < 60; i += 1) {
+      log.push(feed(new Date(t)))
+      t -= (120 + (i % 5) * 30) * 60_000
+    }
+    const fresh = forecastNeeds(log, NOW).feed!
+    const waited = forecastNeeds(log, new Date(NOW.getTime() + 180 * 60_000)).feed!
+    expect(waited.usual).toBeGreaterThan(fresh.usual)
+    expect(waited.dueIn).toBeGreaterThanOrEqual(0)
+  })
+
+  it('calls it late only once the log has plainly not been kept up', () => {
+    expect(forecastNeeds(history(180, 9 * 60), NOW).feed!.state).toBe('late')
   })
 
   it('follows the recent fortnight, not the whole history', () => {
@@ -88,5 +141,26 @@ describe('forecastNeeds', () => {
     // A fortnight away from the log should not become a nine-hour "usual stretch".
     const log = [...history(180, 30), feed(new Date(NOW.getTime() - 40 * DAY))]
     expect(forecastNeeds(log, NOW).feed!.usual).toBeCloseTo(180, 0)
+  })
+})
+
+describe('only what has happened', () => {
+  it('does not let a feed set for later become a stretch it learns from', () => {
+    // Stretches of 4 h and 2 h alternating: the median sits right on the edge,
+    // so one made-up 90-minute "stretch" into the future would drag it down.
+    const past = [30, 270, 390, 630, 750, 990].map((m) => feed(minutesAgo(m)))
+    const plain = forecastNeeds(past, NOW).feed!
+    const withPlanned = forecastNeeds([...past, feed(minutesAgo(-60))], NOW).feed!
+    expect(withPlanned.usual).toBe(plain.usual)
+  })
+
+  it('learns nothing from entries lined up for later', () => {
+    const log = history(180, 30)
+    const ahead = [feed(minutesAgo(-40)), feed(minutesAgo(-90)), nappy(minutesAgo(-20))]
+    expect(forecastNeeds([...log, ...ahead], NOW)).toEqual(forecastNeeds(log, NOW))
+  })
+
+  it('does not treat a sleep set for later as her being asleep', () => {
+    expect(forecastNeeds([...history(180, 30), sleep(minutesAgo(-30))], NOW).asleep).toBe(false)
   })
 })

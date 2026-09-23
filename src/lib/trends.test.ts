@@ -41,16 +41,32 @@ describe('dailySummaries', () => {
   })
 
   it('splits daytime naps out of total sleep', () => {
+    // NOW is 18:00, so the evening sleep goes on yesterday — today's 20:00 has
+    // not happened yet and nothing should count it.
     const log = [
       sleep(0, 2, 180), // overnight
       sleep(0, 10, 60), // nap
       sleep(0, 14, 45), // nap
-      sleep(0, 20, 90), // evening, not a nap
+      sleep(1, 20, 90), // evening, not a nap
     ]
-    const [today] = dailySummaries(log, 1, NOW)
-    expect(today.totals.sleepMinutes).toBe(375)
+    const [today, yesterday] = dailySummaries(log, 2, NOW)
+    expect(today.totals.sleepMinutes).toBe(285)
     expect(today.napMinutes).toBe(105)
     expect(today.naps).toBe(2)
+    expect(yesterday.totals.sleepMinutes).toBe(90)
+    expect(yesterday.napMinutes).toBe(0)
+  })
+
+  it('leaves a nap set for later out of the nap total too', () => {
+    const [today] = dailySummaries([sleep(0, 10, 60), sleep(0, 18, 45)], 1, new Date(NOW.getTime() - 3 * 3600_000))
+    expect(today.napMinutes).toBe(60)
+    expect(today.naps).toBe(1)
+  })
+
+  it('leaves out an entry timed for later today', () => {
+    const [today] = dailySummaries([bottle(0, 9, 100), bottle(0, 21, 120)], 1, NOW)
+    expect(today.totals.bottleMl).toBe(100)
+    expect(today.totals.bottles).toBe(1)
   })
 })
 

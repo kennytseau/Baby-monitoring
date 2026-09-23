@@ -17,6 +17,7 @@ import { uid } from '../lib/storage'
 import {
   NAPPY_LABELS,
   dayTotals,
+  hasHappened,
   sortedByTime,
   summarizeEntry,
   wakeWindows,
@@ -83,9 +84,16 @@ export function DailyLog() {
   const [medicineAmount, setMedicineAmount] = useState('')
   const [note, setNote] = useState('')
 
+  /** Entries timed for later, soonest first — shown apart so they can be moved or dropped */
+  const upcoming = useMemo(
+    () => sortedByTime(state.log.filter((e) => !hasHappened(e, now)), 'asc'),
+    [state.log, now],
+  )
+
   const days = useMemo(() => {
     const byDay = new Map<string, LogEntry[]>()
     for (const entry of state.log) {
+      if (!hasHappened(entry, now)) continue
       const day = dayOf(entry.time)
       const list = byDay.get(day) ?? []
       list.push(entry)
@@ -233,7 +241,14 @@ export function DailyLog() {
       <QuickLog />
 
       {!formOpen ? (
-        <button className="btn btn-block" onClick={() => setFormOpen(true)}>
+        <button
+          className="btn btn-block"
+          onClick={() => {
+            // The page may have been open a while; start from the real now.
+            setTime(nowLocalDatetime())
+            setFormOpen(true)
+          }}
+        >
           + Add with details
         </button>
       ) : (
@@ -255,9 +270,13 @@ export function DailyLog() {
               id="log-time"
               type="datetime-local"
               value={time}
-              max={nowLocalDatetime()}
               onChange={(e) => setTime(e.target.value)}
             />
+            {time && new Date(time).getTime() > now.getTime() + 60_000 && (
+              <span className="tiny muted">
+                Set for later — it will show under Coming up and not count until then.
+              </span>
+            )}
           </div>
 
           {type === 'feed' && (
@@ -425,7 +444,31 @@ export function DailyLog() {
         </form>
       )}
 
-      {days.length === 0 && (
+      {upcoming.length > 0 && (
+        <section className="stack">
+          <div className="day-divider">Coming up</div>
+          <div className="card">
+            {upcoming.map((entry) => (
+              <LogRow
+                key={entry.id}
+                entry={entry}
+                now={now}
+                when={`${formatTime(entry.time)} · in ${formatDuration(
+                  (Date.parse(entry.time) - now.getTime()) / 60_000,
+                )}`}
+                onEdit={() => startEdit(entry)}
+                onDelete={() => deleteLog(entry.id)}
+              />
+            ))}
+            <p className="tiny faint" style={{ marginTop: 8 }}>
+              These don't count until their time comes. If she doesn't go down when expected, edit
+              the time or delete it.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {days.length === 0 && upcoming.length === 0 && (
         <div className="empty">Nothing logged yet — the buttons above make it a one-tap job.</div>
       )}
 
@@ -461,11 +504,14 @@ export function DailyLog() {
 function LogRow({
   entry,
   now,
+  when,
   onEdit,
   onDelete,
 }: {
   entry: LogEntry
   now: Date
+  /** Replaces the plain clock time — used to say how far off an upcoming entry is */
+  when?: string
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -478,7 +524,7 @@ function LogRow({
       <div className="grow">
         <div className="item-title">{title}</div>
         <div className="item-sub">
-          {[formatTime(entry.time), detail, entry.note].filter(Boolean).join(' · ')}
+          {[when ?? formatTime(entry.time), detail, entry.note].filter(Boolean).join(' · ')}
         </div>
       </div>
       <button className="btn btn-ghost btn-sm" onClick={onEdit}>

@@ -3,6 +3,8 @@ import {
   commitNursingSide,
   currentWakeMinutes,
   findOpenNursing,
+  findOpenSleep,
+  minutesBetween,
   finishNursing,
   isNursingInProgress,
   isNursingPaused,
@@ -277,5 +279,58 @@ describe('pausing does not distort the total', () => {
       feed = pauseNursing(feed, stop)
     }
     expect(nursingMinutes(feed)).toBe(10)
+  })
+})
+
+describe('entries timed for later', () => {
+  const soon = new Date(NOW.getTime() + 30 * 60_000).toISOString()
+
+  it('does not count a sleep that has not started yet', () => {
+    expect(findOpenSleep([sleep('s1', soon)], NOW)).toBeUndefined()
+  })
+
+  it('still counts one saved this very second, whose stamp can beat the screen clock', () => {
+    const justAfter = new Date(NOW.getTime() + 800).toISOString()
+    expect(findOpenSleep([sleep('s1', justAfter)], NOW)?.id).toBe('s1')
+    expect(dayTotals([{ id: 'n1', type: 'nappy', kind: 'wet', time: justAfter }], NOW).nappyTotal).toBe(1)
+  })
+
+  it('counts it once its time comes round', () => {
+    const later = new Date(NOW.getTime() + 31 * 60_000)
+    expect(findOpenSleep([sleep('s1', soon)], later)?.id).toBe('s1')
+  })
+
+  it('still counts a sleep she is in whose wake-up time is set ahead', () => {
+    const entry = sleep('s1', at('10:00'), soon)
+    expect(findOpenSleep([entry], NOW)?.id).toBe('s1')
+    expect(sleepMinutes(entry as SleepEntry, NOW)).toBe(minutesBetween(at('10:00'), NOW.toISOString()))
+  })
+
+  it('leaves her awake, rather than asleep in advance', () => {
+    expect(currentWakeMinutes([sleep('s1', at('07:00'), at('08:00')), sleep('s2', soon)], NOW)).toBe(
+      minutesBetween(at('08:00'), NOW.toISOString()),
+    )
+  })
+
+  it('keeps it out of the running totals until it happens', () => {
+    const totals = dayTotals(
+      [
+        { id: 'b1', type: 'feed', kind: 'bottle', contents: 'formula', amountMl: 90, time: at('09:00') },
+        { id: 'b2', type: 'feed', kind: 'bottle', contents: 'formula', amountMl: 60, time: soon },
+      ],
+      NOW,
+    )
+    expect(totals.bottleMl).toBe(90)
+    expect(totals.bottles).toBe(1)
+  })
+
+  it('describes a sleep that has not started as planned, not as minus minutes asleep', () => {
+    expect(summarizeEntry(sleep('s1', soon), NOW).title).toBe('Sleep')
+  })
+
+  it('describes a sleep with its wake-up set for later as still going', () => {
+    const summary = summarizeEntry(sleep('s1', at('10:00'), soon), NOW)
+    expect(summary.title).toMatch(/^Asleep · .* so far$/)
+    expect(summary.detail).toMatch(/^waking set for /)
   })
 })
