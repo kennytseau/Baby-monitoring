@@ -114,7 +114,7 @@ export function pumpTotalMl(entry: PumpEntry): number {
 }
 
 /** The sleeps in a log, in the order they were logged */
-export function sleepsIn(log: LogEntry[]): SleepEntry[] {
+function sleepsIn(log: LogEntry[]): SleepEntry[] {
   return log.filter((e): e is SleepEntry => e.type === 'sleep')
 }
 

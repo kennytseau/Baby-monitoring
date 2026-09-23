@@ -4,11 +4,9 @@ import { estimateByHour, MS_PER_MINUTE, type Estimate, type Sample } from './pat
 
 /**
  * Predicting the next wake-up and the next wind-down, from her own sleeps at
- * this time of day — see `patterns.ts` for how the estimate is made.
- *
- * Backtested against eight weeks of real logs, that beats a single overall
- * average by about half: roughly 16 minutes off for a wake window and 21 for a
- * nap length, versus 24 and 55.
+ * this time of day and the time she has already been down or up — see
+ * `patterns.ts` for how the estimate is made, and the README for how well it
+ * does against her real log.
  */
 
 /** Sleeps closer together than this are one sleep — she stirred and resettled */

@@ -12,12 +12,12 @@ import { estimateByHour, estimateRecent, gapSamples, MIN_SAMPLES, MS_PER_MINUTE 
  * against eight weeks of real logs:
  *
  *  - *When.* How long she goes between feeds swings enormously across a day,
- *    so this is bucketed by hour (see `patterns.ts`): within about 37 minutes
- *    on a stretch that typically runs 1h50, against 53 for a flat average.
+ *    so this is bucketed by hour and narrowed by how long she has already gone
+ *    (see `patterns.ts`).
  *  - *How much.* A bottle is the same size at 3am as at 3pm — bucketing by
- *    hour changes nothing — so amounts are simply her recent median, within
- *    about 13 ml. Her own numbers climbed 25 → 70 ml over those eight weeks,
- *    which is the whole reason for a rolling window.
+ *    hour changes nothing — so amounts are simply her recent median. Her own
+ *    numbers climbed 25 → 70 ml over eight weeks, which is the whole reason for
+ *    a rolling window.
  *
  * Both are shown as "about", with the last one and her usual spread underneath,
  * because errors that size are a nudge and not a timetable.
@@ -78,7 +78,7 @@ export interface NeedsForecast {
 
 /** When the next one is due, from how long she has been going lately at this hour */
 function needFor(kind: NeedKind, times: string[], now: Date, serving?: Serving): Need | null {
-  const parsed = times.map((t) => Date.parse(t)).filter((t) => Number.isFinite(t) && t <= now.getTime())
+  const parsed = times.map((t) => Date.parse(t)).filter(Number.isFinite)
   if (parsed.length === 0) return null
 
   const samples = gapSamples(times, SAME_EVENT_MINUTES, MAX_GAP_MINUTES)

@@ -31,13 +31,17 @@ still with no accounts and nothing sold or tracked.
 - **Daily log** — the day in one place:
   - **Milk** — nursing with a live per-side timer (start on the left, switch to
     the right, finish; minutes are banked to each breast), or a bottle with what
-    was in it (formula / expressed breast milk / both) and how many ml. Solids
-    too, when she gets there.
+    was in it (formula or expressed breast milk) and how many ml. Solids too,
+    when she gets there.
   - **Nappies** — wet, poo or both, with the time.
   - **Sleep** — tap when she goes down, tap again when she wakes; the gaps in
     between are shown as **wake windows**.
   - **Pumping** — millilitres from the left and right breast, and how long the
     session took.
+  - **Medicine** — what, how much, and when it was last given.
+  - **Coming up** — anything set for a time later on waits here, with Edit and
+    Delete, until that time comes. Until then it counts for nothing: Right now
+    stays as it was, totals leave it out, and no prediction learns from it.
   - Each day gets a 24-hour strip (sleep as bars, feeds / nappies / pumping as
     marks) plus totals: milk in, nursing minutes per side, nappies by type,
     total and longest sleep, and how much was pumped.
@@ -48,7 +52,7 @@ still with no accounts and nothing sold or tracked.
   make with no signal queue up and go across as soon as you have one. See
   *Sharing between two phones* below.
 - **Backup** — download all data as JSON from *Settings & data* on the Home
-  screen.
+  screen, and restore it from the same place.
 
 ## Getting started
 
@@ -254,11 +258,10 @@ from *Settings & data* before clearing or switching devices.
 ## Ideas for later
 
 - Photos on memories (needs IndexedDB — `localStorage` is too small)
-- JSON backup **import** to restore/move devices
 - Per-entry attribution ("logged by Mum") now that two devices share a log
 - Pruning old tombstones so a long-running log stays small
-- Reminders (tummy time, vitamin D drops), a service worker for full offline
-  installs, sleep/feed pattern charts
+- Reminders (tummy time, vitamin D drops), and a service worker for full
+  offline installs
 
 ## A note on the data sources
 
