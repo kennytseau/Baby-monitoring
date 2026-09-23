@@ -1,5 +1,5 @@
 import type { LogEntry, SleepEntry } from './types'
-import { dayTotals, sleepMinutes } from './log'
+import { dayTotals, happenedBy, sleepMinutes } from './log'
 import type { DayTotals } from './log'
 import { dayOf, minutesIntoDay } from './format'
 import { toISODate } from './age'
@@ -87,7 +87,7 @@ export function dailySummaries(
   const today = toISODate(now)
   const cutoff = minutesIntoDay(now)
   const byDay = new Map<string, LogEntry[]>()
-  for (const entry of log) {
+  for (const entry of happenedBy(log, now)) {
     const day = dayOf(entry.time)
     byDay.set(day, [...(byDay.get(day) ?? []), entry])
   }

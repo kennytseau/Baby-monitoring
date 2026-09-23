@@ -115,3 +115,18 @@ describe('forecastRhythm', () => {
     expect(wakeUp?.at.getHours()).toBe(14)
   })
 })
+
+describe('only what has happened', () => {
+  it('ignores a sleep set for later when predicting', () => {
+    const log = [...steadyHistory(), sleep(at(0, 13, 0), 60)]
+    const withPlanned = [...log, sleep(at(0, 16, 0), null)] // NOW is 14:00
+    expect(forecastRhythm(withPlanned, NOW)).toEqual(forecastRhythm(log, NOW))
+  })
+
+  it('keeps her asleep when her wake-up has been set for later', () => {
+    const open = sleep(at(0, 13, 0), 90) // "woke" at 14:30, but NOW is 14:00
+    const forecast = forecastRhythm([...steadyHistory(), open], NOW)
+    expect(forecast.asleep).toBe(true)
+    expect(forecast.wakeUp).toBeDefined()
+  })
+})

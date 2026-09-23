@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   dateFromTimeInput,
+  formatDuration,
   positiveNumber,
   resolveLogTime,
   toDatetimeInput,
@@ -8,6 +9,15 @@ import {
 } from './format'
 
 const NOW = new Date(2026, 8, 7, 8, 30)
+
+describe('formatDuration', () => {
+  it('never shows sixty minutes', () => {
+    expect(formatDuration(119.9)).toBe('2 h')
+    expect(formatDuration(59.6)).toBe('1 h')
+    expect(formatDuration(95)).toBe('1 h 35 m')
+    expect(formatDuration(0.4)).toBe('0 min')
+  })
+})
 
 describe('dateFromTimeInput', () => {
   it('reads a time earlier today', () => {

@@ -1,5 +1,5 @@
 import type { LogEntry } from './types'
-import { findOpenSleep } from './log'
+import { findOpenSleep, happenedBy } from './log'
 import { estimate, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patterns'
 
 /**
@@ -82,7 +82,9 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
   }
 }
 
-export function forecastNeeds(log: LogEntry[], now = new Date()): NeedsForecast {
+export function forecastNeeds(allEntries: LogEntry[], now = new Date()): NeedsForecast {
+  // Only what has actually happened: a feed lined up for later is not a feed.
+  const log = happenedBy(allEntries, now)
   const feed = needFor(
     'feed',
     log.filter((e) => e.type === 'feed').map((e) => e.time),

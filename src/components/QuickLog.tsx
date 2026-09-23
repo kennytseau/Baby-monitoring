@@ -3,7 +3,7 @@ import { useNow } from '../hooks/useNow'
 import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { NAPPY_LABELS, sleepMinutes, sortedByTime } from '../lib/log'
+import { NAPPY_LABELS, happenedBy, sleepMinutes, sortedByTime } from '../lib/log'
 import { BottleContentsPicker, MedicineFields } from './LogFields'
 import {
   formatAgo,
@@ -59,8 +59,11 @@ export function QuickLog() {
   const [medicineNote, setMedicineNote] = useState('')
 
   const doses = useMemo(
-    () => sortedByTime(state.log.filter((e): e is MedicationEntry => e.type === 'medication')),
-    [state.log],
+    () =>
+      sortedByTime(
+        happenedBy(state.log, now).filter((e): e is MedicationEntry => e.type === 'medication'),
+      ),
+    [state.log, now],
   )
   /** The last few medicines given, with the dose that went with them, so a repeat is one tap */
   const recentMedicines = useMemo(() => {

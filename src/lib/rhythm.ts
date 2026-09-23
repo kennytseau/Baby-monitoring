@@ -62,8 +62,10 @@ export function sleepBlocks(log: LogEntry[], now = new Date()): SleepBlock[] {
   const blocks: SleepBlock[] = []
   for (const sleep of sleeps) {
     const start = new Date(sleep.time)
-    const open = !sleep.endTime
-    const end = sleep.endTime ? new Date(sleep.endTime) : now
+    // A wake-up time set ahead has not happened: she is still in this sleep.
+    const woke = sleep.endTime && Date.parse(sleep.endTime) <= now.getTime()
+    const open = !woke
+    const end = woke ? new Date(sleep.endTime!) : now
     if (end.getTime() < start.getTime()) continue
     const previous = blocks[blocks.length - 1]
     if (

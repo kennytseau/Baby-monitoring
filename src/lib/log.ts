@@ -92,6 +92,15 @@ export function hasHappened(entry: { time: string }, now = new Date()): boolean 
   return Date.parse(entry.time) <= now.getTime() + CLOCK_SLACK_MS
 }
 
+/**
+ * The part of the log that has actually happened. Everything that learns from
+ * her history — predictions, totals, trends — reads through this, so an entry
+ * lined up for later can never teach the model something that has not occurred.
+ */
+export function happenedBy<T extends { time: string }>(entries: T[], now = new Date()): T[] {
+  return entries.filter((e) => hasHappened(e, now))
+}
+
 /** Minutes asleep so far; a sleep still running counts up to `now` */
 export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
   const ended = entry.endTime && Date.parse(entry.endTime) <= now.getTime()
@@ -276,8 +285,20 @@ export function summarizeEntry(entry: LogEntry, now = new Date()): EntrySummary 
     case 'feed':
       return summarizeFeed(entry, now)
     case 'sleep': {
+      if (!hasHappened(entry, now)) {
+        return {
+          title: 'Sleep',
+          detail: entry.endTime ? `until ${formatTime(entry.endTime)}` : '',
+        }
+      }
       const mins = sleepMinutes(entry, now)
       if (!entry.endTime) return { title: `Asleep · ${formatDuration(mins)} so far`, detail: '' }
+      if (Date.parse(entry.endTime) > now.getTime()) {
+        return {
+          title: `Asleep · ${formatDuration(mins)} so far`,
+          detail: `waking set for ${formatTime(entry.endTime)}`,
+        }
+      }
       return { title: `Slept ${formatDuration(mins)}`, detail: `until ${formatTime(entry.endTime)}` }
     }
     case 'nappy':

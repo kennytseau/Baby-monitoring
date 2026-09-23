@@ -57,6 +57,12 @@ describe('dailySummaries', () => {
     expect(yesterday.napMinutes).toBe(0)
   })
 
+  it('leaves a nap set for later out of the nap total too', () => {
+    const [today] = dailySummaries([sleep(0, 10, 60), sleep(0, 18, 45)], 1, new Date(NOW.getTime() - 3 * 3600_000))
+    expect(today.napMinutes).toBe(60)
+    expect(today.naps).toBe(1)
+  })
+
   it('leaves out an entry timed for later today', () => {
     const [today] = dailySummaries([bottle(0, 9, 100), bottle(0, 21, 120)], 1, NOW)
     expect(today.totals.bottleMl).toBe(100)

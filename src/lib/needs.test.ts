@@ -90,3 +90,24 @@ describe('forecastNeeds', () => {
     expect(forecastNeeds(log, NOW).feed!.usual).toBeCloseTo(180, 0)
   })
 })
+
+describe('only what has happened', () => {
+  it('does not let a feed set for later become a stretch it learns from', () => {
+    // Stretches of 4 h and 2 h alternating: the median sits right on the edge,
+    // so one made-up 90-minute "stretch" into the future would drag it down.
+    const past = [30, 270, 390, 630, 750, 990].map((m) => feed(minutesAgo(m)))
+    const plain = forecastNeeds(past, NOW).feed!
+    const withPlanned = forecastNeeds([...past, feed(minutesAgo(-60))], NOW).feed!
+    expect(withPlanned.usual).toBe(plain.usual)
+  })
+
+  it('learns nothing from entries lined up for later', () => {
+    const log = history(180, 30)
+    const ahead = [feed(minutesAgo(-40)), feed(minutesAgo(-90)), nappy(minutesAgo(-20))]
+    expect(forecastNeeds([...log, ...ahead], NOW)).toEqual(forecastNeeds(log, NOW))
+  })
+
+  it('does not treat a sleep set for later as her being asleep', () => {
+    expect(forecastNeeds([...history(180, 30), sleep(minutesAgo(-30))], NOW).asleep).toBe(false)
+  })
+})

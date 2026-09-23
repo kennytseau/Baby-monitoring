@@ -323,4 +323,14 @@ describe('entries timed for later', () => {
     expect(totals.bottleMl).toBe(90)
     expect(totals.bottles).toBe(1)
   })
+
+  it('describes a sleep that has not started as planned, not as minus minutes asleep', () => {
+    expect(summarizeEntry(sleep('s1', soon), NOW).title).toBe('Sleep')
+  })
+
+  it('describes a sleep with its wake-up set for later as still going', () => {
+    const summary = summarizeEntry(sleep('s1', at('10:00'), soon), NOW)
+    expect(summary.title).toMatch(/^Asleep · .* so far$/)
+    expect(summary.detail).toMatch(/^waking set for /)
+  })
 })
