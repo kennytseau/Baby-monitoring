@@ -333,4 +333,11 @@ describe('entries timed for later', () => {
     expect(summary.title).toMatch(/^Asleep · .* so far$/)
     expect(summary.detail).toMatch(/^waking set for /)
   })
+
+  it('ends a sleep the moment its wake-up is saved, not at the next clock tick', () => {
+    const justWoke = new Date(NOW.getTime() + 2000).toISOString()
+    const entry = sleep('s1', at('10:00'), justWoke)
+    expect(findOpenSleep([entry], NOW)).toBeUndefined()
+    expect(currentWakeMinutes([entry], NOW)).toBe(0)
+  })
 })

@@ -145,6 +145,16 @@ more accurate, but it also made the time slide forward minute by minute once
 she ran past it — no use for planning. Instead the time stays put and the card
 says "Any time now — 20 min past her usual wake-up".
 
+**Short naps.** A catnap isn't real rest, so the wake window after one is
+shorter. On her log, after a nap under 15 minutes she stayed up about half her
+usual, and after 15–25 minutes about seven-tenths; after anything longer, no
+different. The app learns that fraction from her own last six weeks of short
+naps (it waits until it has five) and shortens the next wind-down by it, saying
+so on the card. Scored once per short nap: typical error 32 → 20 min, and within
+30 minutes 46% → 66% of the time, improving on both halves of the data. The
+exception is when she skips the nap altogether and pushes on for two hours or
+more; the earlier time then sits at "any time now" for longer.
+
 **Amounts are different.** A bottle is the same size at 3am as at 3pm —
 bucketing by hour changes nothing — so how much she takes is simply her recent
 median. Whichever way she's been fed most often lately decides the unit.
@@ -182,8 +192,11 @@ on the same backtest:
 - **The size of the last feed** predicting how long she'd go. Raw correlation
   looked promising (r = 0.36) but it vanishes once you condition on the hour,
   and every weighting made the error worse.
-- **The sleep before a wake window, or the wake window before a sleep**
-  (r = −0.09 and −0.11 — essentially nothing).
+- **The wake window before a sleep** predicting how long the sleep lasts
+  (r = −0.11 — essentially nothing). The *sleep before a wake window* was
+  listed here too, on a similar overall correlation, but that test was
+  wrong-shaped: the effect only shows for short naps, and a few hundred long
+  sleeps drowned it out. It is now used — see *Short naps* above.
 - **A growth trend line** (Theil–Sen) for bottle size instead of the median —
   identical error at every window length.
 - **Predicting changes from feeds.** 71% of changes happen within 15 minutes of

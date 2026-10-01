@@ -93,6 +93,14 @@ export function hasHappened(entry: { time: string }, now = new Date()): boolean 
 }
 
 /**
+ * True once a sleep's wake-up has arrived. The same slack applies: a wake-up
+ * saved this very second must end the sleep straight away, not at the next tick.
+ */
+export function hasEnded(entry: SleepEntry, now = new Date()): boolean {
+  return !!entry.endTime && Date.parse(entry.endTime) <= now.getTime() + CLOCK_SLACK_MS
+}
+
+/**
  * The part of the log that has actually happened. Everything that learns from
  * her history — predictions, totals, trends — reads through this, so an entry
  * lined up for later can never teach the model something that has not occurred.
@@ -103,8 +111,7 @@ export function happenedBy<T extends { time: string }>(entries: T[], now = new D
 
 /** Minutes asleep so far; a sleep still running counts up to `now` */
 export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
-  const ended = entry.endTime && Date.parse(entry.endTime) <= now.getTime()
-  return minutesBetween(entry.time, ended ? entry.endTime! : now.toISOString())
+  return minutesBetween(entry.time, hasEnded(entry, now) ? entry.endTime! : now.toISOString())
 }
 
 /** What the session yielded — the sides when they were measured, else the combined amount */
@@ -129,7 +136,7 @@ export function startedSleeps(log: LogEntry[], now = new Date()): SleepEntry[] {
  */
 export function findOpenSleep(log: LogEntry[], now = new Date()): SleepEntry | undefined {
   return sleepsIn(log).find(
-    (e) => hasHappened(e, now) && (!e.endTime || Date.parse(e.endTime) > now.getTime()),
+    (e) => hasHappened(e, now) && !hasEnded(e, now),
   )
 }
 
@@ -177,11 +184,9 @@ export function wakeWindows(log: LogEntry[], now = new Date()): WakeWindow[] {
 /** How long the baby has been awake right now, or null if she's asleep */
 export function currentWakeMinutes(log: LogEntry[], now = new Date()): number | null {
   if (findOpenSleep(log, now)) return null
-  const lastWoke = sortedByTime(startedSleeps(log, now))
-    .map((e) => e.endTime)
-    .find((t): t is string => !!t && Date.parse(t) <= now.getTime())
+  const lastWoke = sortedByTime(startedSleeps(log, now)).find((e) => hasEnded(e, now))?.endTime
   if (!lastWoke) return null
-  return minutesBetween(lastWoke, now.toISOString())
+  return Math.max(0, minutesBetween(lastWoke, now.toISOString()))
 }
 
 export interface DayTotals {
@@ -293,7 +298,7 @@ export function summarizeEntry(entry: LogEntry, now = new Date()): EntrySummary 
       }
       const mins = sleepMinutes(entry, now)
       if (!entry.endTime) return { title: `Asleep · ${formatDuration(mins)} so far`, detail: '' }
-      if (Date.parse(entry.endTime) > now.getTime()) {
+      if (!hasEnded(entry, now)) {
         return {
           title: `Asleep · ${formatDuration(mins)} so far`,
           detail: `waking set for ${formatTime(entry.endTime)}`,

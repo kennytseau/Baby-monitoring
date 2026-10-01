@@ -54,10 +54,18 @@ export function RhythmCard() {
             ? 'Any time now'
             : `in about ${formatDuration(minutesAway)}`}
       </p>
-      <p className="tiny faint">
-        Usually {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}, from{' '}
-        {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
-      </p>
+      {prediction.afterShortNap ? (
+        <p className="tiny faint">
+          Sooner than usual: after a nap of {formatDuration(prediction.afterShortNap.napMinutes)} she
+          has been staying up about {Math.round(prediction.afterShortNap.factor * 100)}% as long. Likely{' '}
+          {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}.
+        </p>
+      ) : (
+        <p className="tiny faint">
+          Usually {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}, from{' '}
+          {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
+        </p>
+      )}
     </section>
   )
 }

@@ -162,3 +162,49 @@ describe('only what has happened', () => {
     expect(forecast.asleep).toBe(true)
   })
 })
+
+describe('after a short nap', () => {
+  /**
+   * A fortnight of mornings: a 9am nap, then a long wake window. On the
+   * seven most recent days the nap was only a 10-minute catnap, and she went
+   * back down in half the time.
+   */
+  function catnapHistory(catnapDays = 7): LogEntry[] {
+    const log: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) {
+      if (day <= catnapDays) {
+        log.push(sleep(at(day, 9, 0), 10)) // up at 9:10
+        log.push(sleep(at(day, 10, 25), 60)) // 75 min later
+      } else {
+        log.push(sleep(at(day, 9, 0), 60)) // up at 10:00
+        log.push(sleep(at(day, 12, 30), 60)) // 150 min later
+      }
+    }
+    return log
+  }
+
+  it('brings the next wind-down forward by as much as her own short naps have', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 10)]
+    const { windDown } = forecastRhythm(log, at(0, 9, 20))
+    expect(windDown!.afterShortNap).toEqual({ napMinutes: 10, factor: 0.5 })
+    expect(windDown!.at.getTime()).toBeLessThan(at(0, 10, 30).getTime())
+  })
+
+  it('leaves the wind-down alone after a proper nap', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 60)]
+    expect(forecastRhythm(log, at(0, 10, 10)).windDown!.afterShortNap).toBeUndefined()
+  })
+
+  it('does not adjust until there are enough past short naps to go on', () => {
+    const log = [...catnapHistory(3), sleep(at(0, 9, 0), 10)]
+    expect(forecastRhythm(log, at(0, 9, 20)).windDown!.afterShortNap).toBeUndefined()
+  })
+
+  it('keeps the shortened time fixed while she stays up', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 10)]
+    const times = [at(0, 9, 20), at(0, 10, 0), at(0, 11, 30)].map(
+      (now) => forecastRhythm(log, now).windDown!.at.getTime(),
+    )
+    expect(new Set(times).size).toBe(1)
+  })
+})
