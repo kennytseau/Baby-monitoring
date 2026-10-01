@@ -35,10 +35,22 @@ export function ageInMonthsFloat(birthDate: string, on: Date = new Date()): numb
   return ageInDays(birthDate, on) / DAYS_PER_MONTH
 }
 
+/**
+ * The same day `months` later. A birthday on the 29th–31st falls on the last
+ * day of any month too short to have it — born 31 January, a month old on
+ * 28 February — rather than spilling over into the next month.
+ */
+function addMonths(date: Date, months: number): Date {
+  const target = new Date(date.getFullYear(), date.getMonth() + months, 1)
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  target.setDate(Math.min(date.getDate(), lastDay))
+  return target
+}
+
 /** Completed calendar months between two dates (e.g. born Jan 15 → Mar 14 is 1 month) */
 export function calendarMonthsBetween(from: Date, to: Date): number {
   let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
-  if (to.getDate() < from.getDate()) months -= 1
+  if (addMonths(from, months) > atMidnight(to)) months -= 1
   return Math.max(0, months)
 }
 
@@ -67,9 +79,7 @@ export function formatAge(birthDate: string, on: Date = new Date()): string {
   }
   const months = ageInCalendarMonths(birthDate, on)
   if (months < 24) {
-    const birth = parseISODate(birthDate)
-    const monthsAgo = new Date(birth.getFullYear(), birth.getMonth() + months, birth.getDate())
-    const remWeeks = Math.floor(daysBetween(monthsAgo, on) / 7)
+    const remWeeks = Math.floor(daysBetween(addMonths(parseISODate(birthDate), months), on) / 7)
     return remWeeks === 0
       ? `${months} months old`
       : `${months} ${plural(months, 'month')}, ${remWeeks} ${plural(remWeeks, 'week')} old`

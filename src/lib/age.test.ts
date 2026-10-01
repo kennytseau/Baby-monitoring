@@ -33,6 +33,24 @@ describe('ageInCalendarMonths', () => {
   })
 })
 
+describe('birthdays late in the month', () => {
+  it('never shows negative weeks', () => {
+    expect(formatAge('2025-01-30', new Date(2026, 2, 1))).toBe('13 months old')
+    expect(formatAge('2025-01-31', new Date(2026, 2, 1))).toBe('13 months old')
+  })
+
+  it('counts the last day of a short month as the monthly birthday', () => {
+    expect(formatAge('2025-01-31', new Date(2025, 3, 30, 3, 22))).toBe('3 months old')
+    expect(formatAge('2025-01-29', new Date(2026, 1, 28))).toBe('13 months old')
+    expect(formatAge('2025-01-29', new Date(2026, 2, 7))).toBe('13 months, 1 week old')
+  })
+
+  it('still counts a mid-month birthday the ordinary way', () => {
+    expect(formatAge('2026-07-07', new Date(2026, 9, 1, 3, 22))).toBe('2 months, 3 weeks old')
+    expect(formatAge('2026-07-07', new Date(2026, 8, 24, 3, 22))).toBe('11 weeks, 2 days old')
+  })
+})
+
 describe('formatAge', () => {
   const birth = '2026-05-14'
   it('uses days for the first two weeks', () => {
