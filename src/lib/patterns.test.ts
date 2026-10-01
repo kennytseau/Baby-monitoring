@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estimateByHour, estimateRecent, gapSamples, hoursApart, quantile } from './patterns'
+import { estimateByHour, gapSamples, hoursApart, quantile } from './patterns'
 
 const at = (iso: string) => new Date(iso)
 
@@ -72,31 +72,5 @@ describe('estimateByHour', () => {
 
   it('has nothing to say about an empty history', () => {
     expect(estimateByHour([], from, 14)).toBeNull()
-  })
-})
-
-describe('estimateRecent', () => {
-  const from = at('2026-09-11T14:00:00')
-
-  it('ignores the hour of day, which is the point of it', () => {
-    const samples = [
-      { at: at('2026-09-10T03:00:00'), value: 40 },
-      { at: at('2026-09-10T14:00:00'), value: 60 },
-      { at: at('2026-09-11T09:00:00'), value: 50 },
-    ]
-    expect(estimateRecent(samples, from, 14)!.value).toBe(50)
-  })
-
-  it('drops anything older than the window, so a growing baby is not held back', () => {
-    const samples = [
-      { at: at('2026-07-01T14:00:00'), value: 20 },
-      { at: at('2026-07-02T14:00:00'), value: 20 },
-      { at: at('2026-09-10T14:00:00'), value: 70 },
-    ]
-    expect(estimateRecent(samples, from, 14)!.value).toBe(70)
-  })
-
-  it('has nothing to say about an empty history', () => {
-    expect(estimateRecent([], from, 14)).toBeNull()
   })
 })

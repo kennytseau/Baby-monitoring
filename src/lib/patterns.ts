@@ -94,20 +94,6 @@ export function estimateByHour(
   return summarize(pool, true, elapsedMinutes)
 }
 
-/**
- * The median of the recent past, with no regard for the hour.
- *
- * Not everything varies by time of day. Backtested on eight weeks of real
- * logs, *how much* she takes is the same at 3am as at 3pm — bucketing by hour
- * makes no difference to the error (13 ml either way for a bottle, 5 minutes
- * for a feed at the breast) — while *how long she goes between* feeds varies
- * enormously. So amounts use this and timings use `estimateByHour`.
- */
-export function estimateRecent(samples: Sample[], from: Date, historyDays: number): Estimate | null {
-  const pool = recentPool(samples, from, historyDays)
-  return pool.length === 0 ? null : summarize(pool, false)
-}
-
 function recentPool(samples: Sample[], from: Date, historyDays: number): Sample[] {
   const cutoff = from.getTime() - historyDays * 24 * 60 * MS_PER_MINUTE
   return samples.filter((s) => s.at.getTime() >= cutoff && s.at.getTime() <= from.getTime())

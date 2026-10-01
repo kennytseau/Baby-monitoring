@@ -2,6 +2,14 @@ import { useState } from 'react'
 import type { TrendSeries } from '../lib/trends'
 import { comparedToUsual } from '../lib/trends'
 import { formatDayLabel } from '../lib/format'
+import { parseISODate } from '../lib/age'
+
+/**
+ * The weekday letter under each bar. Days go through parseISODate, her local
+ * date — `new Date('YYYY-MM-DD')` is UTC midnight, the day before anywhere west
+ * of Greenwich.
+ */
+const WEEKDAY_FORMAT = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' })
 
 /**
  * One measure, one bar per day, oldest on the left.
@@ -103,7 +111,7 @@ export function TrendChart({
                 opacity={selected != null && selected !== i ? 0.55 : 1}
               />
               <text className="tc-day" x={i * slot + slot / 2} y={HEIGHT - 4} textAnchor="middle">
-                {new Date(point.day).toLocaleDateString(undefined, { weekday: 'narrow' })}
+                {WEEKDAY_FORMAT.format(parseISODate(point.day))}
               </text>
             </g>
           )

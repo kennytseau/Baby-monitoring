@@ -62,10 +62,18 @@ interface WakeRow {
 }
 type TimelineRow = { kind: 'entry'; id: string; time: string; entry: LogEntry } | WakeRow
 
+/**
+ * Days of history drawn at once. Each day is a timeline, its totals and every
+ * entry; drawing all of a two-month log took seven seconds on a phone and had
+ * to be redrawn on every tap, so earlier days load on request.
+ */
+const DAYS_PER_PAGE = 7
+
 export function DailyLog() {
   const { state, addLog, updateLog, deleteLog } = useAppState()
   const now = useNow(30_000)
   const [formOpen, setFormOpen] = useState(false)
+  const [dayCount, setDayCount] = useState(DAYS_PER_PAGE)
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const [type, setType] = useState<LogEntryType>('feed')
@@ -472,7 +480,7 @@ export function DailyLog() {
         <div className="empty">Nothing logged yet — the buttons above make it a one-tap job.</div>
       )}
 
-      {days.map(({ day, entries, rows }) => (
+      {days.slice(0, dayCount).map(({ day, entries, rows }) => (
         <section key={day} className="stack">
           <div className="day-divider">{formatDayLabel(day)}</div>
           <DayTimeline day={day} entries={entries} now={now} />
@@ -497,6 +505,12 @@ export function DailyLog() {
           </div>
         </section>
       ))}
+
+      {days.length > dayCount && (
+        <button className="btn btn-block" onClick={() => setDayCount((n) => n + DAYS_PER_PAGE)}>
+          Show earlier days ({days.length - dayCount} more)
+        </button>
+      )}
     </main>
   )
 }

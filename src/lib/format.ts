@@ -27,9 +27,16 @@ export function todayISO(): string {
 }
 
 /** "13:05" from an ISO datetime or a Date */
+/*
+ * One formatter each, made once. toLocaleTimeString builds a new one on every
+ * call, which is most of the cost of drawing a long day of entries.
+ */
+const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
+const DATE_FORMAT = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+const DAY_LABEL_FORMAT = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+
 export function formatTime(at: string | Date): string {
-  const date = typeof at === 'string' ? new Date(at) : at
-  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  return TIME_FORMAT.format(typeof at === 'string' ? new Date(at) : at)
 }
 
 /** Day portion (YYYY-MM-DD) of an ISO datetime or date */
@@ -48,19 +55,11 @@ export function formatDayLabel(isoDay: string): string {
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   if (isoDay === toISODate(yesterday)) return 'Yesterday'
-  return parseISODate(isoDay).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  })
+  return DAY_LABEL_FORMAT.format(parseISODate(isoDay))
 }
 
 export function formatDate(isoDay: string): string {
-  return parseISODate(isoDay).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return DATE_FORMAT.format(parseISODate(isoDay))
 }
 
 /** "1 h 25 m" from minutes */
