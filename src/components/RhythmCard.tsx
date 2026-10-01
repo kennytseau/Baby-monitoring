@@ -29,10 +29,10 @@ export function RhythmCard() {
   const prediction = forecast.wakeUp ?? forecast.windDown
   if (!prediction) return null
 
-  // The estimate counts the time she has already been down or awake, so it
-  // only lands in the past when the log has not been kept up.
+  // The time is fixed when the sleep or wake window begins and does not move,
+  // so once it has gone by the card says so rather than chasing the clock.
   const minutesAway = (prediction.at.getTime() - now.getTime()) / 60_000
-  const overdue = minutesAway <= -IMMINENT_MINUTES
+  const passed = minutesAway <= -IMMINENT_MINUTES
 
   return (
     <section className="card rhythm-card" aria-live="polite">
@@ -46,12 +46,12 @@ export function RhythmCard() {
 
       <p className="rhythm-time">{formatTime(prediction.at)}</p>
       <p className="small">
-        {overdue
-          ? forecast.asleep
-            ? `Any time now — ${formatDuration(-minutesAway)} past her usual`
-            : `Wind-down window opened ${formatDuration(-minutesAway)} ago`
+        {passed
+          ? `Any time now — ${formatDuration(-minutesAway)} past ${
+              forecast.asleep ? 'her usual wake-up' : 'her usual wind-down'
+            }`
           : minutesAway < IMMINENT_MINUTES
-            ? 'any time now'
+            ? 'Any time now'
             : `in about ${formatDuration(minutesAway)}`}
       </p>
       <p className="tiny faint">

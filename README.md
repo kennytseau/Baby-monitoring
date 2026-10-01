@@ -132,13 +132,18 @@ eight weeks of real logs said it earned its place.
 Past stretches are bucketed by the hour they began, the bucket widened until
 there are at least five, and the median taken.
 
-**Time already served.** This matters more than anything else. Once she has
-been asleep fifty minutes, "how long does she nap at 2pm?" is the wrong
-question — the right one is "how long do the 2pm naps that got past fifty
-minutes last?", which is a different and longer answer. Only the past stretches
-that got at least this far are counted, so the estimate moves out as you wait
-instead of going stale, and it can never point at a time that has already
-passed.
+**Time already served** (feeds and changes). Once she has gone two hours
+without a feed, "how long does she go at 2pm?" is the wrong question — the
+right one is "how long do the 2pm stretches that got past two hours last?",
+which is a different and longer answer. Only the past stretches that got at
+least this far are counted, so the "in about…" keeps up as you wait.
+
+**Fixed times** (wake-up and wind-down). These show a clock time to plan
+around, so they are worked out once, when the sleep or wake window begins, and
+then left alone. Counting the time already served would make them a little
+more accurate, but it also made the time slide forward minute by minute once
+she ran past it — no use for planning. Instead the time stays put and the card
+says "Any time now — 20 min past her usual wake-up".
 
 **Amounts are different.** A bottle is the same size at 3am as at 3pm —
 bucketing by hour changes nothing — so how much she takes is simply her recent
@@ -149,8 +154,8 @@ wait, against what happened next:
 
 | Prediction | Median error | Within 30 min | Before time-served was counted |
 | --- | --- | --- | --- |
-| When she'll wake | 22 min | 63% | 26 min |
-| Next wind-down | 15 min | 80% | 17.5 min |
+| When she'll wake (fixed time) | 25 min | 56% | — |
+| Next wind-down (fixed time) | 17 min | 72% | — |
 | Next feed | 30 min | 51% | 41 min |
 | Next change | 38 min | 41% | 45 min |
 | Size of a bottle | 10 ml | 83% (within 30 ml) | — |
