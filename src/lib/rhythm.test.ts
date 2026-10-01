@@ -86,23 +86,31 @@ describe('forecastRhythm', () => {
     expect(wakeUp!.earliest.getTime()).toBeLessThan(wakeUp!.latest.getTime())
   })
 
-  it('counts the sleep she has already had, so the guess moves out as it runs on', () => {
-    // Naps of 40 to 80 minutes. An hour in, the 40s and 50s can no longer happen.
+  it('keeps the same wake-up time for the whole sleep, however long she stays down', () => {
     const history: LogEntry[] = []
     for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 40 + (day % 5) * 10))
     const open = sleep(at(0, 13, 0), null)
-    const atStart = forecastRhythm([...history, open], at(0, 13, 1))
-    const anHourIn = forecastRhythm([...history, open], at(0, 14, 0))
-    expect(anHourIn.wakeUp!.at.getTime()).toBeGreaterThan(atStart.wakeUp!.at.getTime())
+    const times = [at(0, 13, 1), at(0, 13, 45), at(0, 14, 30), at(0, 16, 0)].map(
+      (now) => forecastRhythm([...history, open], now).wakeUp!.at.getTime(),
+    )
+    expect(new Set(times).size).toBe(1)
   })
 
-  it('never says she will wake at a time that has already passed', () => {
+  it('leaves a missed wake-up time where it was rather than rolling it forward', () => {
     const history: LogEntry[] = []
     for (let day = 1; day <= 14; day += 1) history.push(sleep(at(day, 13, 0), 60))
     // Still asleep two hours into a nap she usually finishes in one.
-    const now = at(0, 15, 0)
-    const { wakeUp } = forecastRhythm([...history, sleep(at(0, 13, 0), null)], now)
-    expect(wakeUp!.at.getTime()).toBeGreaterThanOrEqual(now.getTime())
+    const { wakeUp } = forecastRhythm([...history, sleep(at(0, 13, 0), null)], at(0, 15, 0))
+    expect(wakeUp!.at.getHours()).toBe(14)
+    expect(wakeUp!.at.getMinutes()).toBe(0)
+  })
+
+  it('keeps the same wind-down time for the whole wake window', () => {
+    const log = [...steadyHistory(), sleep(at(0, 13, 0), 60)] // woke 14:00
+    const times = [at(0, 14, 5), at(0, 15, 0), at(0, 16, 0)].map(
+      (now) => forecastRhythm(log, now).windDown!.at.getTime(),
+    )
+    expect(new Set(times).size).toBe(1)
   })
 
   it('uses the hour of day, so a morning nap is not predicted from evening ones', () => {
@@ -146,5 +154,57 @@ describe('only what has happened', () => {
     const forecast = forecastRhythm([...steadyHistory(), open], NOW)
     expect(forecast.asleep).toBe(true)
     expect(forecast.wakeUp).toBeDefined()
+  })
+
+  it('switches to asleep the moment a sleep is saved, not at the next clock tick', () => {
+    const justSaved = sleep(new Date(NOW.getTime() + 800), null)
+    const forecast = forecastRhythm([...steadyHistory(), justSaved], NOW)
+    expect(forecast.asleep).toBe(true)
+  })
+})
+
+describe('after a short nap', () => {
+  /**
+   * A fortnight of mornings: a 9am nap, then a long wake window. On the
+   * seven most recent days the nap was only a 10-minute catnap, and she went
+   * back down in half the time.
+   */
+  function catnapHistory(catnapDays = 7): LogEntry[] {
+    const log: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) {
+      if (day <= catnapDays) {
+        log.push(sleep(at(day, 9, 0), 10)) // up at 9:10
+        log.push(sleep(at(day, 10, 25), 60)) // 75 min later
+      } else {
+        log.push(sleep(at(day, 9, 0), 60)) // up at 10:00
+        log.push(sleep(at(day, 12, 30), 60)) // 150 min later
+      }
+    }
+    return log
+  }
+
+  it('brings the next wind-down forward by as much as her own short naps have', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 10)]
+    const { windDown } = forecastRhythm(log, at(0, 9, 20))
+    expect(windDown!.afterShortNap).toEqual({ napMinutes: 10, factor: 0.5 })
+    expect(windDown!.at.getTime()).toBeLessThan(at(0, 10, 30).getTime())
+  })
+
+  it('leaves the wind-down alone after a proper nap', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 60)]
+    expect(forecastRhythm(log, at(0, 10, 10)).windDown!.afterShortNap).toBeUndefined()
+  })
+
+  it('does not adjust until there are enough past short naps to go on', () => {
+    const log = [...catnapHistory(3), sleep(at(0, 9, 0), 10)]
+    expect(forecastRhythm(log, at(0, 9, 20)).windDown!.afterShortNap).toBeUndefined()
+  })
+
+  it('keeps the shortened time fixed while she stays up', () => {
+    const log = [...catnapHistory(), sleep(at(0, 9, 0), 10)]
+    const times = [at(0, 9, 20), at(0, 10, 0), at(0, 11, 30)].map(
+      (now) => forecastRhythm(log, now).windDown!.at.getTime(),
+    )
+    expect(new Set(times).size).toBe(1)
   })
 })
