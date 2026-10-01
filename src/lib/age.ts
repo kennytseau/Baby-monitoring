@@ -35,10 +35,22 @@ export function ageInMonthsFloat(birthDate: string, on: Date = new Date()): numb
   return ageInDays(birthDate, on) / DAYS_PER_MONTH
 }
 
+/**
+ * The same day `months` later. A birthday on the 29th–31st falls on the last
+ * day of any month too short to have it — born 31 January, a month old on
+ * 28 February — rather than spilling over into the next month.
+ */
+function addMonths(date: Date, months: number): Date {
+  const target = new Date(date.getFullYear(), date.getMonth() + months, 1)
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate()
+  target.setDate(Math.min(date.getDate(), lastDay))
+  return target
+}
+
 /** Completed calendar months between two dates (e.g. born Jan 15 → Mar 14 is 1 month) */
 export function calendarMonthsBetween(from: Date, to: Date): number {
   let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
-  if (to.getDate() < from.getDate()) months -= 1
+  if (addMonths(from, months) > atMidnight(to)) months -= 1
   return Math.max(0, months)
 }
 
@@ -46,10 +58,13 @@ export function ageInCalendarMonths(birthDate: string, on: Date = new Date()): n
   return calendarMonthsBetween(parseISODate(birthDate), atMidnight(on))
 }
 
+/** Shown in weeks and days until 16 weeks, then in months */
+const WEEKS_UNTIL_DAYS = 16 * 7
+
 /**
  * Human-friendly age:
  *  - under 2 weeks: "11 days old"
- *  - under 12 weeks: "6 weeks, 3 days old"
+ *  - under 16 weeks: "12 weeks, 2 days old"
  *  - under 24 months: "7 months, 2 weeks old"
  *  - after that: "2 years, 3 months old"
  */
@@ -58,7 +73,10 @@ export function formatAge(birthDate: string, on: Date = new Date()): string {
   if (days < 0) return 'not born yet'
   if (days === 0) return 'born today 🎉'
   if (days < 14) return `${days} ${plural(days, 'day')} old`
-  if (days < 84) {
+  // Weeks for longer than months would suggest: at 2 months a month is not
+  // four weeks, so "2 months, 3 weeks" reads as 11 weeks to most people when
+  // she is really 12 — and weeks are how parents and clinics count this early.
+  if (days < WEEKS_UNTIL_DAYS) {
     const weeks = Math.floor(days / 7)
     const rem = days % 7
     return rem === 0
@@ -67,9 +85,7 @@ export function formatAge(birthDate: string, on: Date = new Date()): string {
   }
   const months = ageInCalendarMonths(birthDate, on)
   if (months < 24) {
-    const birth = parseISODate(birthDate)
-    const monthsAgo = new Date(birth.getFullYear(), birth.getMonth() + months, birth.getDate())
-    const remWeeks = Math.floor(daysBetween(monthsAgo, on) / 7)
+    const remWeeks = Math.floor(daysBetween(addMonths(parseISODate(birthDate), months), on) / 7)
     return remWeeks === 0
       ? `${months} months old`
       : `${months} ${plural(months, 'month')}, ${remWeeks} ${plural(remWeeks, 'week')} old`

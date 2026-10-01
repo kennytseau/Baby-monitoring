@@ -52,6 +52,27 @@ describe('forecastNeeds', () => {
     expect(forecastNeeds(log, NOW).feed!.serving).toEqual({ unit: 'ml', value: 70 })
   })
 
+  it('counts a top-up as part of the feed it belongs to', () => {
+    // Every feed is a 60 ml bottle and a 30 ml top-up ten minutes later.
+    const log = history(180, 30).flatMap((e) =>
+      e.type === 'feed' ? [feed(new Date(e.time), 60), feed(new Date(Date.parse(e.time) + 10 * 60_000), 30)] : [e],
+    )
+    expect(forecastNeeds(log, new Date(NOW.getTime() + 15 * 60_000)).feed!.serving).toEqual({ unit: 'ml', value: 90 })
+  })
+
+  it('reads the amount at the hour the next feed is due', () => {
+    // Big feeds by day, small ones overnight.
+    const sized = (e: LogEntry) => {
+      const hour = new Date(e.time).getHours()
+      return feed(new Date(e.time), hour >= 6 && hour < 18 ? 120 : 60)
+    }
+    const day = history(180, 30).map(sized) // NOW is 14:00, so the next feed is due mid-afternoon
+    expect(forecastNeeds(day, NOW).feed!.serving).toEqual({ unit: 'ml', value: 120 })
+    const nightNow = new Date(NOW.getTime() + 12 * 60 * 60_000) // 02:00
+    const night = history(180, 30).map((e) => sized({ ...e, time: new Date(Date.parse(e.time) + 12 * 60 * 60_000).toISOString() }))
+    expect(forecastNeeds(night, nightNow).feed!.serving).toEqual({ unit: 'ml', value: 60 })
+  })
+
   it('follows the recent fortnight for the amount too, so growth shows', () => {
     const log: LogEntry[] = []
     for (let day = 0; day < 7; day += 1) {

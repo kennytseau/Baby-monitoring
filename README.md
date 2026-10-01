@@ -45,6 +45,8 @@ still with no accounts and nothing sold or tracked.
   - Each day gets a 24-hour strip (sleep as bars, feeds / nappies / pumping as
     marks) plus totals: milk in, nursing minutes per side, nappies by type,
     total and longest sleep, and how much was pumped.
+  - The last week is shown, with earlier days a tap away — drawing two months
+    at once took seven seconds on a phone.
 - **Memories** — dated journal entries for the firsts (first smile, first
   laugh…), each shown with how old she was at the time.
 - **Shared log** — one phone creates the shared log and shows a family code;
@@ -155,9 +157,12 @@ so on the card. Scored once per short nap: typical error 32 → 20 min, and with
 exception is when she skips the nap altogether and pushes on for two hours or
 more; the earlier time then sits at "any time now" for longer.
 
-**Amounts are different.** A bottle is the same size at 3am as at 3pm —
-bucketing by hour changes nothing — so how much she takes is simply her recent
-median. Whichever way she's been fed most often lately decides the unit.
+**Amounts are counted per feed.** A top-up given within the same feed is part
+of it. Counted bottle by bottle, her top-ups after nursing (about 55 ml lately)
+and her full bottle feeds (85–100 ml) averaged out to a figure that fitted
+neither. Per feed, the time of day matters, so the amount is her median at the
+hour the next feed is due. Whichever way she's been fed most often lately
+decides the unit.
 
 Scored the way the card is actually read — re-asked every quarter hour of every
 wait, against what happened next:
@@ -168,7 +173,7 @@ wait, against what happened next:
 | Next wind-down (fixed time) | 17 min | 72% | — |
 | Next feed | 30 min | 51% | 41 min |
 | Next change | 38 min | 41% | 45 min |
-| Size of a bottle | 10 ml | 83% (within 30 ml) | — |
+| Size of the next feed | 15 ml | 75% (within 30 ml) | 20 ml, when counted per bottle |
 
 Two consequences worth knowing. It only ever learns from the **last two or
 three weeks**, so as she grows the estimates move with her — over those eight
@@ -203,6 +208,14 @@ on the same backtest:
   a feed, but she's fed about twice as often as she's changed, so "the next
   feed" is a much worse guess (163 min vs 44) and snapping the gap estimate to
   a predicted feed is worse still (59 min vs 38).
+- **A shorter window for amounts** (3–10 days instead of 14), to keep up with
+  a growing baby — no better.
+- **Learning the nap-length effect for every nap**, not just short ones. After
+  a 40–90 minute nap she does stay up about 9% longer, but using it made
+  wind-down slightly worse (16.0 → 16.1 min).
+- **Time awake before a sleep, or a feed just before it**, predicting how long
+  she sleeps. Neither held up: the halves of the data disagreed, and she is
+  fed before nearly every sleep, so there is nothing to compare against.
 - **Tuning the history window, bucket width and minimum sample count.** The
   differences across ninety-odd combinations were around a minute — noise at
   this sample size — so the defaults stayed put.

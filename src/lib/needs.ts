@@ -1,6 +1,6 @@
 import type { FeedEntry, LogEntry } from './types'
-import { findOpenSleep, happenedBy } from './log'
-import { estimateByHour, estimateRecent, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patterns'
+import { findOpenSleep, happenedBy, sortedByTime } from './log'
+import { estimateByHour, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patterns'
 
 /**
  * When the next feed and the next change are likely, and how much she will
@@ -14,10 +14,9 @@ import { estimateByHour, estimateRecent, gapSamples, MIN_SAMPLES, MS_PER_MINUTE 
  *  - *When.* How long she goes between feeds swings enormously across a day,
  *    so this is bucketed by hour and narrowed by how long she has already gone
  *    (see `patterns.ts`).
- *  - *How much.* A bottle is the same size at 3am as at 3pm — bucketing by
- *    hour changes nothing — so amounts are simply her recent median. Her own
- *    numbers climbed 25 → 70 ml over eight weeks, which is the whole reason for
- *    a rolling window.
+ *  - *How much.* Counted per feed, top-ups included, at the hour the next
+ *    one is due (see `servingFor`). Her own feeds climbed 25 → 70 ml over
+ *    eight weeks, which is the whole reason for a rolling window.
  *
  * Both are shown as "about", with the last one and her usual spread underneath,
  * because errors that size are a nudge and not a timetable.
@@ -77,7 +76,7 @@ export interface NeedsForecast {
 }
 
 /** When the next one is due, from how long she has been going lately at this hour */
-function needFor(kind: NeedKind, times: string[], now: Date, serving?: Serving): Need | null {
+function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
   const parsed = times.map((t) => Date.parse(t)).filter(Number.isFinite)
   if (parsed.length === 0) return null
 
@@ -109,28 +108,44 @@ function needFor(kind: NeedKind, times: string[], now: Date, serving?: Serving):
     usual: estimated.value,
     shortest: estimated.low,
     longest: estimated.high,
-    serving,
     approximate: estimated.approximate,
   }
 }
 
 /**
- * How much the next feed is likely to be. Whichever way she has been fed most
- * often lately is the one worth predicting — there is no use offering
- * millilitres to someone who nurses.
+ * How much the next feed is likely to be, at the hour it is due.
+ *
+ * Counted per feed, not per bottle: a top-up given within the same feed is
+ * part of it. Read per bottle, her top-ups after nursing (about 55 ml lately)
+ * and her full bottle feeds (85–100 ml) averaged out to a figure that fitted
+ * neither. Per feed, the time of day matters too — backtested on her log, the
+ * median at that hour misses by about 15 ml against 20 for one figure all day,
+ * and halves the error on the more recent weeks.
+ *
+ * Whichever way she has been fed most often lately decides the unit — there is
+ * no use offering millilitres to someone who nurses.
  */
-function servingFor(feeds: FeedEntry[], now: Date): Serving | undefined {
-  const bottles = feeds
-    .filter((f) => typeof f.amountMl === 'number' && f.amountMl > 0)
-    .map((f) => ({ at: new Date(f.time), value: f.amountMl! }))
-  const nursing = feeds
-    .filter((f) => f.kind === 'nursing')
-    .map((f) => ({ at: new Date(f.time), value: (f.leftMinutes ?? 0) + (f.rightMinutes ?? 0) }))
-    .filter((s) => s.value > 0)
+function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
+  const events: { at: Date; ml: number; minutes: number }[] = []
+  for (const f of sortedByTime(feeds, 'asc')) {
+    const time = new Date(f.time)
+    const ml = f.amountMl && f.amountMl > 0 ? f.amountMl : 0
+    const minutes = f.kind === 'nursing' ? (f.leftMinutes ?? 0) + (f.rightMinutes ?? 0) : 0
+    const last = events[events.length - 1]
+    if (last && (time.getTime() - last.at.getTime()) / MS_PER_MINUTE < SAME_EVENT_MINUTES) {
+      last.ml += ml
+      last.minutes += minutes
+    } else {
+      events.push({ at: time, ml, minutes })
+    }
+  }
+  const bottles = events.filter((e) => e.ml > 0).map((e) => ({ at: e.at, value: e.ml }))
+  const nursing = events
+    .filter((e) => e.ml === 0 && e.minutes > 0)
+    .map((e) => ({ at: e.at, value: e.minutes }))
 
-  const usual = bottles.length >= nursing.length ? bottles : nursing
   const unit = bottles.length >= nursing.length ? 'ml' : 'min'
-  const estimated = estimateRecent(usual, now, HISTORY_DAYS)
+  const estimated = estimateByHour(unit === 'ml' ? bottles : nursing, at, HISTORY_DAYS)
   if (!estimated || estimated.samples < MIN_SAMPLES) return undefined
   return { unit, value: Math.max(SERVING_STEP, Math.round(estimated.value / SERVING_STEP) * SERVING_STEP) }
 }
@@ -143,8 +158,8 @@ export function forecastNeeds(allEntries: LogEntry[], now = new Date()): NeedsFo
     'feed',
     feeds.map((e) => e.time),
     now,
-    servingFor(feeds, now),
   )
+  if (feed) feed.serving = servingFor(feeds, feed.at)
   const nappy = needFor(
     'nappy',
     log.filter((e) => e.type === 'nappy').map((e) => e.time),

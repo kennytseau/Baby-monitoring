@@ -18,6 +18,7 @@ import {
 } from '../lib/sync'
 import type { Collection } from '../lib/sync'
 import { MAX_CHANGES_PER_PUSH, SyncError, createHousehold, pushPull } from '../lib/syncClient'
+import { todayISO } from '../lib/format'
 
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error'
 
@@ -110,7 +111,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `baby-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`
+    // Her local date: the UTC one is still yesterday before 10am in Sydney.
+    a.download = `baby-tracker-backup-${todayISO()}.json`
     a.click()
     URL.revokeObjectURL(url)
   }, [])
