@@ -35,7 +35,7 @@ export function NeedsCard() {
       {forecast.feed && <NeedRow need={forecast.feed} asleep={forecast.asleep} />}
       {forecast.nappy && <NeedRow need={forecast.nappy} asleep={forecast.asleep} />}
       <p className="tiny faint" style={{ marginTop: 8 }}>
-        From her own last fortnight — how long she goes at this hour, and how much she has been
+        From her own last week or two — how long she goes at this hour, and how much she has been
         taking — so it moves as she grows. A guide, not a schedule.
         {rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
       </p>

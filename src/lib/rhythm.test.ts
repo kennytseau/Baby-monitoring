@@ -49,6 +49,18 @@ describe('sleepBlocks', () => {
 })
 
 describe('forecastRhythm', () => {
+  it('can be narrowed to her last few days, for when her sleep has just changed', () => {
+    // Ten days of 60 minute naps at 13:00, then four of 120 minutes
+    const log: LogEntry[] = []
+    for (let day = 5; day <= 14; day += 1) log.push(sleep(at(day, 13, 0), 60))
+    for (let day = 1; day <= 4; day += 1) log.push(sleep(at(day, 13, 0), 120))
+    const open = sleep(at(0, 13, 0), null)
+    const minutes = (days?: number) =>
+      (forecastRhythm([...log, open], NOW, days).wakeUp!.at.getTime() - at(0, 13, 0).getTime()) / 60_000
+    expect(minutes()).toBe(60)
+    expect(minutes(5)).toBe(120)
+  })
+
   it('says nothing useful until there is history', () => {
     const forecast = forecastRhythm([], NOW)
     expect(forecast.wakeUp).toBeUndefined()

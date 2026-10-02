@@ -392,5 +392,39 @@ export function finishNursing(entry: FeedEntry, now = new Date()): FeedEntry {
 /** A fresh nursing session with the timer already running on `side` */
 export function startNursingSession(id: string, side: BreastSide, now = new Date()): FeedEntry {
   const iso = now.toISOString()
-  return { id, type: 'feed', kind: 'nursing', time: iso, activeSide: side, sideStartedAt: iso }
+  return { id, type: 'feed', kind: 'nursing', time: iso, activeSide: side, sideStartedAt: iso, startSide: side }
+}
+
+const OTHER_SIDE: Record<BreastSide, BreastSide> = { left: 'right', right: 'left' }
+
+export interface SideSuggestion {
+  side: BreastSide
+  /** Why, in the words shown under the buttons */
+  because: string
+  /** When the feed it is based on began */
+  lastAt: string
+}
+
+/**
+ * Which side to start the next feed on: the other one from where the last feed
+ * started. Feeds logged before the start side was recorded fall back to what
+ * they do show — the only side used, or else the side that got less time.
+ */
+export function suggestNursingSide(log: LogEntry[], now = new Date()): SideSuggestion | null {
+  const last = sortedByTime(happenedBy(log, now).filter(isNursing))[0]
+  if (!last) return null
+  if (last.startSide) {
+    return { side: OTHER_SIDE[last.startSide], because: `she started on the ${last.startSide} last time`, lastAt: last.time }
+  }
+  const left = last.leftMinutes ?? 0
+  const right = last.rightMinutes ?? 0
+  if (left > 0 && right === 0) return { side: 'right', because: 'she fed on the left last time', lastAt: last.time }
+  if (right > 0 && left === 0) return { side: 'left', because: 'she fed on the right last time', lastAt: last.time }
+  if (left === right) return null
+  const less: BreastSide = left < right ? 'left' : 'right'
+  return {
+    side: less,
+    because: `the ${less} got less time last feed (L ${Math.round(left)} m · R ${Math.round(right)} m)`,
+    lastAt: last.time,
+  }
 }

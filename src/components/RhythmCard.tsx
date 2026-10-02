@@ -1,6 +1,8 @@
 import { useAppState } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
+import { usePatterns } from '../hooks/usePatterns'
 import { forecastRhythm } from '../lib/rhythm'
+import { sleepHistoryDays } from '../lib/changes'
 import { formatDuration, formatTime } from '../lib/format'
 
 /** Closer than this and "in about 3 minutes" is a precision the data does not have */
@@ -10,12 +12,14 @@ const IMMINENT_MINUTES = 5
  * The next thing to expect, at the top of Home: when she is likely to wake, or
  * when she is likely to be ready to go down. Both are read off her own logged
  * rhythm at this time of day, and both come with the range they were drawn
- * from — a baby is not a train timetable.
+ * from — a baby is not a train timetable. While her sleep is changing, it
+ * learns only from the days since the change began.
  */
 export function RhythmCard() {
   const { state } = useAppState()
   const now = useNow(30_000)
-  const forecast = forecastRhythm(state.log, now)
+  const historyDays = sleepHistoryDays(usePatterns().changes)
+  const forecast = forecastRhythm(state.log, now, historyDays)
 
   if (forecast.reason) {
     return (
@@ -64,6 +68,11 @@ export function RhythmCard() {
         <p className="tiny faint">
           Usually {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}, from{' '}
           {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
+        </p>
+      )}
+      {historyDays && (
+        <p className="tiny faint">
+          Her sleep has changed lately, so this goes by her last {historyDays} days only.
         </p>
       )}
     </section>

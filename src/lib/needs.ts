@@ -6,10 +6,10 @@ import { estimateByHour, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patter
  * When the next feed and the next change are likely, and how much she will
  * probably take.
  *
- * Everything here is read off her own last fortnight, never a chart of what a
+ * Everything here is read off her own last week or two, never a chart of what a
  * baby that age "should" do, which is what makes it keep up as she grows. Two
  * different questions, answered two different ways, both settled by backtest
- * against eight weeks of real logs:
+ * against her real logs:
  *
  *  - *When.* How long she goes between feeds swings enormously across a day,
  *    so this is bucketed by hour and narrowed by how long she has already gone
@@ -23,11 +23,18 @@ import { estimateByHour, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patter
  */
 
 /** Entries closer together than this are one feed or one change, not two */
-const SAME_EVENT_MINUTES = 45
+export const SAME_EVENT_MINUTES = 45
 /** A stretch longer than this is missing data, not a habit */
 const MAX_GAP_MINUTES = 8 * 60
-/** How far back to learn from — a fortnight won the backtest for all of it */
-const HISTORY_DAYS = 14
+/**
+ * How far back to learn from, settled by backtest on her log to 2 October and
+ * on a simulated baby. For timing a fortnight stays: ten days tied on her log
+ * but was 4 minutes worse on the simulation, where fewer stretches mean more
+ * noise. For amounts a week tied or did slightly better on both, so the more
+ * recent won — her feeds grow fast at this age.
+ */
+const TIMING_HISTORY_DAYS = 14
+const AMOUNT_HISTORY_DAYS = 7
 /** Within this much of her usual stretch, it is coming up rather than a while off */
 const SOON_MINUTES = 20
 /** This close, "in about 4 minutes" is a false precision; it is simply about now */
@@ -88,7 +95,7 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
   const since = (now.getTime() - lastAt.getTime()) / MS_PER_MINUTE
   // How long she has already gone narrows it down; beyond the cap the log has
   // simply not been kept up, and there is nothing sensible left to condition on.
-  const estimated = estimateByHour(samples, lastAt, HISTORY_DAYS, Math.min(since, MAX_GAP_MINUTES))
+  const estimated = estimateByHour(samples, lastAt, TIMING_HISTORY_DAYS, Math.min(since, MAX_GAP_MINUTES))
   if (!estimated) return null
 
   const dueIn = estimated.value - since
@@ -145,7 +152,7 @@ function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
     .map((e) => ({ at: e.at, value: e.minutes }))
 
   const unit = bottles.length >= nursing.length ? 'ml' : 'min'
-  const estimated = estimateByHour(unit === 'ml' ? bottles : nursing, at, HISTORY_DAYS)
+  const estimated = estimateByHour(unit === 'ml' ? bottles : nursing, at, AMOUNT_HISTORY_DAYS)
   if (!estimated || estimated.samples < MIN_SAMPLES) return undefined
   return { unit, value: Math.max(SERVING_STEP, Math.round(estimated.value / SERVING_STEP) * SERVING_STEP) }
 }

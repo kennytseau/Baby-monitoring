@@ -16,6 +16,7 @@ import {
   sideMinutes,
   sleepMinutes,
   startNursingSession,
+  suggestNursingSide,
   summarizeEntry,
   switchNursingSide,
   wakeWindows,
@@ -339,5 +340,41 @@ describe('entries timed for later', () => {
     const entry = sleep('s1', at('10:00'), justWoke)
     expect(findOpenSleep([entry], NOW)).toBeUndefined()
     expect(currentWakeMinutes([entry], NOW)).toBe(0)
+  })
+})
+
+describe('which side to start on', () => {
+  it('records the side a feed starts on', () => {
+    expect(startNursingSession('f1', 'right', NOW).startSide).toBe('right')
+  })
+
+  it('suggests the other side from where the last feed started', () => {
+    const last = nursing({ id: 'f1', time: at('09:00'), startSide: 'right', leftMinutes: 12, rightMinutes: 10 })
+    expect(suggestNursingSide([last], NOW)).toMatchObject({ side: 'left', because: 'she started on the right last time' })
+  })
+
+  it('goes by the latest feed, not an older one', () => {
+    const older = nursing({ id: 'f1', time: at('06:00'), startSide: 'left' })
+    const newer = nursing({ id: 'f2', time: at('09:00'), startSide: 'right' })
+    expect(suggestNursingSide([newer, older], NOW)?.side).toBe('left')
+  })
+
+  it('falls back to the only side used, for feeds logged before start sides were kept', () => {
+    expect(suggestNursingSide([nursing({ id: 'f1', time: at('09:00'), leftMinutes: 15 })], NOW)?.side).toBe('right')
+  })
+
+  it('else suggests the side that got less time', () => {
+    const last = nursing({ id: 'f1', time: at('09:00'), leftMinutes: 8, rightMinutes: 12 })
+    expect(suggestNursingSide([last], NOW)).toMatchObject({ side: 'left' })
+  })
+
+  it('makes no suggestion it cannot back up', () => {
+    expect(suggestNursingSide([nursing({ id: 'f1', time: at('09:00'), leftMinutes: 10, rightMinutes: 10 })], NOW)).toBeNull()
+    expect(suggestNursingSide([], NOW)).toBeNull()
+  })
+
+  it('ignores a feed set for later', () => {
+    const planned = nursing({ id: 'f1', time: new Date(NOW.getTime() + 3600_000).toISOString(), startSide: 'left' })
+    expect(suggestNursingSide([planned], NOW)).toBeNull()
   })
 })

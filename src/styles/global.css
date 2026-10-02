@@ -625,10 +625,10 @@ a { color: var(--accent-text); }
 /* ---------- Day timeline ---------- */
 .day-timeline { width: 100%; height: auto; display: block; }
 .dt-track { fill: var(--surface-2); }
-.dt-sleep { fill: var(--accent); opacity: 0.75; }
+.dt-sleep { fill: var(--chart-sleep); }
 .dt-grid { stroke: var(--border); stroke-width: 1; }
 .dt-tick { fill: var(--text-faint); font-size: 16px; }
-.dt-feed { fill: var(--accent-strong); }
+.dt-feed { fill: var(--chart-feed); stroke: var(--surface); stroke-width: 2; }
 .dt-nappy { fill: var(--good); }
 .dt-pump { fill: var(--cat-cognitive); }
 .dt-medication { fill: var(--cat-motor); }
@@ -640,3 +640,110 @@ a { color: var(--accent-text); }
   color: var(--text-muted);
   font-weight: 600;
 }
+
+/* ---------- Sleep and feeds across days ---------- */
+/*
+ * Sleep and feed keep one colour each wherever they are drawn. Each pair is
+ * checked with the palette validator against its own surface: light, dark and
+ * night all pass the lightness band, colour-blind separation and 3:1 contrast.
+ */
+:root {
+  --chart-sleep: #5b54b8;
+  --chart-feed: #c96f4f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-sleep: #9085e9;
+    --chart-feed: #cf7552;
+  }
+}
+.sp-svg { width: 100%; height: auto; display: block; margin-top: 8px; touch-action: pan-y; }
+.sp-grid { stroke: var(--border); stroke-width: 1; }
+.sp-tick { fill: var(--text-faint); font-size: 9px; }
+.sp-day { fill: var(--text-muted); font-size: 10px; }
+.sp-day-today { fill: var(--text); font-weight: 700; }
+.sp-track { fill: var(--surface-2); }
+.sp-sleep { fill: var(--chart-sleep); }
+.sp-feed { fill: var(--chart-feed); stroke: var(--surface); stroke-width: 2; }
+.sp-on { stroke: var(--text); stroke-width: 2; }
+.sp-now { stroke: var(--text-muted); stroke-width: 1.5; }
+.sp-legend { display: flex; gap: 10px; }
+.sp-key { display: inline-flex; align-items: center; gap: 4px; }
+.sp-swatch { display: inline-block; }
+.sp-swatch-sleep { width: 14px; height: 8px; border-radius: 3px; background: var(--chart-sleep); }
+.sp-swatch-feed { width: 8px; height: 8px; border-radius: 50%; background: var(--chart-feed); }
+.sp-detail { min-height: 1.4em; margin-top: 4px; }
+.sp-table summary { cursor: pointer; padding: 6px 0; }
+.sp-table table { width: 100%; border-collapse: collapse; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+.sp-table th { text-align: left; font-weight: 600; color: var(--text-muted); padding: 4px 0; }
+.sp-table td { padding: 4px 0; border-top: 1px solid var(--border); }
+
+/* ---------- Babies her age ---------- */
+.guides-card { display: flex; flex-direction: column; gap: 8px; }
+.guides { margin: 0; }
+.guide-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.guide-row dd { margin: 0; grid-column: 1 / -1; }
+.guide-row dt { font-weight: 600; }
+.guide-row .guide-typical { grid-column: 2; grid-row: 1; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.guide-hers { font-variant-numeric: tabular-nums; }
+
+/* ---------- Pattern changes ---------- */
+.regression-signs { margin: 8px 0 6px; padding-left: 18px; }
+.regression-signs li { margin: 2px 0; }
+
+/* ---------- Night mode ---------- */
+/*
+ * Near-black and warm, with no blue or green light: for feeds in the small
+ * hours. Wins over the light and dark palettes whichever the phone is set to.
+ * Text clears 9:1 on its surface and secondary text 5:1.
+ */
+:root[data-night='on'] {
+  --bg: #0b0705;
+  --surface: #140c09;
+  --surface-2: #1d120d;
+  --text: #e3a27f;
+  --text-muted: #b8785a;
+  --text-faint: #8f5a43;
+  --border: #2a1a12;
+  --accent: #d27a52;
+  --accent-strong: #e08b6d;
+  --accent-soft: #2a170f;
+  --accent-text: #e8946c;
+  --good: #cf9a5e;
+  --good-soft: #2a1d10;
+  --warn: #e07a6c;
+  --warn-soft: #2d1411;
+  --shadow: none;
+
+  --cat-social: #d99a55;
+  --cat-social-soft: #2a1d10;
+  --cat-language: #d9a066;
+  --cat-language-soft: #2a1d10;
+  --cat-cognitive: #d98c6a;
+  --cat-cognitive-soft: #2a170f;
+  --cat-motor: #e08a80;
+  --cat-motor-soft: #2d1411;
+
+  --chart-line: #d27a52;
+  --chart-band-outer: #1d120d;
+  --chart-band-inner: #2a1a12;
+  --chart-median: #6b4030;
+  --chart-bar: #985439;
+  --chart-bar-today: #e08b6d;
+  --chart-sleep: #9e4a3c;
+  --chart-feed: #bd8540;
+  color-scheme: dark;
+}
+:root[data-night='on'] .btn-primary,
+:root[data-night='on'] .chip-btn.on,
+:root[data-night='on'] .milestone-check.done { color: #140c09; }
+:root[data-night='on'] .btn-danger { color: var(--warn); }
+/* Bigger targets for one-handed tapping in the dark */
+:root[data-night='on'] .quick-btn { min-height: 96px; font-size: 1rem; }
+:root[data-night='on'] .quick-btn span:first-child { font-size: 2rem; }
