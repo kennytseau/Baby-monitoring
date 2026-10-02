@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dailyMeasures, patternChanges, regressionWatch, type PatternChange } from './changes'
+import { dailyMeasures, patternChanges, regressionWatch, sleepHistoryDays, type PatternChange } from './changes'
 import type { LogEntry } from './types'
 import { toISODate } from './age'
 
@@ -198,4 +198,29 @@ describe('regressionWatch', () => {
   })
 })
 
+describe('sleepHistoryDays', () => {
+  const change = (measure: PatternChange['measure'], days: number): PatternChange => ({
+    measure,
+    direction: 'down',
+    usual: 0,
+    lately: 0,
+    days: Array.from({ length: days }, (_, i) => `d${i}`),
+  })
 
+  it('leaves the predictions alone while her sleep is steady', () => {
+    expect(sleepHistoryDays([])).toBeUndefined()
+    // A change in her feeds is not a change in her sleep
+    expect(sleepHistoryDays([change('feeds', 6)])).toBeUndefined()
+  })
+
+  it('narrows to the days since her sleep changed, but never below five', () => {
+    expect(sleepHistoryDays([change('nightWakings', 3)])).toBe(5)
+    expect(sleepHistoryDays([change('nightWakings', 7)])).toBe(8)
+    // The longest-running sleep change sets it
+    expect(sleepHistoryDays([change('napLength', 4), change('longestNight', 9), change('feeds', 13)])).toBe(10)
+  })
+
+  it('never looks back further than usual', () => {
+    expect(sleepHistoryDays([change('nightSleep', 20)])).toBe(14)
+  })
+})

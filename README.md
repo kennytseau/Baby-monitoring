@@ -149,7 +149,7 @@ she'll be ready for sleep, when the next feed is due and roughly how much it
 will be, and when the next change is due.
 
 Three ideas do the work, and each one was kept only because a backtest against
-eight weeks of real logs said it earned its place.
+her real logs said it earned its place.
 
 **Time of day.** Babies are far more predictable by the hour than on average.
 Past stretches are bucketed by the hour they began, the bucket widened until
@@ -171,11 +171,11 @@ says "Any time now — 20 min past her usual wake-up".
 **Short naps.** A catnap isn't real rest, so the wake window after one is
 shorter. On her log, after a nap under 15 minutes she stayed up about half her
 usual, and after 15–25 minutes about seven-tenths; after anything longer, no
-different. The app learns that fraction from her own last six weeks of short
+different. The app learns that fraction from her own last three weeks of short
 naps (it waits until it has five) and shortens the next wind-down by it, saying
-so on the card. Scored once per short nap (38 of them): typical error 34 → 18
-min, and within 30 minutes 42% → 68% of the time, improving on both halves of
-the data. The
+so on the card. Scored once per short nap on her log to 2 October (54 of them):
+typical error 40 → 23 min, and within 30 minutes 37% → 59% of the time,
+improving on both halves of the data. The
 exception is when she skips the nap altogether and pushes on for two hours or
 more; the earlier time then sits at "any time now" for longer.
 
@@ -186,32 +186,49 @@ neither. Per feed, the time of day matters, so the amount is her median at the
 hour the next feed is due. Whichever way she's been fed most often lately
 decides the unit.
 
+**Her most recent weeks count most.** Every prediction learns from her last
+two weeks only — her last week, for feed sizes — so as she grows the estimates
+move with her and nothing about a ten-week-old is hard-coded. When her sleep visibly changes — the *What's
+changed* card is showing a sleep change, as it would at the start of a
+regression — the wake-up and wind-down predictions narrow further, to just the
+days since the change began (at least five), and the card says so. A planted
+regression in her real log showed why: in its first week, the wake-up error
+fell from 19 to 4 minutes for a sharp regression and 34 to 20 for a milder
+one. In the second week, and for wind-down, it made little difference either
+way — for the milder one, wind-down was within half an hour 65% of the time
+against 71%, though its typical error was a minute better. On her real log,
+where her nights were lengthening rather than breaking up, it made no real
+difference.
+
 Scored the way the card is actually read: played forward through her log from
-29 July to 7 September (the first two weeks only taught it), asked every 15
+29 July to 2 October (the first two weeks only taught it), asked every 15
 minutes using only what had been logged by then, and checked against what
 happened next. The last two columns are simple rules of thumb on the same
-history — her plain median gap, and "same as last time" — to show what the
-model is worth.
+history — her plain median, and "same as last time" — to show what the model
+is worth.
 
-| Prediction | Typical error | Within 30 min | Her usual gap | Same as last time |
+| Prediction | Typical error | Within 30 min | Her usual | Same as last time |
 | --- | --- | --- | --- | --- |
-| When she'll wake (fixed time) | 29 min | 51% | 62 min | 58 min |
-| Next wind-down (fixed time) | 18 min | 69% | 23 min | 30 min |
-| Next feed | 28 min | 53% | 68 min | 67 min |
-| Next change | 36 min | 42% | 51 min | 64 min |
-| Size of the next feed | 15 ml | 75% (within 30 ml) | 30 ml | 30 ml |
+| When she'll wake (fixed time) | 30 min | 50% | 70 min | 70 min |
+| Next wind-down (fixed time) | 18 min | 69% | 26 min | 31 min |
+| Next feed | 29 min | 52% | 66 min | 74 min |
+| Next change | 35 min | 44% | 55 min | 81 min |
+| Size of the next feed | 10 ml | 81% (within 30 ml) | 10 ml (71%) | 15 ml (69%) |
 
-It is getting better as her days settle: over the last two weeks, wake-ups
-were off by a typical 20 minutes (65% within half an hour), feeds 27 and
-changes 32. Counting the time already served is what makes feeds and changes
-work — without it the same model is off by 42 and 43 minutes.
+Wake-ups are the hardest right now. Over the last two weeks her night sleeps
+grew fast (her typical night sleep went from about 2 h 50 m to 4 h 24 m), and
+every way of learning from the past trails a change like that: wake-ups were
+off by a typical 37 minutes over those weeks, against 45 before the changes
+above. Wind-down over the same weeks was 19 minutes (66% within half an hour),
+feeds 31 and changes 30. Counting the time already served is what makes feeds
+and changes work — without it the same model is off by 43 and 42 minutes.
 
 Her feeds come in two sizes (a top-up after nursing, or a full bottle), and
 which comes next isn't predictable from her log — the two even swapped sizes
-between the first and second halves of it. Asked with the exact feed time
-already known, which no app can, the amount would only improve from 25.5 to
-25.2 ml on average in the first half and 19.1 to 17.2 in the second, so it is
-close to as good as this log allows.
+between the first and second halves of it to 7 September. On that log, asked
+with the exact feed time already known, which no app can, the amount would
+only have improved from 25.5 to 25.2 ml on average in the first half and 19.1
+to 17.2 in the second, so it is close to as good as her log allows.
 
 **Against a simulated baby.** To see how close to *possible* this is, the same
 test was run on eight weeks of log made up from known rules — stretches that
@@ -221,7 +238,7 @@ Knowing the rules gives the best prediction anyone could make:
 | Prediction | The app | Best possible |
 | --- | --- | --- |
 | Wake-up | 45 min (40% within 30) | 39 min (41%) |
-| Wind-down | 15 min (75%) | 13 min (82%) |
+| Wind-down | 14 min (77%) | 13 min (82%) |
 | Next feed | 36 min (43%) | 32 min (47%) |
 | Next change | 54 min (30%) | 49 min (31%) |
 | Size of the next feed | 10 ml (97% within 30 ml) | 5 ml (99%) |
@@ -229,12 +246,9 @@ Knowing the rules gives the best prediction anyone could make:
 The rest of the error is her being a baby: no model can call a wake-up closer
 than the randomness in it.
 
-Two consequences worth knowing. It only ever learns from the **last two or
-three weeks**, so as she grows the estimates move with her — over those eight
-weeks her bottles went from 25 ml to 70 ml and her feeds spread out and drew
-back in again, and nothing about a ten-week-old is hard-coded. And a feed
-logged as a top-up within 45 minutes of the last one counts as the same feed,
-so a cluster feed doesn't teach it that she eats every ten minutes.
+A feed logged as a top-up within 45 minutes of the start of the last one
+counts as the same feed, so a cluster feed doesn't teach it that she eats every
+ten minutes.
 
 It stays quiet until there's something to learn from: a handful of logged
 stretches for each, and it says so plainly until then. While she's asleep, a
@@ -262,14 +276,22 @@ on the same backtest:
   a feed, but she's fed about twice as often as she's changed, so "the next
   feed" is a much worse guess (163 min vs 44) and snapping the gap estimate to
   a predicted feed is worse still (59 min vs 38).
-- **A shorter window for amounts** (3–10 days instead of 14), to keep up with
-  a growing baby — no better.
 - **Learning the nap-length effect for every nap**, not just short ones. After
   a 40–90 minute nap she does stay up about 9% longer, but using it made
   wind-down slightly worse (16.0 → 16.1 min).
 - **Time awake before a sleep, or a feed just before it**, predicting how long
   she sleeps. Neither held up: the halves of the data disagreed, and she is
   fed before nearly every sleep, so there is nothing to compare against.
+- **Weighting recent days more** (a recency-weighted median, half-lives of 3
+  to 7 days) instead of a hard two-week cut-off, retried on her log to
+  2 October — wake-ups got worse on the newest weeks (37–41 min against 35).
+- **Separate night and day pools for sleep length**, so 6pm catnaps don't
+  pull down a bedtime sleep — a minute's difference at most, either way.
+- **Shorter windows for feed and change timing** (5 to 10 days instead of
+  14) — tied on her log, but 2–4 minutes worse on the simulated baby, where
+  fewer stretches mean more noise. Feed sizes did move to one week: no better
+  on her log to 7 September, but on the log to 2 October it tied or did a
+  little better on both.
 - **Tuning the history window, bucket width and minimum sample count.** The
   differences across ninety-odd combinations were around a minute — noise at
   this sample size — so the defaults stayed put.
@@ -320,7 +342,9 @@ sleep is split once.
 | Once it ended | cleared after 2 normal nights |
 | On her real log, 25 Jul – 7 Sep, age ignored | never flagged (0 of 45 days) |
 
-Neither the changes nor the regression watch feed into a prediction.
+While a sleep change is showing, the wake-up and wind-down predictions learn
+only from the days since it began (see *Her most recent weeks count most*
+above). Nothing else here feeds a prediction.
 
 ## If the published site stops working
 

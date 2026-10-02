@@ -73,7 +73,7 @@ describe('forecastNeeds', () => {
     expect(forecastNeeds(night, nightNow).feed!.serving).toEqual({ unit: 'ml', value: 60 })
   })
 
-  it('follows the recent fortnight for the amount too, so growth shows', () => {
+  it('follows her recent days for the amount too, so growth shows', () => {
     const log: LogEntry[] = []
     for (let day = 0; day < 7; day += 1) {
       for (let i = 0; i < 8; i += 1) log.push(feed(new Date(NOW.getTime() - day * DAY - i * 180 * 60_000), 70))
@@ -122,8 +122,8 @@ describe('forecastNeeds', () => {
     expect(forecastNeeds(history(180, 9 * 60), NOW).feed!.state).toBe('late')
   })
 
-  it('follows the recent fortnight, not the whole history', () => {
-    // Two-hourly this week, four-hourly in the weeks before the fortnight window.
+  it('follows her recent days, not the whole history', () => {
+    // Two-hourly this week, four-hourly in the weeks before the window.
     const recent = history(120, 30, 7)
     const old: LogEntry[] = []
     for (let day = 15; day < 36; day += 1) {

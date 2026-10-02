@@ -181,7 +181,8 @@ export interface PatternChange {
  * would have become her "usual" and the change would quietly vanish while it
  * was still going on. It ends when her last days are back inside that spread.
  *
- * Read-only: the predictions do not use it.
+ * The sleep predictions narrow to the days since a sleep change began, while
+ * it lasts — see `sleepHistoryDays`.
  */
 export function patternChanges(
   measures: DayMeasures[],
@@ -239,6 +240,28 @@ function changeFrom(series: DayMeasures[], start: number, measure: MeasureId): P
     }
   }
   return null
+}
+
+/** The measures that describe her sleep, as against her feeds */
+const SLEEP_MEASURES: MeasureId[] = ['longestNight', 'nightWakings', 'nightSleep', 'napLength', 'daySleep']
+/** However recent a change, the sleep predictions learn from at least this many days */
+const MIN_CHANGED_HISTORY_DAYS = 5
+
+/**
+ * While her sleep is changing, how many days the sleep predictions should
+ * learn from: just the days since the change began, so the old pattern stops
+ * pulling them back. Undefined when her sleep has not changed lately.
+ *
+ * Tested by planting a regression into her real log: in its first week the
+ * wake-up error fell from 19 to 4 minutes (a sharp regression) and 34 to 20 (a
+ * milder one), with the second week about level; on her real log, where her
+ * nights were lengthening rather than breaking up, it made no real difference.
+ */
+export function sleepHistoryDays(changes: PatternChange[]): number | undefined {
+  const sleep = changes.filter((c) => SLEEP_MEASURES.includes(c.measure))
+  if (sleep.length === 0) return undefined
+  const since = Math.max(...sleep.map((c) => c.days.length)) + 1
+  return Math.min(NEWS_DAYS, Math.max(MIN_CHANGED_HISTORY_DAYS, since))
 }
 
 const MEASURES: MeasureId[] = [

@@ -1,41 +1,13 @@
-import { useMemo } from 'react'
-import { useAppState } from '../hooks/useAppState'
-import { useNow } from '../hooks/useNow'
+import { usePatterns } from '../hooks/usePatterns'
 import {
-  dailyMeasures,
   NEWS_DAYS,
-  patternChanges,
-  REGRESSION_DAYS,
   REGRESSION_UNTIL_WEEKS,
-  regressionWatch,
   type DayMeasures,
   type PatternChange,
   type RegressionWatch,
 } from '../lib/changes'
-import { adjustedAgeInDays, ageInDays, usesAdjustedAge } from '../lib/age'
 import { formatDuration } from '../lib/format'
 import { quantile } from '../lib/patterns'
-
-/**
- * What has shifted in her pattern lately, and whether it looks like the
- * 4-month sleep regression. Read off her own log against her own fortnight
- * before; none of it changes a prediction.
- */
-function usePatterns() {
-  const { state } = useAppState()
-  const profile = state.profile!
-  const now = useNow(60_000)
-  const measures = useMemo(() => dailyMeasures(state.log, now), [state.log, now])
-  const changes = useMemo(() => patternChanges(measures, now), [measures, now])
-  const ageWeeks = Math.floor(
-    (usesAdjustedAge(profile) ? adjustedAgeInDays(profile, now) : ageInDays(profile.birthDate, now)) / 7,
-  )
-  const regression = useMemo(
-    () => regressionWatch(patternChanges(measures, now, REGRESSION_DAYS), ageWeeks),
-    [measures, now, ageWeeks],
-  )
-  return { measures, changes, regression, ageWeeks }
-}
 
 /** Home: only when something has changed, so it means something when it is there */
 export function ChangesCard() {
@@ -78,7 +50,8 @@ export function PatternsSection() {
         <p className="tiny faint" style={{ marginTop: 8 }}>
           A change has to hold for 3 days in a row, each one outside the middle half of her usual
           spread, and by enough to matter. It shows for up to {NEWS_DAYS / 7} weeks; after that it is her
-          new normal, and the predictions on Home have caught up with it.
+          new normal. While her sleep is changing, the sleep predictions on Home learn only from the
+          days since it began.
         </p>
       </section>
       {regression.state !== 'outside' && (
@@ -229,7 +202,7 @@ function RegressionCard({
         </>
       )}
       <p className="tiny faint" style={{ marginTop: 6 }}>
-        Not used by the predictions, and not medical advice — if her sleep is worrying you, your
+        Not medical advice — if her sleep is worrying you, your
         child health nurse or GP is the person to ask.
       </p>
     </section>

@@ -14,9 +14,14 @@ const RESETTLE_GAP_MINUTES = 15
 const MIN_BLOCK_MINUTES = 10
 /** A gap longer than this is not a wake window, it is missing data */
 const MAX_WAKE_WINDOW_MINUTES = 8 * 60
-/** How far back each prediction looks — chosen by backtest, they differ */
-const WAKE_WINDOW_HISTORY_DAYS = 21
-const SLEEP_LENGTH_HISTORY_DAYS = 14
+/**
+ * How far back both predictions look. A fortnight, chosen by backtest on her
+ * log to 2 October: the wake window used to look back three weeks, and two did
+ * as well on the earlier weeks and better on the newer ones (68% within half
+ * an hour, against 61%). While her sleep is visibly changing the caller can
+ * narrow this further — see `sleepHistoryDays` in `changes.ts`.
+ */
+const HISTORY_DAYS = 14
 /**
  * Naps shorter than these end in a band of their own. A catnap is not real
  * rest: on her log, the wake window after one under 15 minutes runs about half
@@ -24,8 +29,12 @@ const SLEEP_LENGTH_HISTORY_DAYS = 14
  */
 const CATNAP_MINUTES = 15
 const SHORT_NAP_MINUTES = 25
-/** Short naps are rare, so how much they shorten things is learned over longer */
-const SHORT_NAP_HISTORY_DAYS = 42
+/**
+ * Short naps are rare, so how much they shorten things is learned over longer.
+ * Three weeks did as well as six on the earlier weeks of her log and a little
+ * better on the newer ones, so the more recent of the two won.
+ */
+const SHORT_NAP_HISTORY_DAYS = 21
 
 export interface Prediction {
   /** When it is expected to happen */
@@ -124,7 +133,12 @@ function napBand(minutes: number): 'catnap' | 'short' | 'full' {
  * fraction of her usual wake window at that hour — read off her own past short
  * naps, and 1 (no change) after a full nap or when there are too few to go on.
  */
-function afterNapFactor(blocks: SleepBlock[], napMinutes: number, from: Date): number {
+function afterNapFactor(
+  blocks: SleepBlock[],
+  napMinutes: number,
+  from: Date,
+  historyDays: number,
+): number {
   const band = napBand(napMinutes)
   if (band === 'full') return 1
 
@@ -139,7 +153,7 @@ function afterNapFactor(blocks: SleepBlock[], napMinutes: number, from: Date): n
     const awake = (next.start.getTime() - nap.end.getTime()) / MS_PER_MINUTE
     if (awake <= 0 || awake > MAX_WAKE_WINDOW_MINUTES) continue
     // Her usual at that moment, from what came before it — never from itself.
-    const usual = estimateByHour(usualSamples, new Date(nap.end.getTime() - 1), WAKE_WINDOW_HISTORY_DAYS)
+    const usual = estimateByHour(usualSamples, new Date(nap.end.getTime() - 1), historyDays)
     if (usual && usual.value > 0) ratios.push(awake / usual.value)
   }
   if (ratios.length < MIN_SAMPLES) return 1
@@ -168,9 +182,14 @@ function toPrediction(from: Date, estimated: Estimate): Prediction {
 
 /**
  * What to expect next: when she will wake if she is asleep, or when she will be
- * ready to go down if she is awake.
+ * ready to go down if she is awake. `historyDays` narrows how far back it
+ * learns from, for when her sleep has just changed.
  */
-export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecast {
+export function forecastRhythm(
+  log: LogEntry[],
+  now = new Date(),
+  historyDays = HISTORY_DAYS,
+): RhythmForecast {
   const blocks = sleepBlocks(log, now)
   const current = blocks[blocks.length - 1]
   const asleep = !!current?.open
@@ -184,7 +203,7 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   // she runs past it is no use to plan around; a fixed one that has been
   // passed says something — the card shows "any time now" instead.
   if (asleep) {
-    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, SLEEP_LENGTH_HISTORY_DAYS)
+    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, historyDays)
     if (!estimated) {
       return { asleep, reason: 'Not enough sleeps logged yet to guess when she will wake.' }
     }
@@ -192,13 +211,13 @@ export function forecastRhythm(log: LogEntry[], now = new Date()): RhythmForecas
   }
 
   const lastWoke = current.end
-  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, WAKE_WINDOW_HISTORY_DAYS)
+  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, historyDays)
   if (!estimated) {
     return { asleep, reason: 'Not enough sleeps logged yet to guess her next wind-down.' }
   }
   // A catnap leaves her nearly as tired as before it, so the window that
   // follows is shorter — by as much as her own short naps have shown.
-  const factor = afterNapFactor(blocks, current.minutes, lastWoke)
+  const factor = afterNapFactor(blocks, current.minutes, lastWoke, historyDays)
   if (factor < 1) {
     return {
       asleep,
