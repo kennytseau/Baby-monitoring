@@ -7,6 +7,7 @@ import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/f
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
 import { NeedsCard } from '../components/NeedsCard'
+import { ChangesCard } from '../components/ChangesCard'
 import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
@@ -97,6 +98,8 @@ export function Home() {
       <RhythmCard />
 
       <NeedsCard />
+
+      <ChangesCard />
 
       <section>
         <h2 className="section-title">Quick log</h2>

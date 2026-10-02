@@ -60,6 +60,11 @@ still with no accounts and nothing sold or tracked.
   last fortnight stacked on one 24-hour line, today at the top: sleep as bars,
   feeds as dots, so a rhythm shows as the bars lining up. Tap a bar or dot to
   read it, or open it as a table.
+- **What's changed** — when her nights break up, her naps shorten or her feeds
+  bunch, Home says so, for example "She is feeding more often: 11 feeds a day
+  lately, usually 9". Nothing shows when nothing has changed. By day has the
+  full picture, plus a **4-month sleep regression watch**. See *Noticing
+  changes* below.
 - **Night mode** — near-black and warm, with no blue light and bigger quick-log
   buttons. *Auto* turns it on from 7pm to 7am; *Always* and *Off* are there
   too, under *Settings & data*. It is set per phone.
@@ -235,6 +240,48 @@ on the same backtest:
 - **Tuning the history window, bucket width and minimum sample count.** The
   differences across ninety-odd combinations were around a minute — noise at
   this sample size — so the defaults stayed put.
+
+## Noticing changes
+
+Every morning her night (7pm to 7am) is measured: the longest stretch, how many
+times she woke, and how long she slept. Every evening her day is measured: how
+long her naps were and how long she slept, and every midnight how many feeds
+she had (top-ups counted in). Each measure is compared with her own fortnight
+before. A change is reported only when **3 days in a row** all sit outside the
+middle half of that fortnight, the same way, and by enough to matter: a quarter
+for times, 1 waking, or 2 feeds. One bad night is a bad night.
+
+A change is measured against the fortnight before *it began*, not the
+fortnight before today. Otherwise, a week into a rough patch, the rough nights
+would have become her "usual" and the alert would quietly vanish while it was
+still going on. A change is shown for up to two weeks. After that it is her new
+normal, and the predictions, which learn from her last fortnight, have caught
+up with it.
+
+Run back over her log, the rule raised a change about every five days. Each
+held for 3 to 14 days, and they matched what happened: feeds jumping from 9 to
+12 a day at six weeks, and naps roughly halving in mid-August.
+
+**The 4-month sleep regression.** It is a lasting change in how her sleep
+cycles work. It commonly starts between about 12 and 20 weeks and settles
+within 2 to 6 weeks. No log can tell in advance *when* it will start, so the
+watch looks for its signs instead: more night wakings, a shorter longest
+stretch, less night sleep, and naps cut to one cycle (45 minutes or less). One
+night sign held for 3 nights makes it *Maybe starting*. Two night signs, or one
+with one-cycle naps, make it *Likely started*. It watches from 10 to 24 weeks
+and keeps following a regression for up to six weeks. To test it, a regression
+was planted into her real log at different dates: night sleep broken every 90
+minutes, naps cut to 40 minutes, or a milder version where each long night
+sleep is split once.
+
+| | |
+|---|---|
+| Nights to notice it | 1–3 |
+| Days it kept being shown while the regression went on | every day, up to the end of her log (11+) |
+| Days to clear once it ended | 3 |
+| False alarms on her real log, 10 Aug – 23 Sep | 0 of 45 days |
+
+Neither the changes nor the regression watch feed into a prediction.
 
 ## If the published site stops working
 

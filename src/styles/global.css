@@ -693,6 +693,10 @@ a { color: var(--accent-text); }
 .guide-row .guide-typical { grid-column: 2; grid-row: 1; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .guide-hers { font-variant-numeric: tabular-nums; }
 
+/* ---------- Pattern changes ---------- */
+.regression-signs { margin: 8px 0 6px; padding-left: 18px; }
+.regression-signs li { margin: 2px 0; }
+
 /* ---------- Night mode ---------- */
 /*
  * Near-black and warm, with no blue or green light: for feeds in the small

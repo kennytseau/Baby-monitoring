@@ -3,6 +3,7 @@ import { useAppState } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { TrendChart } from '../components/TrendChart'
 import { SleepPatternChart } from '../components/SleepPatternChart'
+import { PatternsSection } from '../components/ChangesCard'
 import { dailySummaries, trendSeries } from '../lib/trends'
 import type { DaySummary, TrendMetric } from '../lib/trends'
 import { sleepPattern } from '../lib/pattern'
@@ -46,10 +47,13 @@ export function Trends() {
     <main className="page">
       <header>
         <h1 className="page-title">By day</h1>
-        <p className="page-subtitle">
-          Today against the week behind it, compared at this time of day. Tap a bar to read it.
-        </p>
+        <p className="page-subtitle">What has changed lately, and her days side by side.</p>
       </header>
+
+      <PatternsSection />
+
+      <h2 className="section-title">Today against the week</h2>
+      <p className="small muted">Compared at this time of day. Tap a bar to read it.</p>
 
       {charts.length === 0 ? (
         <div className="empty">
