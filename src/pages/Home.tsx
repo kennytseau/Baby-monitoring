@@ -10,6 +10,8 @@ import { NeedsCard } from '../components/NeedsCard'
 import { SharingPanel } from '../components/SharingPanel'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import { useNow } from '../hooks/useNow'
+import { setNightSetting, useNightSetting } from '../hooks/useNightMode'
+import { NIGHT_FROM_HOUR, NIGHT_UNTIL_HOUR, type NightSetting } from '../lib/night'
 import {
   currentWakeMinutes,
   dayTotals,
@@ -161,6 +163,8 @@ export function Home() {
         <div className="stack" style={{ marginTop: 12 }}>
           <EditProfile />
           <hr className="rule" />
+          <NightModeSetting />
+          <hr className="rule" />
           <SharingPanel />
           <hr className="rule" />
           <button className="btn" onClick={exportData}>
@@ -230,6 +234,35 @@ function RestoreBackup() {
         />
       </label>
       {status && <p className="tiny muted">{status}</p>}
+    </div>
+  )
+}
+
+const NIGHT_LABELS: Record<NightSetting, string> = { auto: 'Auto', on: 'Always', off: 'Off' }
+
+/** Dim, warm screen for night feeds — set per phone */
+function NightModeSetting() {
+  const setting = useNightSetting()
+  return (
+    <div className="stack">
+      <span className="item-title">Night mode</span>
+      <div className="seg" role="group" aria-label="Night mode">
+        {(Object.keys(NIGHT_LABELS) as NightSetting[]).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={setting === option ? 'on' : ''}
+            aria-pressed={setting === option}
+            onClick={() => setNightSetting(option)}
+          >
+            {NIGHT_LABELS[option]}
+          </button>
+        ))}
+      </div>
+      <p className="tiny faint">
+        A dim, warm screen with bigger buttons for feeds in the dark. Auto turns it on from{' '}
+        {NIGHT_FROM_HOUR - 12}pm to {NIGHT_UNTIL_HOUR}am. This phone only.
+      </p>
     </div>
   )
 }

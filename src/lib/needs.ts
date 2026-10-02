@@ -23,7 +23,7 @@ import { estimateByHour, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patter
  */
 
 /** Entries closer together than this are one feed or one change, not two */
-const SAME_EVENT_MINUTES = 45
+export const SAME_EVENT_MINUTES = 45
 /** A stretch longer than this is missing data, not a habit */
 const MAX_GAP_MINUTES = 8 * 60
 /** How far back to learn from — a fortnight won the backtest for all of it */

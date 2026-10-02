@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAppState } from './hooks/useAppState'
+import { useNightMode } from './hooks/useNightMode'
 import { TabBar } from './components/TabBar'
 import { SyncBanner } from './components/SyncBanner'
 import { Onboarding } from './pages/Onboarding'
@@ -12,6 +13,7 @@ import { Trends } from './pages/Trends'
 
 export default function App() {
   const { state } = useAppState()
+  useNightMode()
 
   if (!state.profile) {
     return (

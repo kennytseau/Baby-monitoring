@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import { DevelopmentCard } from '../components/DevelopmentCard'
+import { AgeGuidesCard } from '../components/AgeGuidesCard'
 import { GrowthChart } from '../components/GrowthChart'
 import type { ChartPoint } from '../components/GrowthChart'
 import { GROWTH_CURVES, MEASURE_INFO } from '../data/who-growth'
@@ -109,6 +110,7 @@ export function Growth() {
       </header>
 
       <DevelopmentCard />
+      <AgeGuidesCard />
 
       <div className="seg" role="group" aria-label="Measurement type">
         {MEASURES.map((m) => (

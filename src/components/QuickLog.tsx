@@ -3,7 +3,7 @@ import { useNow } from '../hooks/useNow'
 import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { NAPPY_LABELS, happenedBy, sleepMinutes, sortedByTime } from '../lib/log'
+import { NAPPY_LABELS, happenedBy, sleepMinutes, sortedByTime, suggestNursingSide } from '../lib/log'
 import { BottleContentsPicker, MedicineFields } from './LogFields'
 import {
   formatAgo,
@@ -65,6 +65,9 @@ export function QuickLog() {
       ),
     [state.log, now],
   )
+  /** Which side to start on, when a new feed is about to begin */
+  const nextSide = useMemo(() => suggestNursingSide(state.log, now), [state.log, now])
+
   /** The last few medicines given, with the dose that went with them, so a repeat is one tap */
   const recentMedicines = useMemo(() => {
     const seen: MedicationEntry[] = []
@@ -279,34 +282,37 @@ export function QuickLog() {
 
       {panel === 'nurse' && (
         <div className="card stack quick-panel">
-          <p className="tiny muted">
-            {runningNursing
-              ? 'Switch sides — the timer keeps running.'
-              : openNursing
-                ? 'Tap a side to start the clock again.'
-                : 'Which side is she on?'}
-          </p>
+          {!openNursing && nextSide ? (
+            <p className="small">
+              <strong>Start on the {nextSide.side}</strong>{' '}
+              <span className="muted">
+                — {nextSide.because}, {formatAgo(nextSide.lastAt, now)}.
+              </span>
+            </p>
+          ) : (
+            <p className="tiny muted">
+              {runningNursing
+                ? 'Switch sides — the timer keeps running.'
+                : openNursing
+                  ? 'Tap a side to start the clock again.'
+                  : 'Which side is she on?'}
+            </p>
+          )}
           <div className="row">
-            <button
-              className="btn btn-primary grow"
-              onClick={() => {
-                nurse('left', logAt())
-                setPanel(null)
-                resetTime()
-              }}
-            >
-              Left
-            </button>
-            <button
-              className="btn btn-primary grow"
-              onClick={() => {
-                nurse('right', logAt())
-                setPanel(null)
-                resetTime()
-              }}
-            >
-              Right
-            </button>
+            {(['left', 'right'] as const).map((side) => (
+              <button
+                key={side}
+                // The suggested side stands out; the other is still one tap away.
+                className={`btn grow${!openNursing && nextSide && nextSide.side !== side ? '' : ' btn-primary'}`}
+                onClick={() => {
+                  nurse(side, logAt())
+                  setPanel(null)
+                  resetTime()
+                }}
+              >
+                {side === 'left' ? 'Left' : 'Right'}
+              </button>
+            ))}
           </div>
 
           {!openNursing && (

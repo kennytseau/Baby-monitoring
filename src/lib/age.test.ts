@@ -33,20 +33,23 @@ describe('ageInCalendarMonths', () => {
   })
 })
 
+/** The month wording, as it will read once the family switches to it */
+const MONTHS = 12 * 7
+
 describe('birthdays late in the month', () => {
   it('never shows negative weeks', () => {
-    expect(formatAge('2025-01-30', new Date(2026, 2, 1))).toBe('13 months old')
-    expect(formatAge('2025-01-31', new Date(2026, 2, 1))).toBe('13 months old')
+    expect(formatAge('2025-01-30', new Date(2026, 2, 1), MONTHS)).toBe('13 months old')
+    expect(formatAge('2025-01-31', new Date(2026, 2, 1), MONTHS)).toBe('13 months old')
   })
 
   it('counts the last day of a short month as the monthly birthday', () => {
-    expect(formatAge('2025-01-31', new Date(2025, 5, 30, 3, 22))).toBe('5 months old')
-    expect(formatAge('2025-01-29', new Date(2026, 1, 28))).toBe('13 months old')
-    expect(formatAge('2025-01-29', new Date(2026, 2, 7))).toBe('13 months, 1 week old')
+    expect(formatAge('2025-01-31', new Date(2025, 5, 30, 3, 22), MONTHS)).toBe('5 months old')
+    expect(formatAge('2025-01-29', new Date(2026, 1, 28), MONTHS)).toBe('13 months old')
+    expect(formatAge('2025-01-29', new Date(2026, 2, 7), MONTHS)).toBe('13 months, 1 week old')
   })
 
   it('still counts a mid-month birthday the ordinary way', () => {
-    expect(formatAge('2026-07-07', new Date(2027, 0, 1, 3, 22))).toBe('5 months, 3 weeks old')
+    expect(formatAge('2026-07-07', new Date(2027, 0, 1, 3, 22), MONTHS)).toBe('5 months, 3 weeks old')
   })
 })
 
@@ -56,11 +59,11 @@ describe('formatAge', () => {
     expect(formatAge(birth, new Date(2026, 4, 15))).toBe('1 day old')
     expect(formatAge(birth, new Date(2026, 4, 24))).toBe('10 days old')
   })
-  it('stays in weeks past 12 weeks, where "2 months, 3 weeks" would read as 11', () => {
+  it('stays in weeks until months are switched on', () => {
     // Born 7 July: 12 weeks, 2 days on 1 October.
     expect(formatAge('2026-07-07', new Date(2026, 9, 1, 3, 22))).toBe('12 weeks, 2 days old')
-    expect(formatAge('2026-07-07', new Date(2026, 9, 27))).toBe('3 months, 2 weeks old')
-    expect(formatAge('2026-07-07', new Date(2026, 9, 26))).toBe('15 weeks, 6 days old')
+    expect(formatAge('2026-07-07', new Date(2026, 9, 27))).toBe('16 weeks old')
+    expect(formatAge('2026-07-07', new Date(2027, 6, 9))).toBe('52 weeks, 3 days old')
   })
 
   it('uses weeks and days early on', () => {
@@ -68,11 +71,11 @@ describe('formatAge', () => {
     expect(formatAge(birth, new Date(2026, 5, 25))).toBe('6 weeks old')
   })
   it('uses months and weeks up to 24 months', () => {
-    expect(formatAge(birth, new Date(2026, 11, 14))).toBe('7 months old')
-    expect(formatAge(birth, new Date(2026, 11, 30))).toBe('7 months, 2 weeks old')
+    expect(formatAge(birth, new Date(2026, 11, 14), MONTHS)).toBe('7 months old')
+    expect(formatAge(birth, new Date(2026, 11, 30), MONTHS)).toBe('7 months, 2 weeks old')
   })
   it('uses years and months after 24 months', () => {
-    expect(formatAge(birth, new Date(2028, 7, 20))).toBe('2 years, 3 months old')
+    expect(formatAge(birth, new Date(2028, 7, 20), MONTHS)).toBe('2 years, 3 months old')
   })
 })
 

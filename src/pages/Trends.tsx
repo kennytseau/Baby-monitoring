@@ -2,12 +2,16 @@ import { useMemo } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { TrendChart } from '../components/TrendChart'
+import { SleepPatternChart } from '../components/SleepPatternChart'
 import { dailySummaries, trendSeries } from '../lib/trends'
 import type { DaySummary, TrendMetric } from '../lib/trends'
+import { sleepPattern } from '../lib/pattern'
 import { formatDayLabel, formatDuration } from '../lib/format'
 
 /** How far back the comparison looks: today plus the week behind it */
 const WINDOW_DAYS = 8
+/** Two weeks is enough rows to see a rhythm form without scrolling past it */
+const PATTERN_DAYS = 14
 
 const CHARTS: Array<{ metric: TrendMetric; title: string; format: (v: number) => string }> = [
   { metric: 'milk', title: 'Milk in bottles', format: (v) => `${Math.round(v)} ml` },
@@ -35,6 +39,7 @@ export function Trends() {
     // A measure she has never had logged is not worth a chart of zeroes
     .filter((chart) => chart.series.max > 0)
 
+  const pattern = useMemo(() => sleepPattern(state.log, PATTERN_DAYS, now), [state.log, now])
   const logged = summaries.filter((s) => hasAnything(s))
 
   return (
@@ -59,6 +64,13 @@ export function Trends() {
             format={chart.format}
           />
         ))
+      )}
+
+      {pattern.some((day) => day.sleeps.length > 0 || day.feeds.length > 0) && (
+        <>
+          <h2 className="section-title">Across the fortnight</h2>
+          <SleepPatternChart days={pattern} now={now} />
+        </>
       )}
 
       {logged.length > 0 && <h2 className="section-title">Day by day</h2>}

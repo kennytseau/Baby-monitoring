@@ -59,6 +59,8 @@ export interface FeedEntry extends SyncMeta {
   activeSide?: BreastSide
   /** Nursing: ISO datetime the current side started, paired with `activeSide` */
   sideStartedAt?: string
+  /** Nursing: the side the feed began on, so the next one can start on the other */
+  startSide?: BreastSide
   /** Bottle: what was in it */
   contents?: BottleContent
   /** Bottle: millilitres taken */

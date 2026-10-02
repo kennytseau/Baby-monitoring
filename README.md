@@ -12,8 +12,8 @@ still with no accounts and nothing sold or tracked.
 
 ## Features
 
-- **Home ("Today")** — her exact age (with adjusted age for babies born early),
-  one-tap quick logging, whether she's asleep or how long she's been awake, and
+- **Home ("Today")** — her exact age in weeks and days (with adjusted age for
+  babies born early), one-tap quick logging, whether she's asleep or how long she's been awake, and
   today's milk / sleep / nappy totals at a glance.
 - **What's next** — when she's likely to wake, or to be ready for sleep, and
   whether a feed or a change is about due. All four are read off *her own*
@@ -28,11 +28,19 @@ still with no accounts and nothing sold or tracked.
 - **Growth** — log weight, length and head circumference; see them plotted
   over shaded percentile bands (3rd–97th) approximating the WHO Child Growth
   Standards, with an estimated percentile for each entry.
+- **Babies around her age** — on the Growth tab, the ranges published guidance
+  gives for sleep, naps, wake windows, feeds, formula, wet nappies and weight
+  gain at her age, with her own last seven days alongside. Each range names
+  its source, and the ones that are popular advice rather than research say
+  so. It is there to read and nothing more: no prediction uses it (a test
+  makes sure of that).
 - **Daily log** — the day in one place:
   - **Milk** — nursing with a live per-side timer (start on the left, switch to
     the right, finish; minutes are banked to each breast), or a bottle with what
     was in it (formula or expressed breast milk) and how many ml. Solids too,
-    when she gets there.
+    when she gets there. Before a feed it suggests which side to start on:
+    the other one from last time, or the side that got less time if the
+    start wasn't recorded.
   - **Nappies** — wet, poo or both, with the time.
   - **Sleep** — tap when she goes down, tap again when she wakes; the gaps in
     between are shown as **wake windows**.
@@ -47,6 +55,14 @@ still with no accounts and nothing sold or tracked.
     total and longest sleep, and how much was pumped.
   - The last week is shown, with earlier days a tap away — drawing two months
     at once took seven seconds on a phone.
+- **By day** — today against the week behind it for milk, nursing, sleep,
+  naps, nappies and pumping, compared at the same time of day. Below that, the
+  last fortnight stacked on one 24-hour line, today at the top: sleep as bars,
+  feeds as dots, so a rhythm shows as the bars lining up. Tap a bar or dot to
+  read it, or open it as a table.
+- **Night mode** — near-black and warm, with no blue light and bigger quick-log
+  buttons. *Auto* turns it on from 7pm to 7am; *Always* and *Off* are there
+  too, under *Settings & data*. It is set per phone.
 - **Memories** — dated journal entries for the firsts (first smile, first
   laugh…), each shown with how old she was at the time.
 - **Shared log** — one phone creates the shared log and shows a family code;
@@ -266,11 +282,13 @@ src/
               wake windows, day totals), the shared hour-of-day estimator and
               the sleep / feed / nappy predictions built on it, sync merge +
               client, percentiles, formatting
-  data/       milestone dataset (CDC-based) + growth curve tables (WHO-based)
-  hooks/      app state provider, quick-log actions, ticking clock
-  pages/      Onboarding, Home, Milestones, Growth, DailyLog, Memories
+  data/       milestone dataset (CDC-based), growth curve tables (WHO-based),
+              typical ranges by age (for reading only)
+  hooks/      app state provider, quick-log actions, ticking clock, night mode
+  pages/      Onboarding, Home, Milestones, Growth, DailyLog, Trends, Memories
   components/ TabBar, GrowthChart, QuickLog, NursingTimer, DayTimeline,
-              DayTotalsCard, RhythmCard, NeedsCard, SharingPanel, SyncBanner
+              DayTotalsCard, RhythmCard, NeedsCard, TrendChart,
+              SleepPatternChart, AgeGuidesCard, SharingPanel, SyncBanner
 worker/       sync server: Cloudflare Worker + D1 schema
 ```
 
@@ -295,6 +313,16 @@ from *Settings & data* before clearing or switching devices.
   offline installs
 
 ## A note on the data sources
+
+Her age is shown in weeks and days for as long as that is useful. Switching to
+months later is one constant, `AGE_IN_MONTHS_FROM_DAYS` in `src/lib/age.ts`.
+
+The typical ranges on the Growth tab come from the US National Sleep
+Foundation and the American Academy of Sleep Medicine (sleep), the American
+Academy of Pediatrics and the US CDC (feeds), the NHS (formula and wet
+nappies) and the Raising Children Network (wet nappies). Nap counts, wake
+windows and weight gain per week are figures commonly quoted rather than
+research, and the card says so.
 
 Milestone content follows the CDC's 2022 "Learn the Signs. Act Early."
 checklists; growth curves closely approximate the WHO Child Growth Standards
