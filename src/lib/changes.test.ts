@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { dailyMeasures, patternChanges, regressionWatch, type PatternChange } from './changes'
 import type { LogEntry } from './types'
+import { toISODate } from './age'
 
 const NOW = new Date(2026, 9, 2, 14, 0)
 
@@ -66,6 +67,32 @@ describe('dailyMeasures', () => {
     expect(day.values.nightWakings).toBe(2)
     expect(day.values.napLength).toBe(80)
     expect(day.values.feeds).toBe(8)
+  })
+
+  it('counts an early bedtime as the start of her night, not a nap', () => {
+    const log = [
+      sleep(at(2, 18, 20), 250), // 6:20pm to 10:30pm, mostly after 7pm
+      sleep(at(1, 1, 0), 180),
+      sleep(at(1, 9, 0), 60),
+      sleep(at(1, 13, 0), 60),
+      sleep(at(1, 16, 0), 60),
+    ]
+    // The night of 6:20pm two days ago, and the day after it
+    const day = dailyMeasures(log, NOW).find((d) => d.day === toISODate(at(1, 12)))!
+    expect(day.values.longestNight).toBe(250)
+    expect(day.values.nightWakings).toBe(1)
+    expect(day.values.napLength).toBe(60)
+  })
+
+  it('waits for a sleep still going at 7am before measuring the night', () => {
+    const stillAsleep: LogEntry = { id: 'open', type: 'sleep', time: at(0, 5, 0).toISOString() }
+    const log = [...steady(2), sleep(at(1, 19, 30), 200), stillAsleep]
+    const today = (now: Date) => dailyMeasures(log, now).find((d) => d.day === toISODate(NOW))!
+    expect(today(at(0, 7, 30)).values.longestNight).toBeUndefined()
+    // Once she wakes at 8am, the whole night counts, the sleep she woke from included
+    const woke: LogEntry = { ...stillAsleep, endTime: at(0, 8, 0).toISOString() }
+    const night = dailyMeasures([...steady(2), sleep(at(1, 19, 30), 200), woke], at(0, 8, 30))
+    expect(night.find((d) => d.day === toISODate(NOW))!.values.nightWakings).toBe(1)
   })
 
   it('does not measure today before it is over', () => {

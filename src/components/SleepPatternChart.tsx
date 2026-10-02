@@ -29,7 +29,8 @@ const TICKS: Array<{ minutes: number; label: string }> = [
 ]
 const ROW_LABEL = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric' })
 
-type Selection = { row: number; kind: 'sleep' | 'feed'; index: number }
+/** Keyed by day rather than row, so it still points at the same mark after midnight */
+type Selection = { day: string; kind: 'sleep' | 'feed'; index: number }
 
 export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date }) {
   const [selected, setSelected] = useState<Selection | null>(null)
@@ -40,7 +41,7 @@ export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date
   const height = AXIS + days.length * ROW
   const toggle = (next: Selection) =>
     setSelected(
-      selected && selected.row === next.row && selected.kind === next.kind && selected.index === next.index
+      selected && selected.day === next.day && selected.kind === next.kind && selected.index === next.index
         ? null
         : next,
     )
@@ -91,9 +92,9 @@ export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date
 
               {day.sleeps.map((sleep, i) => {
                 const width = Math.max(x(sleep.end) - x(sleep.start), 2)
-                const on = selected?.row === row && selected.kind === 'sleep' && selected.index === i
+                const on = selected?.day === day.day && selected.kind === 'sleep' && selected.index === i
                 return (
-                  <g key={`s${i}`} onClick={() => toggle({ row, kind: 'sleep', index: i })}>
+                  <g key={`s${i}`} onClick={() => toggle({ day: day.day, kind: 'sleep', index: i })}>
                     {/* A hit target the full row high and never narrower than a thumb */}
                     <rect
                       x={x(sleep.start) + width / 2 - Math.max(width, 16) / 2}
@@ -115,9 +116,9 @@ export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date
               })}
 
               {day.feeds.map((feed, i) => {
-                const on = selected?.row === row && selected.kind === 'feed' && selected.index === i
+                const on = selected?.day === day.day && selected.kind === 'feed' && selected.index === i
                 return (
-                  <g key={`f${i}`} onClick={() => toggle({ row, kind: 'feed', index: i })}>
+                  <g key={`f${i}`} onClick={() => toggle({ day: day.day, kind: 'feed', index: i })}>
                     <circle cx={x(feed.at)} cy={mid} r="11" fill="transparent" />
                     <circle
                       className={on ? 'sp-feed sp-on' : 'sp-feed'}
@@ -144,7 +145,7 @@ export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date
       </svg>
 
       <p className="tiny muted sp-detail" aria-live="polite">
-        {selected ? describe(days[selected.row], selected) : 'Tap a sleep or a feed to read it.'}
+        {(selected && describe(days, selected)) ?? 'Tap a sleep or a feed to read it.'}
       </p>
 
       <details className="sp-table">
@@ -177,15 +178,20 @@ export function SleepPatternChart({ days, now }: { days: PatternDay[]; now: Date
   )
 }
 
-function describe(day: PatternDay, selection: Selection): string {
+/** The tapped mark in words, or null if it has scrolled out of the chart */
+function describe(days: PatternDay[], selection: Selection): string | null {
+  const day = days.find((d) => d.day === selection.day)
+  if (!day) return null
   if (selection.kind === 'sleep') {
     const sleep = day.sleeps[selection.index]
+    if (!sleep) return null
     const minutes = (sleep.to.getTime() - sleep.from.getTime()) / 60_000
     return sleep.open
       ? `Asleep since ${formatTime(sleep.from)} · ${formatDuration(minutes)} so far`
       : `Slept ${formatTime(sleep.from)} – ${formatTime(sleep.to)} · ${formatDuration(minutes)}`
   }
   const feed = day.feeds[selection.index]
+  if (!feed) return null
   const parts = [`Fed at ${formatTime(feed.time)}`]
   if (feed.ml > 0) parts.push(`${feed.ml} ml`)
   if (feed.nursingMinutes > 0) parts.push(`nursed ${formatDuration(feed.nursingMinutes)}`)

@@ -57,6 +57,14 @@ describe('herWeek', () => {
     expect(week.values.wake).toBe(210)
   })
 
+  it('does not count a day with no sleep logged as a day without sleep', () => {
+    const feedsOnly = [6, 10, 14, 18].map((h) => bottle(1, h, 100))
+    const log = [...[2, 3, 4, 5, 6, 7].flatMap(day), ...feedsOnly]
+    const week = herWeek(log, [], NOW)
+    expect(week.values.sleep).toBe(390)
+    expect(week.values.feeds).toBe(4)
+  })
+
   it('says nothing from fewer than three logged days', () => {
     const week = herWeek([1, 2].flatMap(day), [], NOW)
     expect(week.days).toBe(2)

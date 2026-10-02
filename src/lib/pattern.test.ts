@@ -58,6 +58,17 @@ describe('sleepPattern', () => {
     expect(rows[3].feeds).toHaveLength(1)
   })
 
+  it('draws by the clock on the morning the clocks go forward', () => {
+    // Sydney skips 2am–3am on 4 October 2026: 1am to 4am is two hours asleep
+    const after = new Date(2026, 9, 4, 18, 0)
+    const from = new Date(2026, 9, 4, 1, 0)
+    const to = new Date(2026, 9, 4, 4, 0)
+    const rows = sleepPattern([sleep(from.toISOString(), to.toISOString()), bottle(new Date(2026, 9, 4, 3, 0).toISOString(), 90)], 1, after)
+    expect(rows[0].sleeps).toMatchObject([{ start: 60, end: 240 }])
+    expect(rows[0].feeds).toMatchObject([{ at: 180 }])
+    expect(rows[0].asleepMinutes).toBe((to.getTime() - from.getTime()) / 60_000)
+  })
+
   it('has nothing to draw before anything is logged', () => {
     expect(sleepPattern([], 14, NOW)).toEqual([])
   })

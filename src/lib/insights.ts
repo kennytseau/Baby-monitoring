@@ -70,10 +70,12 @@ export function herWeek(log: LogEntry[], growth: GrowthEntry[], now = new Date()
   }
   if (days < MIN_DAYS) return result
 
-  if (pattern.length >= MIN_DAYS) {
-    values.sleep = mean(pattern.map((d) => d.asleepMinutes))
-    values.feeds = mean(pattern.map((d) => d.feeds.length))
-  }
+  // Each averaged over the days it was logged on: a day with feeds but no
+  // sleep logged is a gap in the sleep record, not a day without sleep
+  const slept = pattern.filter((d) => d.sleeps.length > 0)
+  const fed = pattern.filter((d) => d.feeds.length > 0)
+  if (slept.length >= MIN_DAYS) values.sleep = mean(slept.map((d) => d.asleepMinutes))
+  if (fed.length >= MIN_DAYS) values.feeds = mean(fed.map((d) => d.feeds.length))
   if (summaries.length >= MIN_DAYS) {
     values.naps = mean(summaries.map((s) => s.naps))
     values.wet = mean(summaries.map((s) => s.totals.nappies.wet + s.totals.nappies.mixed))

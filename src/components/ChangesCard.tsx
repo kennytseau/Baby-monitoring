@@ -41,12 +41,17 @@ function usePatterns() {
 export function ChangesCard() {
   const { changes, regression } = usePatterns()
   const flagged = regression.state === 'possible' || regression.state === 'likely'
-  if (changes.length === 0 && !flagged) return null
+  // A regression is followed for longer than other changes, so its signs can
+  // outlast them; they are listed with it either way
+  const shown = flagged
+    ? [...regression.signs, ...changes.filter((c) => !regression.signs.some((s) => s.measure === c.measure))]
+    : changes
+  if (shown.length === 0) return null
   return (
     <section className="card" aria-live="polite">
       <p className="rhythm-label">What's changed</p>
       {flagged && <RegressionHeadline watch={regression} />}
-      {changes.map((change) => (
+      {shown.map((change) => (
         <ChangeRow key={change.measure} change={change} />
       ))}
       <p className="tiny faint" style={{ marginTop: 8 }}>

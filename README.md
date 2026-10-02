@@ -258,9 +258,15 @@ still going on. A change is shown for up to two weeks. After that it is her new
 normal, and the predictions, which learn from her last fortnight, have caught
 up with it.
 
-Run back over her log, the rule raised a change about every five days. Each
-held for 3 to 14 days, and they matched what happened: feeds jumping from 9 to
-12 a day at six weeks, and naps roughly halving in mid-August.
+Run back over her log from 10 August to 23 September, the rule raised a change
+every three or four days (she was changing fast at that age). Each was shown
+for 3 to 14 days, and they matched what happened: feeds jumping from 9 to 12 a
+day at six weeks, naps roughly halving in mid-August, and three broken nights
+on 7–9 September.
+
+A sleep belongs to whichever of the night or the day holds most of it, so a
+6:20pm bedtime that runs to 10:30 counts as the start of her night, not a nap.
+A night isn't measured while she is still asleep in it.
 
 **The 4-month sleep regression.** It is a lasting change in how her sleep
 cycles work. It commonly starts between about 12 and 20 weeks and settles
@@ -277,9 +283,12 @@ sleep is split once.
 | | |
 |---|---|
 | Nights to notice it | 1–3 |
-| Days it kept being shown while the regression went on | every day, up to the end of her log (11+) |
-| Days to clear once it ended | 3 |
-| False alarms on her real log, 10 Aug – 23 Sep | 0 of 45 days |
+| While it went on | flagged every day for the full version; the milder version dropped out for 2 days once |
+| Once it ended | cleared after 2 normal nights |
+| On her real log, 10 Aug – 23 Sep, age ignored | *Maybe starting* on 3 days (9–11 Sep, after nights with 4, 3 and 3 wakings against her usual 2); never *Likely started* |
+
+She was 9 weeks on those days, below where the watch starts, so the app showed
+them only as "She is waking more at night".
 
 Neither the changes nor the regression watch feed into a prediction.
 

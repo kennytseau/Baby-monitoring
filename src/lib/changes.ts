@@ -53,15 +53,28 @@ function overlapMinutes(block: SleepBlock, from: Date, to: Date): number {
   return Math.max(0, (end - start) / MS_PER_MINUTE)
 }
 
+/** More than half of this sleep falls between `from` and `to` */
+function mostlyWithin(block: SleepBlock, from: Date, to: Date): boolean {
+  return overlapMinutes(block, from, to) * 2 > block.minutes
+}
+
+/** A sleep that touches this stretch has not ended yet, so it cannot be measured */
+function stillGoing(blocks: SleepBlock[], from: Date, to: Date): boolean {
+  return blocks.some((b) => b.open && b.end > from && b.start < to)
+}
+
 function median(xs: number[]): number {
   return quantile([...xs].sort((a, b) => a - b), 0.5)
 }
 
 /**
- * Her nights and days, oldest first, as far back as the log goes. A night is
- * only measured once it is over (7am), and a day once it is over (7pm for
- * naps, midnight for feeds). A night or day with no sleep logged in it at all
- * is treated as not logged rather than as no sleep.
+ * Her nights and days, oldest first, as far back as the log goes.
+ *
+ * Each sleep belongs to whichever of the night or the day holds most of it, so
+ * a 6:20pm bedtime that runs to 10:30 is the start of her night, not a nap.
+ * A night is measured once it is over (7am) and no sleep in it is still going;
+ * the same for a day (7pm for naps, midnight for feeds). A night or day with
+ * no sleep logged in it at all is treated as not logged rather than as none.
  */
 export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] {
   const happened = happenedBy(log, now)
@@ -93,9 +106,8 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
     const nightFrom = at(morning, NIGHT_FROM_HOUR)
     nightFrom.setDate(nightFrom.getDate() - 1)
     const nightTo = at(morning, NIGHT_UNTIL_HOUR)
-    if (nightTo <= now && nightFrom >= at(first, 0)) {
-      // Sleeps that began during the night — a bedtime at 7:30pm included
-      const night = blocks.filter((b) => b.start >= nightFrom && b.start < nightTo && !b.open)
+    if (nightTo <= now && nightFrom >= at(first, 0) && !stillGoing(blocks, nightFrom, nightTo)) {
+      const night = blocks.filter((b) => mostlyWithin(b, nightFrom, nightTo))
       if (night.length > 0) {
         values.longestNight = Math.max(...night.map((b) => b.minutes))
         values.nightWakings = night.length - 1
@@ -104,10 +116,8 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
     }
 
     const dayTo = at(morning, NIGHT_FROM_HOUR)
-    if (dayTo <= now) {
-      const naps = blocks.filter(
-        (b) => b.start >= nightTo && b.start < dayTo && !b.open && b.minutes >= MIN_NAP_MINUTES,
-      )
+    if (dayTo <= now && !stillGoing(blocks, nightTo, dayTo)) {
+      const naps = blocks.filter((b) => mostlyWithin(b, nightTo, dayTo) && b.minutes >= MIN_NAP_MINUTES)
       if (naps.length > 0) {
         values.napLength = median(naps.map((b) => b.minutes))
         values.daySleep = blocks.reduce((total, b) => total + overlapMinutes(b, nightTo, dayTo), 0)
@@ -126,8 +136,9 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
 /**
  * Lately has to be this far from her usual before it counts as a change: a
  * quarter for times, one waking, two feeds. Settled by running the rule back
- * over her whole log — about one change every five days, each of them one a
- * parent would recognise (the 6-week feeding spurt, naps halving in August).
+ * over her whole log — a change every three or four days at this fast-changing
+ * age, each one a parent would recognise (the 6-week feeding spurt, naps
+ * halving in August).
  */
 const MIN_RELATIVE_CHANGE = 0.25
 const MIN_ABSOLUTE_CHANGE: Partial<Record<MeasureId, number>> = { nightWakings: 1, feeds: 2 }

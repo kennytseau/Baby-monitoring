@@ -4,6 +4,7 @@ import { sleepBlocks } from './rhythm'
 import { SAME_EVENT_MINUTES } from './needs'
 import { MS_PER_MINUTE } from './patterns'
 import { toISODate } from './age'
+import { minutesIntoDay } from './format'
 
 /**
  * Her days stacked one above the other on the same 24-hour line, so a rhythm
@@ -58,9 +59,13 @@ function nextMidnight(date: Date): Date {
   return d
 }
 
-/** Minutes from this row's midnight, capped to the row (a DST day is 23 or 25 hours) */
-function minutesOnRow(at: Date, midnight: Date): number {
-  return Math.min(DAY_MINUTES, Math.max(0, (at.getTime() - midnight.getTime()) / MS_PER_MINUTE))
+/**
+ * Where a moment sits on its row: by the clock, like the daily strip, so on the
+ * morning the clocks change a 3am feed is still drawn at 3am. The next
+ * midnight is the end of the row.
+ */
+function clockOnRow(at: Date, rowEnd: Date): number {
+  return at.getTime() >= rowEnd.getTime() ? DAY_MINUTES : minutesIntoDay(at)
 }
 
 /**
@@ -100,15 +105,19 @@ export function sleepPattern(log: LogEntry[], days = 14, now = new Date()): Patt
     // Walk the midnights the sleep crosses, one piece per day
     let cursor = block.start
     while (cursor < block.end) {
-      const midnight = midnightOf(cursor)
       const until = nextMidnight(cursor)
       const pieceEnd = block.end < until ? block.end : until
       const row = rows.get(toISODate(cursor))
       if (row) {
-        const start = minutesOnRow(cursor, midnight)
-        const end = minutesOnRow(pieceEnd, midnight)
-        row.sleeps.push({ start, end, from: block.start, to: block.end, open: block.open })
-        row.asleepMinutes += end - start
+        row.sleeps.push({
+          start: clockOnRow(cursor, until),
+          end: clockOnRow(pieceEnd, until),
+          from: block.start,
+          to: block.end,
+          open: block.open,
+        })
+        // Time actually asleep, which on a clock-change night is not the bar's length
+        row.asleepMinutes += (pieceEnd.getTime() - cursor.getTime()) / MS_PER_MINUTE
       }
       cursor = until
     }
@@ -133,7 +142,7 @@ export function sleepPattern(log: LogEntry[], days = 14, now = new Date()): Patt
       continue
     }
     const row = rows.get(toISODate(time))
-    previous = { at: minutesOnRow(time, midnightOf(time)), time, entries: 1, ml, nursingMinutes: minutes }
+    previous = { at: minutesIntoDay(time), time, entries: 1, ml, nursingMinutes: minutes }
     row?.feeds.push(previous)
   }
 
