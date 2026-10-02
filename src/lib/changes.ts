@@ -18,7 +18,7 @@ const NIGHT_FROM_HOUR = 19
 /** ...to this hour that morning; the day runs between the two */
 const NIGHT_UNTIL_HOUR = 7
 /** How many of the latest days make up "lately" */
-export const RECENT_DAYS = 3
+const RECENT_DAYS = 3
 /** Her usual is drawn from this many days before those */
 const BASELINE_DAYS = 14
 /** Fewer days than this and her "usual" is not worth comparing against */
@@ -85,16 +85,17 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
     'asc',
   )
 
-  // Feeds merged into events, the way the feed predictions count them
+  // Feeds merged into events the way the feed predictions count them: a
+  // top-up within 45 minutes of the start of a feed is part of that feed
   const feedDays = new Map<string, number>()
-  let lastFeed = -Infinity
+  let feedStart = -Infinity
   for (const feed of feeds) {
     const time = Date.parse(feed.time)
-    if ((time - lastFeed) / MS_PER_MINUTE >= SAME_EVENT_MINUTES) {
+    if ((time - feedStart) / MS_PER_MINUTE >= SAME_EVENT_MINUTES) {
+      feedStart = time
       const day = toISODate(new Date(time))
       feedDays.set(day, (feedDays.get(day) ?? 0) + 1)
     }
-    lastFeed = time
   }
 
   const first = new Date(sortedByTime(happened, 'asc')[0].time)
@@ -136,9 +137,9 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
 /**
  * Lately has to be this far from her usual before it counts as a change: a
  * quarter for times, one waking, two feeds. Settled by running the rule back
- * over her whole log — a change every three or four days at this fast-changing
- * age, each one a parent would recognise (the 6-week feeding spurt, naps
- * halving in August).
+ * over her whole log — about one change every five days, each one a parent
+ * would recognise (feeds jumping at three and a half weeks, naps shortening,
+ * her nights drawing out).
  */
 const MIN_RELATIVE_CHANGE = 0.25
 const MIN_ABSOLUTE_CHANGE: Partial<Record<MeasureId, number>> = { nightWakings: 1, feeds: 2 }
@@ -256,7 +257,7 @@ const MEASURES: MeasureId[] = [
  * about 12 and 20 weeks, but when it starts is not something any log can tell
  * in advance — what it can do is spot the signs within a few nights.
  */
-export const REGRESSION_FROM_WEEKS = 10
+const REGRESSION_FROM_WEEKS = 10
 export const REGRESSION_UNTIL_WEEKS = 24
 /** Naps this short are one sleep cycle — the regression's daytime sign */
 const ONE_CYCLE_NAP_MINUTES = 45

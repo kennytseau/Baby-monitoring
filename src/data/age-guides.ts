@@ -16,9 +16,7 @@ export type GuideId = 'sleep' | 'naps' | 'wake' | 'feeds' | 'bottle' | 'wet' | '
 export interface AgeGuide {
   id: GuideId
   label: string
-  /** The typical range in the guide's own unit, when it is a number */
-  range?: [number, number]
-  /** How the range reads, e.g. "14–17 h" */
+  /** The typical range as it reads, e.g. "14–17 h" */
   text: string
   source: string
 }
@@ -116,7 +114,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'sleep',
       label: 'Sleep in 24 hours',
-      range: sleep.range,
       text: `${hours(sleep.range[0])}–${hours(sleep.range[1])} h`,
       source: sleep.source,
     })
@@ -127,7 +124,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'naps',
       label: 'Daytime naps',
-      range: naps.range,
       text: naps.range ? `${countText(naps.range)} a day` : naps.text!,
       source: 'Commonly quoted by sleep guides, not from research',
     })
@@ -138,7 +134,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'wake',
       label: 'Awake between sleeps',
-      range: wake,
       text: minutesText(wake),
       source: 'Commonly quoted by sleep guides, not from research',
     })
@@ -149,7 +144,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'feeds',
       label: 'Milk feeds in 24 hours',
-      range: feeds.range,
       text: feeds.text ?? countText(feeds.range),
       source: feeds.source,
     })
@@ -162,7 +156,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'bottle',
       label: 'Formula in 24 hours',
-      range,
       text: range
         ? `${range[0]}–${range[1]} ml at ${weightKg} kg`
         : `${ML_PER_KG[0]}–${ML_PER_KG[1]} ml per kg of her weight`,
@@ -174,7 +167,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'wet',
       label: 'Wet nappies a day',
-      range: [6, Infinity],
       text: '6 or more',
       source: 'NHS and Raising Children Network, after the first week',
     })
@@ -185,7 +177,6 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
     guides.push({
       id: 'weight',
       label: 'Weight gain',
-      range: gain,
       text: `${gain[0]}–${gain[1]} g a week`,
       source: 'Commonly quoted in child health guidance; her percentile curve says more',
     })

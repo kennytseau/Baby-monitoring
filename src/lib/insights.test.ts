@@ -95,7 +95,7 @@ describe('guidesForAge', () => {
 
   it('turns the formula guide into millilitres once she has a weight', () => {
     expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('750–1000 ml at 5 kg')
-    expect(guidesForAge(2.8).find((g) => g.id === 'bottle')?.range).toBeUndefined()
+    expect(guidesForAge(2.8).find((g) => g.id === 'bottle')?.text).toBe('150–200 ml per kg of her weight')
     expect(guidesForAge(7).find((g) => g.id === 'bottle')).toBeUndefined()
   })
 })

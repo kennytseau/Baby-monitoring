@@ -95,6 +95,12 @@ describe('dailyMeasures', () => {
     expect(night.find((d) => d.day === toISODate(NOW))!.values.nightWakings).toBe(1)
   })
 
+  it('counts feeds the way the predictions do, from the start of each feed', () => {
+    // 9:00 and its 9:40 top-up are one feed; 10:20 is 80 minutes after it began
+    const log = [bottle(at(1, 9, 0)), bottle(at(1, 9, 40)), bottle(at(1, 10, 20))]
+    expect(dailyMeasures(log, NOW).find((d) => d.day === toISODate(at(1, 12)))!.values.feeds).toBe(2)
+  })
+
   it('does not measure today before it is over', () => {
     const all = dailyMeasures([...steady(1), ...steady(0)], NOW)
     const today = all[all.length - 1]
