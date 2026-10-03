@@ -1,5 +1,5 @@
 import type { BottleContent } from '../lib/types'
-import { BOTTLE_LABELS, BOTTLE_OPTIONS } from '../lib/log'
+import { BOTTLE_LABELS, BOTTLE_OPTIONS, type PumpMode } from '../lib/log'
 
 /**
  * The controls the two logging surfaces share. Quick log and the daily log
@@ -70,5 +70,110 @@ export function MedicineFields({
         />
       </div>
     </div>
+  )
+}
+
+const PUMP_MODE_KEY = 'little-one:pump-mode'
+
+/** The way this phone last logged pumping — one total unless sides were chosen */
+export function lastPumpMode(): PumpMode {
+  try {
+    return localStorage.getItem(PUMP_MODE_KEY) === 'sides' ? 'sides' : 'total'
+  } catch {
+    return 'total'
+  }
+}
+
+export function rememberPumpMode(mode: PumpMode): void {
+  try {
+    localStorage.setItem(PUMP_MODE_KEY, mode)
+  } catch {
+    // Private browsing can refuse storage; the choice then lasts the session.
+  }
+}
+
+/**
+ * How much was pumped and for how long. One total by default — two numbers in
+ * the middle of the night — or each side, for when that is worth knowing.
+ */
+export function PumpFields({
+  idPrefix,
+  mode,
+  onMode,
+  left,
+  right,
+  total,
+  minutes,
+  onLeft,
+  onRight,
+  onTotal,
+  onMinutes,
+}: {
+  idPrefix: string
+  mode: PumpMode
+  onMode: (mode: PumpMode) => void
+  left: string
+  right: string
+  total: string
+  minutes: string
+  onLeft: (value: string) => void
+  onRight: (value: string) => void
+  onTotal: (value: string) => void
+  onMinutes: (value: string) => void
+}) {
+  const amount = (id: string, label: string, value: string, onChange: (value: string) => void) => (
+    <div className="field">
+      <label htmlFor={`${idPrefix}-${id}`}>{label}</label>
+      <input
+        id={`${idPrefix}-${id}`}
+        type="number"
+        inputMode="numeric"
+        min="0"
+        step="5"
+        placeholder={id === 'total' ? '120' : '60'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  )
+  return (
+    <>
+      <div className="seg" role="group" aria-label="How to log the amount">
+        {(['total', 'sides'] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={mode === option ? 'on' : ''}
+            aria-pressed={mode === option}
+            onClick={() => onMode(option)}
+          >
+            {option === 'total' ? 'Total' : 'Left & right'}
+          </button>
+        ))}
+      </div>
+      <div className="field-row">
+        {mode === 'total' ? (
+          amount('total', 'Total (ml)', total, onTotal)
+        ) : (
+          <>
+            {amount('left', 'Left (ml)', left, onLeft)}
+            {amount('right', 'Right (ml)', right, onRight)}
+          </>
+        )}
+        <div className="field">
+          <label htmlFor={`${idPrefix}-pump-mins`}>Minutes</label>
+          <input
+            id={`${idPrefix}-pump-mins`}
+            type="number"
+            inputMode="numeric"
+            min="0"
+            step="1"
+            placeholder="20"
+            value={minutes}
+            onChange={(e) => onMinutes(e.target.value)}
+          />
+        </div>
+      </div>
+    </>
   )
 }

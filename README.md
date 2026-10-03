@@ -44,8 +44,9 @@ still with no accounts and nothing sold or tracked.
   - **Nappies** — wet, poo or both, with the time.
   - **Sleep** — tap when she goes down, tap again when she wakes; the gaps in
     between are shown as **wake windows**.
-  - **Pumping** — millilitres from the left and right breast, and how long the
-    session took.
+  - **Pumping** — how much and how long: one total by default (two numbers in
+    the middle of the night), or flip the toggle to log the left and right
+    breast separately. Each phone remembers which way it was last used.
   - **Medicine** — what, how much, and when it was last given.
   - **Coming up** — anything set for a time later on waits here, with Edit and
     Delete, until that time comes. Until then it counts for nothing: Right now

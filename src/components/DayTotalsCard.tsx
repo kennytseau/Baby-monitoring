@@ -29,7 +29,11 @@ export function DayTotalsCard({ totals }: { totals: DayTotals }) {
   const pumped: string[] = []
   if (totals.pumpSessions) {
     pumped.push(`${totals.pumpedMl} ml`)
-    pumped.push(`L ${totals.pumpedLeftMl} ml · R ${totals.pumpedRightMl} ml`)
+    // The split only where sides were measured; a total on its own says so
+    if (totals.pumpedMl > totals.pumpedUnsplitMl) {
+      pumped.push(`L ${totals.pumpedLeftMl} ml · R ${totals.pumpedRightMl} ml`)
+      if (totals.pumpedUnsplitMl) pumped.push(`${totals.pumpedUnsplitMl} ml not split`)
+    }
     pumped.push(`${totals.pumpSessions} session${totals.pumpSessions === 1 ? '' : 's'}`)
   }
 

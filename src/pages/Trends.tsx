@@ -152,7 +152,8 @@ function DayCard({ summary }: { summary: DaySummary }) {
           {t.pumpedLeftMl > 0 || t.pumpedRightMl > 0 ? (
             <span className="faint">
               {' '}
-              (L {t.pumpedLeftMl} · R {t.pumpedRightMl})
+              (L {t.pumpedLeftMl} · R {t.pumpedRightMl}
+              {t.pumpedUnsplitMl > 0 ? ` · ${t.pumpedUnsplitMl} not split` : ''})
             </span>
           ) : null}
         </p>

@@ -120,6 +120,27 @@ export function pumpTotalMl(entry: PumpEntry): number {
   return sides > 0 ? sides : (entry.totalMl ?? 0)
 }
 
+/** Whether a pumping session is logged as one total or side by side */
+export type PumpMode = 'total' | 'sides'
+
+/** How a session was logged, so editing it opens the same way */
+export function pumpModeOf(entry: PumpEntry): PumpMode {
+  return entry.leftMl != null || entry.rightMl != null ? 'sides' : 'total'
+}
+
+/**
+ * The amounts to save for a session. Only the chosen way is kept, so a session
+ * switched from sides to a total (or back) never carries a stale figure.
+ */
+export function pumpAmounts(
+  mode: PumpMode,
+  leftMl?: number,
+  rightMl?: number,
+  totalMl?: number,
+): Pick<PumpEntry, 'leftMl' | 'rightMl' | 'totalMl'> {
+  return mode === 'total' ? { leftMl: undefined, rightMl: undefined, totalMl } : { leftMl, rightMl, totalMl: undefined }
+}
+
 /** The sleeps in a log, in the order they were logged */
 function sleepsIn(log: LogEntry[]): SleepEntry[] {
   return log.filter((e): e is SleepEntry => e.type === 'sleep')
@@ -209,6 +230,8 @@ export interface DayTotals {
   pumpedLeftMl: number
   pumpedRightMl: number
   pumpedMl: number
+  /** Pumped as one total, with no left/right split */
+  pumpedUnsplitMl: number
   /** Every dose given, in the order they were given */
   medicines: Array<{ name: string; amount?: string; time: string }>
 }
@@ -235,6 +258,7 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
     pumpedLeftMl: 0,
     pumpedRightMl: 0,
     pumpedMl: 0,
+    pumpedUnsplitMl: 0,
     medicines: [],
   }
 
@@ -272,6 +296,7 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
       totals.pumpedLeftMl += entry.leftMl ?? 0
       totals.pumpedRightMl += entry.rightMl ?? 0
       totals.pumpedMl += pumpTotalMl(entry)
+      if (pumpModeOf(entry) === 'total') totals.pumpedUnsplitMl += entry.totalMl ?? 0
     }
   }
   return totals
