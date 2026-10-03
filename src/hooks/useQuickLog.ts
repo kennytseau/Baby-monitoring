@@ -12,7 +12,7 @@ import {
   startNursingSession,
   switchNursingSide,
 } from '../lib/log'
-import type { BottleContent, BreastSide, NappyKind } from '../lib/types'
+import type { BottleContent, BreastSide, NappyKind, PumpEntry } from '../lib/types'
 
 /**
  * The one-tap actions shared by Home and the Daily log, so both screens drive
@@ -129,13 +129,16 @@ export function useQuickLog() {
   )
 
   const logPump = useCallback(
-    (leftMl?: number, rightMl?: number, durationMinutes?: number, at: Date = new Date()) => {
+    (
+      amounts: Pick<PumpEntry, 'leftMl' | 'rightMl' | 'totalMl'>,
+      durationMinutes?: number,
+      at: Date = new Date(),
+    ) => {
       addLog({
         id: uid(),
         type: 'pump',
         time: at.toISOString(),
-        leftMl,
-        rightMl,
+        ...amounts,
         durationMinutes,
       })
     },

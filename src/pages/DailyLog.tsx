@@ -3,7 +3,13 @@ import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { QuickLog } from '../components/QuickLog'
-import { BottleContentsPicker, MedicineFields } from '../components/LogFields'
+import {
+  BottleContentsPicker,
+  MedicineFields,
+  PumpFields,
+  lastPumpMode,
+  rememberPumpMode,
+} from '../components/LogFields'
 import { DayTimeline } from '../components/DayTimeline'
 import { DayTotalsCard } from '../components/DayTotalsCard'
 import type {
@@ -21,6 +27,9 @@ import {
   sortedByTime,
   summarizeEntry,
   wakeWindows,
+  pumpAmounts,
+  pumpModeOf,
+  type PumpMode,
 } from '../lib/log'
 import {
   dayOf,
@@ -88,6 +97,8 @@ export function DailyLog() {
   const [pumpLeft, setPumpLeft] = useState('')
   const [pumpRight, setPumpRight] = useState('')
   const [pumpMinutes, setPumpMinutes] = useState('')
+  const [pumpTotal, setPumpTotal] = useState('')
+  const [pumpMode, setPumpMode] = useState<PumpMode>(lastPumpMode)
   const [medicineName, setMedicineName] = useState('')
   const [medicineAmount, setMedicineAmount] = useState('')
   const [note, setNote] = useState('')
@@ -143,7 +154,9 @@ export function DailyLog() {
     setNappyKind('wet')
     setPumpLeft('')
     setPumpRight('')
+    setPumpTotal('')
     setPumpMinutes('')
+    setPumpMode(lastPumpMode())
     setMedicineName('')
     setMedicineAmount('')
     setNote('')
@@ -170,8 +183,11 @@ export function DailyLog() {
       setMedicineName(entry.name)
       setMedicineAmount(entry.amount ?? '')
     } else {
+      // Opens the way it was logged, so a total-only session keeps its total
+      setPumpMode(pumpModeOf(entry))
       setPumpLeft(entry.leftMl?.toString() ?? '')
       setPumpRight(entry.rightMl?.toString() ?? '')
+      setPumpTotal(entry.totalMl?.toString() ?? '')
       setPumpMinutes(entry.durationMinutes?.toString() ?? '')
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -226,8 +242,7 @@ export function DailyLog() {
         id,
         type: 'pump',
         time: iso,
-        leftMl: positiveNumber(pumpLeft),
-        rightMl: positiveNumber(pumpRight),
+        ...pumpAmounts(pumpMode, positiveNumber(pumpLeft), positiveNumber(pumpRight), positiveNumber(pumpTotal)),
         durationMinutes: positiveNumber(pumpMinutes),
         note: trimmedNote,
       }
@@ -373,47 +388,22 @@ export function DailyLog() {
           )}
 
           {type === 'pump' && (
-            <div className="field-row">
-              <div className="field">
-                <label htmlFor="log-pump-left">Left (ml)</label>
-                <input
-                  id="log-pump-left"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="5"
-                  placeholder="60"
-                  value={pumpLeft}
-                  onChange={(e) => setPumpLeft(e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="log-pump-right">Right (ml)</label>
-                <input
-                  id="log-pump-right"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="5"
-                  placeholder="60"
-                  value={pumpRight}
-                  onChange={(e) => setPumpRight(e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="log-pump-mins">Minutes</label>
-                <input
-                  id="log-pump-mins"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="1"
-                  placeholder="20"
-                  value={pumpMinutes}
-                  onChange={(e) => setPumpMinutes(e.target.value)}
-                />
-              </div>
-            </div>
+            <PumpFields
+              idPrefix="log"
+              mode={pumpMode}
+              onMode={(mode) => {
+                setPumpMode(mode)
+                rememberPumpMode(mode)
+              }}
+              left={pumpLeft}
+              right={pumpRight}
+              total={pumpTotal}
+              minutes={pumpMinutes}
+              onLeft={setPumpLeft}
+              onRight={setPumpRight}
+              onTotal={setPumpTotal}
+              onMinutes={setPumpMinutes}
+            />
           )}
 
           {type === 'medication' && (

@@ -20,6 +20,9 @@ import {
   summarizeEntry,
   switchNursingSide,
   wakeWindows,
+  pumpAmounts,
+  pumpModeOf,
+  pumpTotalMl,
 } from './log'
 import type { FeedEntry, LogEntry, NappyEntry, PumpEntry, SleepEntry } from './types'
 
@@ -376,5 +379,39 @@ describe('which side to start on', () => {
   it('ignores a feed set for later', () => {
     const planned = nursing({ id: 'f1', time: new Date(NOW.getTime() + 3600_000).toISOString(), startSide: 'left' })
     expect(suggestNursingSide([planned], NOW)).toBeNull()
+  })
+})
+
+describe('pumping as one total or side by side', () => {
+  const NOON = new Date(2026, 9, 3, 12, 0).toISOString()
+  const pump = (over: Partial<PumpEntry>): PumpEntry => ({ id: 'p', type: 'pump', time: NOON, ...over })
+
+  it('keeps only the way it was logged, so switching never leaves a stale figure', () => {
+    expect(pumpAmounts('total', 60, 50, 120)).toEqual({ leftMl: undefined, rightMl: undefined, totalMl: 120 })
+    expect(pumpAmounts('sides', 60, 50, 120)).toEqual({ leftMl: 60, rightMl: 50, totalMl: undefined })
+  })
+
+  it('opens a session for editing the way it was logged', () => {
+    expect(pumpModeOf(pump({ totalMl: 120 }))).toBe('total')
+    expect(pumpModeOf(pump({ leftMl: 60 }))).toBe('sides')
+    expect(pumpModeOf(pump({ leftMl: 60, rightMl: 50 }))).toBe('sides')
+  })
+
+  it('counts a total-only session in the day, and keeps it out of the left/right split', () => {
+    const totals = dayTotals(
+      [pump({ id: 'a', totalMl: 120, durationMinutes: 20 }), pump({ id: 'b', leftMl: 60, rightMl: 50 })],
+      new Date(2026, 9, 3, 18, 0),
+    )
+    expect(totals.pumpSessions).toBe(2)
+    expect(totals.pumpedMl).toBe(230)
+    expect(totals.pumpedLeftMl).toBe(60)
+    expect(totals.pumpedRightMl).toBe(50)
+    expect(totals.pumpedUnsplitMl).toBe(120)
+  })
+
+  it('reads a total-only session plainly in the log', () => {
+    const entry = pump({ totalMl: 120, durationMinutes: 20 })
+    expect(pumpTotalMl(entry)).toBe(120)
+    expect(summarizeEntry(entry)).toEqual({ title: 'Pumped 120 ml', detail: 'both sides · 20 min' })
   })
 })

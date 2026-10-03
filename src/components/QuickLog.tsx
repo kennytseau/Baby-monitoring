@@ -3,8 +3,16 @@ import { useNow } from '../hooks/useNow'
 import { useAppState } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
-import { NAPPY_LABELS, happenedBy, sleepMinutes, sortedByTime, suggestNursingSide } from '../lib/log'
-import { BottleContentsPicker, MedicineFields } from './LogFields'
+import {
+  NAPPY_LABELS,
+  happenedBy,
+  pumpAmounts,
+  sleepMinutes,
+  sortedByTime,
+  suggestNursingSide,
+  type PumpMode,
+} from '../lib/log'
+import { BottleContentsPicker, MedicineFields, PumpFields, lastPumpMode, rememberPumpMode } from './LogFields'
 import {
   formatAgo,
   formatDuration,
@@ -49,6 +57,8 @@ export function QuickLog() {
   const [leftMl, setLeftMl] = useState('')
   const [rightMl, setRightMl] = useState('')
   const [pumpMinutes, setPumpMinutes] = useState('')
+  const [pumpTotal, setPumpTotal] = useState('')
+  const [pumpMode, setPumpMode] = useState<PumpMode>(lastPumpMode)
   const [sleepError, setSleepError] = useState<string | null>(null)
   /** How far back the next entry is being logged: 0 is now */
   const [offsetMinutes, setOffsetMinutes] = useState(0)
@@ -155,11 +165,24 @@ export function QuickLog() {
     resetTime()
   }
 
+  const pumpReady =
+    pumpMode === 'total' ? !!positiveNumber(pumpTotal) : !!(positiveNumber(leftMl) || positiveNumber(rightMl))
+
+  function choosePumpMode(mode: PumpMode) {
+    setPumpMode(mode)
+    rememberPumpMode(mode)
+  }
+
   function savePump() {
-    if (!positiveNumber(leftMl) && !positiveNumber(rightMl)) return
-    logPump(positiveNumber(leftMl), positiveNumber(rightMl), positiveNumber(pumpMinutes), logAt())
+    if (!pumpReady) return
+    logPump(
+      pumpAmounts(pumpMode, positiveNumber(leftMl), positiveNumber(rightMl), positiveNumber(pumpTotal)),
+      positiveNumber(pumpMinutes),
+      logAt(),
+    )
     setLeftMl('')
     setRightMl('')
+    setPumpTotal('')
     setPumpMinutes('')
     setPanel(null)
     resetTime()
@@ -473,53 +496,20 @@ export function QuickLog() {
 
       {panel === 'pump' && (
         <div className="card stack quick-panel">
-          <p className="tiny muted">How much came off each side?</p>
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="quick-left">Left (ml)</label>
-              <input
-                id="quick-left"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                step="5"
-                placeholder="60"
-                value={leftMl}
-                onChange={(e) => setLeftMl(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="quick-right">Right (ml)</label>
-              <input
-                id="quick-right"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                step="5"
-                placeholder="60"
-                value={rightMl}
-                onChange={(e) => setRightMl(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="quick-pump-mins">Minutes</label>
-              <input
-                id="quick-pump-mins"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                step="1"
-                placeholder="20"
-                value={pumpMinutes}
-                onChange={(e) => setPumpMinutes(e.target.value)}
-              />
-            </div>
-          </div>
-          <button
-            className="btn btn-primary btn-block"
-            onClick={savePump}
-            disabled={!positiveNumber(leftMl) && !positiveNumber(rightMl)}
-          >
+          <PumpFields
+            idPrefix="quick"
+            mode={pumpMode}
+            onMode={choosePumpMode}
+            left={leftMl}
+            right={rightMl}
+            total={pumpTotal}
+            minutes={pumpMinutes}
+            onLeft={setLeftMl}
+            onRight={setRightMl}
+            onTotal={setPumpTotal}
+            onMinutes={setPumpMinutes}
+          />
+          <button className="btn btn-primary btn-block" onClick={savePump} disabled={!pumpReady}>
             Save pumping session
           </button>
         </div>
