@@ -439,12 +439,12 @@ export function suggestNursingSide(log: LogEntry[], now = new Date()): SideSugge
   const last = sortedByTime(happenedBy(log, now).filter(isNursing))[0]
   if (!last) return null
   if (last.startSide) {
-    return { side: OTHER_SIDE[last.startSide], because: `she started on the ${last.startSide} last time`, lastAt: last.time }
+    return { side: OTHER_SIDE[last.startSide], because: `{he} started on the ${last.startSide} last time`, lastAt: last.time }
   }
   const left = last.leftMinutes ?? 0
   const right = last.rightMinutes ?? 0
-  if (left > 0 && right === 0) return { side: 'right', because: 'she fed on the left last time', lastAt: last.time }
-  if (right > 0 && left === 0) return { side: 'left', because: 'she fed on the right last time', lastAt: last.time }
+  if (left > 0 && right === 0) return { side: 'right', because: '{he} fed on the left last time', lastAt: last.time }
+  if (right > 0 && left === 0) return { side: 'left', because: '{he} fed on the right last time', lastAt: last.time }
   if (left === right) return null
   const less: BreastSide = left < right ? 'left' : 'right'
   return {

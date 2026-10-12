@@ -158,7 +158,7 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
       label: 'Formula in 24 hours',
       text: range
         ? `${range[0]}–${range[1]} ml at ${weightKg} kg`
-        : `${ML_PER_KG[0]}–${ML_PER_KG[1]} ml per kg of her weight`,
+        : `${ML_PER_KG[0]}–${ML_PER_KG[1]} ml per kg of {his} weight`,
       source: 'NHS, for a baby fed only formula',
     })
   }
@@ -178,7 +178,7 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
       id: 'weight',
       label: 'Weight gain',
       text: `${gain[0]}–${gain[1]} g a week`,
-      source: 'Commonly quoted in child health guidance; her percentile curve says more',
+      source: 'Commonly quoted in child health guidance; {his} percentile curve says more',
     })
   }
 

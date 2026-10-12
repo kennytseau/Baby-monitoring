@@ -25,6 +25,7 @@ import {
   pumpTotalMl,
 } from './log'
 import type { FeedEntry, LogEntry, NappyEntry, PumpEntry, SleepEntry } from './types'
+import { withPronouns } from './format'
 
 const NOW = new Date('2026-09-06T12:00:00Z')
 const at = (hhmm: string) => `2026-09-06T${hhmm}:00.000Z`
@@ -353,7 +354,10 @@ describe('which side to start on', () => {
 
   it('suggests the other side from where the last feed started', () => {
     const last = nursing({ id: 'f1', time: at('09:00'), startSide: 'right', leftMinutes: 12, rightMinutes: 10 })
-    expect(suggestNursingSide([last], NOW)).toMatchObject({ side: 'left', because: 'she started on the right last time' })
+    const suggestion = suggestNursingSide([last], NOW)!
+    expect(suggestion.side).toBe('left')
+    expect(withPronouns(suggestion.because, 'female')).toBe('she started on the right last time')
+    expect(withPronouns(suggestion.because, 'male')).toBe('he started on the right last time')
   })
 
   it('goes by the latest feed, not an older one', () => {

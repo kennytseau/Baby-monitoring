@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNow } from '../hooks/useNow'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useQuickLog } from '../hooks/useQuickLog'
 import { NursingTimer } from './NursingTimer'
 import {
@@ -47,6 +47,7 @@ export function QuickLog() {
     logPump,
   } = useQuickLog()
   const { state } = useAppState()
+  const p = usePronouns()
   const now = useNow(30_000)
   const [panel, setPanel] = useState<Panel>(null)
 
@@ -136,7 +137,7 @@ export function QuickLog() {
     const at = logAt()
     if (openSleep) {
       if (at.getTime() <= new Date(openSleep.time).getTime()) {
-        setSleepError(`She went down at ${formatTime(openSleep.time)} — waking must be after that.`)
+        setSleepError(p(`{He} went down at ${formatTime(openSleep.time)} — waking must be after that.`))
         return
       }
       endSleep(at)
@@ -299,7 +300,7 @@ export function QuickLog() {
         <p className="tiny muted" role="status">
           Asleep since {formatTime(openSleep.time)}
           {sleepMinutes(openSleep, now) >= 1 ? ` (${formatDuration(sleepMinutes(openSleep, now))})` : ''} — tap
-          “Woke up” when she stirs.
+          “Woke up” when {p('{he}')} stirs.
         </p>
       )}
 
@@ -309,7 +310,7 @@ export function QuickLog() {
             <p className="small">
               <strong>Start on the {nextSide.side}</strong>{' '}
               <span className="muted">
-                — {nextSide.because}, {formatAgo(nextSide.lastAt, now)}.
+                — {p(nextSide.because)}, {formatAgo(nextSide.lastAt, now)}.
               </span>
             </p>
           ) : (
@@ -318,7 +319,7 @@ export function QuickLog() {
                 ? 'Switch sides — the timer keeps running.'
                 : openNursing
                   ? 'Tap a side to start the clock again.'
-                  : 'Which side is she on?'}
+                  : p('Which side is {he} on?')}
             </p>
           )}
           <div className="row">
@@ -429,9 +430,11 @@ export function QuickLog() {
       {panel === 'sleep' && (
         <div className="card stack quick-panel">
           <p className="tiny muted">
-            {openSleep
-              ? `She went down at ${formatTime(openSleep.time)}. Set the time above if she woke earlier.`
-              : 'Set the time above if she went down a while ago.'}
+            {p(
+              openSleep
+                ? `{He} went down at ${formatTime(openSleep.time)}. Set the time above if {he} woke earlier.`
+                : 'Set the time above if {he} went down a while ago.',
+            )}
           </p>
           <button className="btn btn-primary btn-block" onClick={saveSleep}>
             {openSleep ? 'Woke up' : 'Asleep'} {backdated ? `at ${formatTime(logAt())}` : 'now'}
@@ -479,7 +482,7 @@ export function QuickLog() {
             <textarea
               id="quick-med-note"
               rows={2}
-              placeholder="e.g. after her jabs, she was warm"
+              placeholder={p('e.g. after {his} jabs, {he} was warm')}
               value={medicineNote}
               onChange={(e) => setMedicineNote(e.target.value)}
             />

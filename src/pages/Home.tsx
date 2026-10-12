@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { correctionDays, developmentalAgeMonths, formatAge, usesAdjustedAge } from '../lib/age'
 import { bandForAgeMonths, nextBand } from '../data/milestones'
 import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
@@ -25,6 +25,7 @@ import {
 export function Home() {
   const { state, exportData, resetAll, sync } = useAppState()
   const profile = state.profile!
+  const p = usePronouns()
   const now = useNow(30_000)
   const [confirmReset, setConfirmReset] = useState(false)
 
@@ -57,7 +58,7 @@ export function Home() {
         </h1>
         {usesAdjusted && (
           <p className="tiny muted">
-            Born {Math.round(correctionDays(profile) / 7)} weeks early — milestones use her adjusted age.
+            Born {Math.round(correctionDays(profile) / 7)} weeks early — milestones use {p('{his}')} adjusted age.
           </p>
         )}
         {sync.paired && (
@@ -143,19 +144,21 @@ export function Home() {
       {nextInBand.length > 0 && (
         <section className="card">
           <h2 className="item-title">On the horizon</h2>
-          <p className="tiny muted">From her current window ({band.label.toLowerCase()})</p>
+          <p className="tiny muted">
+            From {p('{his}')} current window ({band.label.toLowerCase()})
+          </p>
           {nextInBand.map((m) => (
             <div className="list-item" key={m.id}>
               <div className="grow">
-                <div className="item-title">{m.title}</div>
-                <div className="item-sub">{m.howToEncourage[0]}</div>
+                <div className="item-title">{p(m.title)}</div>
+                <div className="item-sub">{p(m.howToEncourage[0])}</div>
               </div>
             </div>
           ))}
           {upcoming && (
             <p className="tiny faint" style={{ marginTop: 6 }}>
-              Coming later: {upcoming.label.toLowerCase()} — {upcoming.milestones[0].title.toLowerCase()},{' '}
-              {upcoming.milestones[1]?.title.toLowerCase()}…
+              Coming later: {upcoming.label.toLowerCase()} — {p(upcoming.milestones[0].title).toLowerCase()},{' '}
+              {upcoming.milestones[1] && p(upcoming.milestones[1].title).toLowerCase()}…
             </p>
           )}
         </section>
@@ -203,7 +206,7 @@ export function Home() {
       </details>
 
       <p className="disclaimer">
-        General information, not medical advice. Every baby develops at her own pace — talk to your
+        General information, not medical advice. Every baby develops at {p('{his}')} own pace — talk to your
         pediatrician about anything that concerns you.
       </p>
     </main>

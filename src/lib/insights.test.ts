@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { herWeek } from './insights'
 import { guidesForAge } from '../data/age-guides'
 import type { GrowthEntry, LogEntry } from './types'
+import { withPronouns } from './format'
 
 const NOW = new Date(2026, 9, 2, 14, 0)
 
@@ -95,7 +96,9 @@ describe('guidesForAge', () => {
 
   it('turns the formula guide into millilitres once she has a weight', () => {
     expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('750–1000 ml at 5 kg')
-    expect(guidesForAge(2.8).find((g) => g.id === 'bottle')?.text).toBe('150–200 ml per kg of her weight')
+    const perKg = guidesForAge(2.8).find((g) => g.id === 'bottle')!.text
+    expect(withPronouns(perKg, 'female')).toBe('150–200 ml per kg of her weight')
+    expect(withPronouns(perKg, 'male')).toBe('150–200 ml per kg of his weight')
     expect(guidesForAge(7).find((g) => g.id === 'bottle')).toBeUndefined()
   })
 })

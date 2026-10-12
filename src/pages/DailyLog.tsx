@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { QuickLog } from '../components/QuickLog'
 import {
@@ -80,6 +80,7 @@ const DAYS_PER_PAGE = 7
 
 export function DailyLog() {
   const { state, addLog, updateLog, deleteLog } = useAppState()
+  const p = usePronouns()
   const now = useNow(30_000)
   const [formOpen, setFormOpen] = useState(false)
   const [dayCount, setDayCount] = useState(DAYS_PER_PAGE)
@@ -459,8 +460,8 @@ export function DailyLog() {
               />
             ))}
             <p className="tiny faint" style={{ marginTop: 8 }}>
-              These don't count until their time comes. If she doesn't go down when expected, edit
-              the time or delete it.
+              These don't count until their time comes. If {p('{he}')} doesn't go down when expected,
+              edit the time or delete it.
             </p>
           </div>
         </section>

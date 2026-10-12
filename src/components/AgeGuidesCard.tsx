@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { guidesForAge } from '../data/age-guides'
 import type { AgeGuide, GuideId } from '../data/age-guides'
@@ -14,6 +14,7 @@ import { formatDuration } from '../lib/format'
  */
 export function AgeGuidesCard() {
   const { state } = useAppState()
+  const p = usePronouns()
   const profile = state.profile!
   const now = useNow(60_000)
   const week = useMemo(() => herWeek(state.log, state.growth, now), [state.log, state.growth, now])
@@ -31,18 +32,19 @@ export function AgeGuidesCard() {
       </div>
       <p className="tiny muted">
         Typical ranges from published guidance, with {profile.name}'s last 7 days alongside. Every
-        baby is different, and none of this feeds the app's predictions — those learn from her alone.
+        baby is different, and none of this feeds the app's predictions — those learn from {p('{him}')}{' '}
+        alone.
       </p>
       <dl className="guides">
         {guides.map((guide) => (
           <div key={guide.id} className="guide-row">
             <dt className="small">{guide.label}</dt>
-            <dd className="guide-typical small">{guide.text}</dd>
+            <dd className="guide-typical small">{p(guide.text)}</dd>
             <dd className="guide-hers small">
               <span className="muted">{profile.name}: </span>
               {hers(guide, week)}
             </dd>
-            <dd className="tiny faint">{guide.source}</dd>
+            <dd className="tiny faint">{p(guide.source)}</dd>
           </div>
         ))}
       </dl>

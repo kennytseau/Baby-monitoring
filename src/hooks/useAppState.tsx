@@ -18,7 +18,7 @@ import {
 } from '../lib/sync'
 import type { Collection } from '../lib/sync'
 import { MAX_CHANGES_PER_PUSH, SyncError, createHousehold, pushPull } from '../lib/syncClient'
-import { todayISO } from '../lib/format'
+import { todayISO, withPronouns } from '../lib/format'
 
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error'
 
@@ -315,4 +315,10 @@ export function useAppState(): AppStateContextValue {
   const ctx = useContext(AppStateContext)
   if (!ctx) throw new Error('useAppState must be used within AppStateProvider')
   return ctx
+}
+
+/** Text about the baby with the right pronouns filled in — see `withPronouns` */
+export function usePronouns(): (text: string) => string {
+  const sex = useAppState().state.profile?.sex ?? 'female'
+  return useCallback((text: string) => withPronouns(text, sex), [sex])
 }

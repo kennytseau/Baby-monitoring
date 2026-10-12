@@ -195,7 +195,7 @@ export function forecastRhythm(
   const asleep = !!current?.open
 
   if (blocks.length === 0) {
-    return { asleep: false, reason: 'Log a few sleeps and this will start predicting her rhythm.' }
+    return { asleep: false, reason: 'Log a few sleeps and this will start predicting {his} rhythm.' }
   }
 
   // Both predictions are made once, from the moment the sleep or the wake
@@ -205,7 +205,7 @@ export function forecastRhythm(
   if (asleep) {
     const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, historyDays)
     if (!estimated) {
-      return { asleep, reason: 'Not enough sleeps logged yet to guess when she will wake.' }
+      return { asleep, reason: 'Not enough sleeps logged yet to guess when {he} will wake.' }
     }
     return { asleep, wakeUp: toPrediction(current.start, estimated) }
   }
@@ -213,7 +213,7 @@ export function forecastRhythm(
   const lastWoke = current.end
   const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, historyDays)
   if (!estimated) {
-    return { asleep, reason: 'Not enough sleeps logged yet to guess her next wind-down.' }
+    return { asleep, reason: 'Not enough sleeps logged yet to guess {his} next wind-down.' }
   }
   // A catnap leaves her nearly as tired as before it, so the window that
   // follows is shorter — by as much as her own short naps have shown.

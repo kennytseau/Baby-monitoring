@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { TrendChart } from '../components/TrendChart'
 import { SleepPatternChart } from '../components/SleepPatternChart'
@@ -25,6 +25,7 @@ const CHARTS: Array<{ metric: TrendMetric; title: string; format: (v: number) =>
 
 export function Trends() {
   const { state } = useAppState()
+  const p = usePronouns()
   const now = useNow(60_000)
   const summaries = useMemo(() => dailySummaries(state.log, WINDOW_DAYS, now), [state.log, now])
   // The same days trimmed to this time of day, so today is compared like for like
@@ -47,7 +48,7 @@ export function Trends() {
     <main className="page">
       <header>
         <h1 className="page-title">By day</h1>
-        <p className="page-subtitle">What has changed lately, and her days side by side.</p>
+        <p className="page-subtitle">{p('What has changed lately, and {his} days side by side.')}</p>
       </header>
 
       <PatternsSection />

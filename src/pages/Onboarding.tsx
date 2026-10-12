@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAppState } from '../hooks/useAppState'
 import type { Sex } from '../lib/types'
-import { todayISO } from '../lib/format'
+import { todayISO, withPronouns } from '../lib/format'
 
 export function Onboarding() {
   const { setProfile } = useAppState()
@@ -77,7 +77,7 @@ export function Onboarding() {
           <label htmlFor="ob-due">Due date (optional)</label>
           <input id="ob-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           <span className="tiny faint">
-            If she arrived early, this lets the app show her adjusted age for milestones.
+            {withPronouns('If {he} arrived early, this lets the app show {his} adjusted age for milestones.', sex)}
           </span>
         </div>
 

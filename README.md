@@ -88,9 +88,10 @@ npm test           # unit tests (age math, storage, percentiles)
 ```
 
 Open the printed URL on your phone or desktop. On first launch you'll be asked
-for your baby's name, birth date, sex (used to pick the right growth curves)
-and, optionally, her due date — if she arrived more than two weeks early, the
-app uses her adjusted age for milestone windows.
+for your baby's name, birth date, sex (used to pick the right growth curves,
+and for "she/her" or "he/him" throughout the app, milestones included) and,
+optionally, the due date — if the baby arrived more than two weeks early, the
+app uses the adjusted age for milestone windows.
 
 Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 

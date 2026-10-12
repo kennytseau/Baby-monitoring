@@ -1,4 +1,5 @@
 import { parseISODate, toISODate } from './age'
+import type { Sex } from './types'
 
 /** A moment formatted for a datetime-local input (YYYY-MM-DDTHH:mm), in local time */
 export function toDatetimeInput(at: string | Date = new Date()): string {
@@ -149,4 +150,21 @@ export function resolveLogTime(choice: LogTimeChoice, now: Date = new Date()): D
   }
   const offset = Number.isFinite(choice.offsetMinutes) ? Math.max(0, choice.offsetMinutes) : 0
   return offset === 0 ? now : new Date(now.getTime() - offset * 60_000)
+}
+
+const PRONOUNS: Record<Sex, Record<string, string>> = {
+  female: { he: 'she', him: 'her', his: 'her', himself: 'herself' },
+  male: { he: 'he', him: 'him', his: 'his', himself: 'himself' },
+}
+
+/**
+ * Fill the pronoun placeholders — {he}, {him}, {his}, {himself}, and the same
+ * capitalised — for the baby's sex as chosen at setup. Text about the baby is
+ * written with these rather than "she" or "he", so it reads right for either.
+ */
+export function withPronouns(text: string, sex: Sex): string {
+  return text.replace(/\{(he|him|his|himself|He|Him|His|Himself)\}/g, (_, word: string) => {
+    const filled = PRONOUNS[sex][word.toLowerCase()]
+    return word[0] === word[0].toUpperCase() ? filled[0].toUpperCase() + filled.slice(1) : filled
+  })
 }

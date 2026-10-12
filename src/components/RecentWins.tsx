@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { findMilestone } from '../data/milestones'
 import { formatAge, parseISODate } from '../lib/age'
 
@@ -12,6 +12,7 @@ const SHOWN = 3
  */
 export function RecentWins() {
   const { state } = useAppState()
+  const p = usePronouns()
   const profile = state.profile!
 
   const wins = useMemo(
@@ -32,7 +33,7 @@ export function RecentWins() {
       {wins.map(({ record, found }) => (
         <div className="list-item" key={record.milestoneId}>
           <div className="grow">
-            <div className="item-title">{found!.milestone.title}</div>
+            <div className="item-title">{p(found!.milestone.title)}</div>
             <div className="item-sub">
               {formatAge(profile.birthDate, parseISODate(record.achievedOn)).replace(' old', '')}
             </div>
