@@ -1,7 +1,6 @@
 import type { LogEntry, SleepEntry } from './types'
-import { dayTotals, happenedBy, sleepMinutes } from './log'
+import { dayTotals, dayWindow, entriesWithin, sleepMinutesWithin } from './log'
 import type { DayTotals } from './log'
-import { dayOf, minutesIntoDay } from './format'
 import { toISODate } from './age'
 
 /** A daytime sleep counts as a nap; the rest is night sleep */
@@ -47,30 +46,6 @@ function isNap(entry: SleepEntry): boolean {
 }
 
 /**
- * Trim a day's entries to the part of the day that has happened so far, so a
- * finished day can be compared fairly against today. Sleeps are clipped at the
- * cutoff rather than dropped, since one can straddle it.
- */
-function upToTimeOfDay(entries: LogEntry[], cutoffMinutes: number): LogEntry[] {
-  const trimmed: LogEntry[] = []
-  for (const entry of entries) {
-    const start = new Date(entry.time)
-    if (minutesIntoDay(start) > cutoffMinutes) continue
-    if (entry.type === 'sleep' && entry.endTime) {
-      const end = new Date(entry.endTime)
-      if (dayOf(entry.endTime) === dayOf(entry.time) && minutesIntoDay(end) > cutoffMinutes) {
-        const clipped = new Date(start)
-        clipped.setHours(0, cutoffMinutes, 0, 0)
-        trimmed.push({ ...entry, endTime: clipped.toISOString() })
-        continue
-      }
-    }
-    trimmed.push(entry)
-  }
-  return trimmed
-}
-
-/**
  * The last `days` days, newest first, each rolled up the same way the daily log
  * rolls up a day. Days with nothing logged are included as empty, so a gap in
  * the record reads as a gap rather than closing up.
@@ -85,26 +60,26 @@ export function dailySummaries(
   cutoffToNow = false,
 ): DaySummary[] {
   const today = toISODate(now)
-  const cutoff = minutesIntoDay(now)
-  const byDay = new Map<string, LogEntry[]>()
-  for (const entry of happenedBy(log, now)) {
-    const day = dayOf(entry.time)
-    byDay.set(day, [...(byDay.get(day) ?? []), entry])
-  }
-
   const summaries: DaySummary[] = []
   for (let back = 0; back < days; back += 1) {
     const date = new Date(now)
     date.setDate(date.getDate() - back)
     const day = toISODate(date)
-    const all = byDay.get(day) ?? []
-    const entries = cutoffToNow && day !== today ? upToTimeOfDay(all, cutoff) : all
+    // Midnight to midnight — or, to compare fairly, a past day only up to the
+    // time of day it is now. A sleep that crosses a boundary counts on each
+    // side for the part that falls there.
+    const window = dayWindow(day)
+    if (cutoffToNow && day !== today) {
+      window.to = new Date(window.from)
+      window.to.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds())
+    }
+    const entries = entriesWithin(log, window, now)
     const naps = entries.filter((e): e is SleepEntry => e.type === 'sleep' && isNap(e))
     summaries.push({
       day,
       isToday: day === today,
-      totals: dayTotals(entries, now),
-      napMinutes: naps.reduce((total, nap) => total + sleepMinutes(nap, now), 0),
+      totals: dayTotals(entries, now, window),
+      napMinutes: naps.reduce((total, nap) => total + sleepMinutesWithin(nap, window, now), 0),
       naps: naps.length,
     })
   }

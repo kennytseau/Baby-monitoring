@@ -53,7 +53,9 @@ still with no accounts and nothing sold or tracked.
     stays as it was, totals leave it out, and no prediction learns from it.
   - Each day gets a 24-hour strip (sleep as bars, feeds / nappies / pumping as
     marks) plus totals: milk in, nursing minutes per side, nappies by type,
-    total and longest sleep, and how much was pumped.
+    total and longest sleep, and how much was pumped. A sleep that crosses
+    midnight counts on each day for the part that falls in it, so at 2am
+    "Today" already includes the night since midnight.
   - The last week is shown, with earlier days a tap away — drawing two months
     at once took seven seconds on a phone.
 - **By day** — today against the week behind it for milk, nursing, sleep,

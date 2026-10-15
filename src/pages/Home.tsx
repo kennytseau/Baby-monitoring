@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAppState, usePronouns } from '../hooks/useAppState'
 import { correctionDays, developmentalAgeMonths, formatAge, usesAdjustedAge } from '../lib/age'
 import { bandForAgeMonths, nextBand } from '../data/milestones'
-import { dayOf, formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
+import { formatAgo, formatDuration, formatTime, todayISO } from '../lib/format'
 import { QuickLog } from '../components/QuickLog'
 import { RhythmCard } from '../components/RhythmCard'
 import { NeedsCard } from '../components/NeedsCard'
@@ -16,6 +16,8 @@ import { NIGHT_FROM_HOUR, NIGHT_UNTIL_HOUR, type NightSetting } from '../lib/nig
 import {
   currentWakeMinutes,
   dayTotals,
+  dayWindow,
+  entriesWithin,
   findOpenSleep,
   hasHappened,
   sleepMinutes,
@@ -40,8 +42,9 @@ export function Home() {
   const nextInBand = band.milestones.filter((m) => !achievedSet.has(m.id)).slice(0, 3)
 
   const today = todayISO()
-  const todayLog = useMemo(() => state.log.filter((e) => dayOf(e.time) === today), [state.log, today])
-  const totals = dayTotals(todayLog, now)
+  // Today from midnight, including a sleep that began last night and ran on past it
+  const todayWindow = useMemo(() => dayWindow(today), [today])
+  const totals = dayTotals(entriesWithin(state.log, todayWindow, now), now, todayWindow)
   const openSleep = findOpenSleep(state.log, now)
   const awakeMinutes = currentWakeMinutes(state.log, now)
   const lastFeed = sortedByTime(
