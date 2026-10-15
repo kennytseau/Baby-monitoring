@@ -104,9 +104,10 @@ function countText([lo, hi]: [number, number]): string {
 
 /**
  * The guides that apply at this age. `weightKg` is her latest weight, if one
- * is recorded, which turns the formula guide into millilitres.
+ * is recorded, which turns the formula guide into millilitres — or an
+ * estimate of it today, when `estimated` says so.
  */
-export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
+export function guidesForAge(ageMonths: number, weightKg?: number, estimated = false): AgeGuide[] {
   const guides: AgeGuide[] = []
 
   const sleep = pick(SLEEP, ageMonths)
@@ -157,7 +158,7 @@ export function guidesForAge(ageMonths: number, weightKg?: number): AgeGuide[] {
       id: 'bottle',
       label: 'Formula in 24 hours',
       text: range
-        ? `${range[0]}–${range[1]} ml at ${weightKg} kg`
+        ? `${range[0]}–${range[1]} ml at ${estimated ? `about ${weightKg} kg (estimated)` : `${weightKg} kg`}`
         : `${ML_PER_KG[0]}–${ML_PER_KG[1]} ml per kg of {his} weight`,
       source: 'NHS, for a baby fed only formula',
     })

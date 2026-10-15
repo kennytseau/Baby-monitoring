@@ -3,7 +3,7 @@ import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { guidesForAge } from '../data/age-guides'
 import type { AgeGuide, GuideId } from '../data/age-guides'
-import { herWeek } from '../lib/insights'
+import { estimatedWeight, herWeek } from '../lib/insights'
 import type { HerWeek } from '../lib/insights'
 import { adjustedAgeInDays, ageInDays, developmentalAgeMonths, usesAdjustedAge } from '../lib/age'
 import { formatDuration } from '../lib/format'
@@ -18,7 +18,10 @@ export function AgeGuidesCard() {
   const profile = state.profile!
   const now = useNow(60_000)
   const week = useMemo(() => herWeek(state.log, state.growth, now), [state.log, state.growth, now])
-  const guides = guidesForAge(developmentalAgeMonths(profile, now), week.latestWeightKg)
+  // Her weight today: estimated between weigh-ins, so the formula guide keeps up with her
+  const estimate = estimatedWeight(state.growth, profile.birthDate, profile.sex, now)
+  const weightKg = estimate ? Math.round(((estimate.low + estimate.high) / 2) * 10) / 10 : week.latestWeightKg
+  const guides = guidesForAge(developmentalAgeMonths(profile, now), weightKg, !!estimate)
   const weeks = Math.floor(
     (usesAdjustedAge(profile) ? adjustedAgeInDays(profile, now) : ageInDays(profile.birthDate, now)) / 7,
   )

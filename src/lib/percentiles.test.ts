@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { curveAt, estimatePercentile, normalCdf, ordinal } from './percentiles'
+import { curveAt, estimatePercentile, normalCdf, ordinal, valueAtZ, zScore } from './percentiles'
 import { GROWTH_CURVES } from '../data/who-growth'
 
 const girlsWeight = GROWTH_CURVES.female.weight
@@ -78,5 +78,16 @@ describe('ordinal', () => {
     expect(ordinal(11)).toBe('11th')
     expect(ordinal(50)).toBe('50th')
     expect(ordinal(93)).toBe('93rd')
+  })
+})
+
+describe('valueAtZ', () => {
+  it('is the reverse of zScore, inside the curves and beyond them', () => {
+    const rows = GROWTH_CURVES.female.weight
+    for (const age of [0, 1.4, 2.6, 3.3, 9]) {
+      for (const z of [-2.5, -1.5, -0.4, 0, 0.87, 1.5, 2.5]) {
+        expect(zScore(rows, age, valueAtZ(rows, age, z))).toBeCloseTo(z, 6)
+      }
+    }
   })
 })

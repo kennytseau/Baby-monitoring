@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { DevelopmentCard } from '../components/DevelopmentCard'
 import { AgeGuidesCard } from '../components/AgeGuidesCard'
 import { GrowthChart } from '../components/GrowthChart'
@@ -12,11 +12,13 @@ import { ageInMonthsFloat, parseISODate } from '../lib/age'
 import { formatDate, positiveNumber, todayISO } from '../lib/format'
 import type { GrowthEntry, Sex } from '../lib/types'
 import { uid } from '../lib/storage'
+import { estimatedWeight } from '../lib/insights'
 
 const MEASURES: Measure[] = ['weight', 'length', 'head']
 
 export function Growth() {
   const { state, addGrowth, updateGrowth, deleteGrowth } = useAppState()
+  const p = usePronouns()
   const profile = state.profile!
   const [measure, setMeasure] = useState<Measure>('weight')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -28,6 +30,7 @@ export function Growth() {
 
   const rows = GROWTH_CURVES[profile.sex][measure]
   const info = MEASURE_INFO[measure]
+  const estimate = estimatedWeight(state.growth, profile.birthDate, profile.sex)
   const currentAgeMonths = ageInMonthsFloat(profile.birthDate)
 
   const sorted = useMemo(
@@ -223,6 +226,19 @@ export function Growth() {
       {latest.length > 0 && (
         <section className="card growth-latest">
           <p className="rhythm-label">Latest</p>
+          {estimate && (
+            <p className="tiny muted" style={{ marginTop: 6 }}>
+              {p(
+                `Weight today: about ${kg(estimate.low)}${
+                  kg(estimate.low) === kg(estimate.high) ? '' : `–${kg(estimate.high)}`
+                } kg, estimated from ${estimate.fromKg} kg on ${formatDate(estimate.fromDate)} — ${
+                  estimate.low === estimate.high
+                    ? 'assuming {he} stays on {his} percentile'
+                    : 'between {him} staying on {his} percentile and keeping up {his} recent gain'
+                }. A new weigh-in replaces it.`,
+              )}
+            </p>
+          )}
           {latest.map((item) => (
             <button
               key={item.measure}
@@ -279,4 +295,9 @@ function describeEntry(entry: GrowthEntry, sex: Sex, birthDate: string): string 
     const item = reading(entry, measure, sex, birthDate)
     return item ? [`${item.label.toLowerCase()} ${item.text} (~${ordinal(item.percentile)})`] : []
   }).join(' · ')
+}
+
+/** Kilograms to one decimal, the precision an estimate deserves */
+function kg(value: number): string {
+  return value.toFixed(1)
 }

@@ -27,7 +27,14 @@ still with no accounts and nothing sold or tracked.
   wins show up on Home.
 - **Growth** — log weight, length and head circumference; see them plotted
   over shaded percentile bands (3rd–97th) approximating the WHO Child Growth
-  Standards, with an estimated percentile for each entry.
+  Standards, with an estimated percentile for each entry. Between weigh-ins
+  it estimates her weight today as a range: the low end assumes she stays on
+  her percentile, and the high end assumes she keeps gaining at her recent
+  rate. The range is rounded to 0.1 kg and moves a little each day. It shows
+  from three days to eight weeks after the last weigh-in, and the formula
+  guide uses it. On her own weigh-ins, neither end was reliably closer, and
+  holding the last weight was off by 0.6–1.5 kg. A new weigh-in replaces the
+  estimate, and a home weigh-in every week or two beats it.
 - **Babies around her age** — on the Growth tab, the ranges published guidance
   gives for sleep, naps, wake windows, feeds, formula, wet nappies and weight
   gain at her age, with her own last seven days alongside. Each range names

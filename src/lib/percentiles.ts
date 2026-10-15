@@ -55,12 +55,12 @@ export function normalCdf(z: number): number {
 }
 
 /**
- * Estimate the percentile (1–99) of a measurement at a given age by
- * interpolating between the stored percentile curves in z-space.
- * Beyond the outermost curves the last segment's slope is extrapolated,
- * clamped to z = ±2.7 (≈ 0.3rd–99.7th percentile).
+ * How many standard deviations a measurement sits from the median at that age,
+ * interpolating between the stored percentile curves in z-space. Beyond the
+ * outermost curves the last segment's slope is extrapolated, clamped to
+ * z = ±2.7 (≈ 0.3rd–99.7th percentile).
  */
-export function estimatePercentile(rows: CurveRow[], ageMonths: number, value: number): number {
+export function zScore(rows: CurveRow[], ageMonths: number, value: number): number {
   const row = curveAt(rows, ageMonths)
   const pts = CURVE_POINTS.map((p) => ({ v: row[p.key], z: p.z }))
 
@@ -83,9 +83,24 @@ export function estimatePercentile(rows: CurveRow[], ageMonths: number, value: n
       }
     }
   }
+  return Math.max(-2.7, Math.min(2.7, z))
+}
 
-  z = Math.max(-2.7, Math.min(2.7, z))
-  const pct = normalCdf(z) * 100
+/** The measurement that sits at this z-score at this age — the reverse of `zScore` */
+export function valueAtZ(rows: CurveRow[], ageMonths: number, z: number): number {
+  const row = curveAt(rows, ageMonths)
+  const pts = CURVE_POINTS.map((p) => ({ v: row[p.key], z: p.z }))
+  // The segment z falls in, or the outermost one beyond the curves
+  let i = 1
+  while (i < pts.length - 1 && z > pts[i].z) i++
+  const a = pts[i - 1]
+  const b = pts[i]
+  return a.v + ((z - a.z) * (b.v - a.v)) / (b.z - a.z)
+}
+
+/** Estimate the percentile (1–99) of a measurement at a given age */
+export function estimatePercentile(rows: CurveRow[], ageMonths: number, value: number): number {
+  const pct = normalCdf(zScore(rows, ageMonths, value)) * 100
   return Math.max(1, Math.min(99, Math.round(pct)))
 }
 
