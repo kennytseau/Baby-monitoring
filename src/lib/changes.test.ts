@@ -211,6 +211,8 @@ describe('sleepHistoryDays', () => {
     expect(sleepHistoryDays([])).toBeUndefined()
     // A change in her feeds is not a change in her sleep
     expect(sleepHistoryDays([change('feeds', 6)])).toBeUndefined()
+    // Nor, for the wake-up, is a change in her naps: only her nights narrow it
+    expect(sleepHistoryDays([change('napLength', 6), change('daySleep', 8)])).toBeUndefined()
   })
 
   it('narrows to the days since her sleep changed, but never below five', () => {

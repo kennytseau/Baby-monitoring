@@ -12,8 +12,8 @@ const IMMINENT_MINUTES = 5
  * The next thing to expect, at the top of Home: when she is likely to wake, or
  * when she is likely to be ready to go down. Both are read off her own logged
  * rhythm at this time of day, and both come with the range they were drawn
- * from — a baby is not a train timetable. While her sleep is changing, it
- * learns only from the days since the change began.
+ * from — a baby is not a train timetable. While her nights are changing, the
+ * wake-up learns only from the days since the change began.
  */
 export function RhythmCard() {
   const { state } = useAppState()
@@ -71,9 +71,9 @@ export function RhythmCard() {
           {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
         </p>
       )}
-      {historyDays && (
+      {forecast.asleep && historyDays && (
         <p className="tiny faint">
-          {p('{His}')} sleep has changed lately, so this goes by {p('{his}')} last {historyDays} days
+          {p('{His}')} nights have changed lately, so this goes by {p('{his}')} last {historyDays} days
           only.
         </p>
       )}

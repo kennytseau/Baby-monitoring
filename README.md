@@ -192,17 +192,34 @@ decides the unit.
 
 **Her most recent weeks count most.** Every prediction learns from her last
 two weeks only — her last week, for feed sizes — so as she grows the estimates
-move with her and nothing about a ten-week-old is hard-coded. When her sleep visibly changes — the *What's
-changed* card is showing a sleep change, as it would at the start of a
-regression — the wake-up and wind-down predictions narrow further, to just the
-days since the change began (at least five), and the card says so. A planted
-regression in her real log showed why: in its first week, the wake-up error
-fell from 19 to 4 minutes for a sharp regression and 34 to 20 for a milder
-one. In the second week, and for wind-down, it made little difference either
-way — for the milder one, wind-down was within half an hour 65% of the time
-against 71%, though its typical error was a minute better. On her real log,
-where her nights were lengthening rather than breaking up, it made no real
-difference.
+move with her and nothing about a ten-week-old is hard-coded. When her *nights*
+visibly change — the *What's changed* card is showing a change in her longest
+stretch, night wakings or night sleep, as it would at the start of a
+regression — the wake-up prediction narrows further, to just the days since
+the change began (at least five), and the card says so. The wind-down never
+narrows: two weeks did best for it in every case tested.
+
+It first narrowed on any sleep change, for both predictions. Her log to
+16 October showed the flaw: her naps shortening narrowed it to five days, too
+few bedtime sleeps to learn from, just as her bedtime sleeps grew to six to
+nine hours. Over 2–16 October, wake-ups were off by 71 minutes that way, 58
+with no narrowing, and 48 narrowing on night changes only; wind-down went from
+19 to 17 minutes (76% within half an hour).
+
+Then on 40 simulated babies, 10 for each kind of change at day 35, with the
+best possible prediction worked out from the rules they follow — wake-up error
+in the two weeks after the change:
+
+| Change | Narrow on any sleep change | Never narrow | Night changes only | Best possible |
+| --- | --- | --- | --- | --- |
+| None, steady growth | 47 min | 46 min | 47 min | 40 min |
+| Regression | 24 min | 29 min | 24 min | 20 min |
+| Nights lengthen fast | 124 min | 152 min | 128 min | 70 min |
+| Naps shorten only | 53 min | 50 min | 53 min | 37 min |
+
+So it keeps the head start in a regression, costs nothing when nothing
+changes, and nights lengthening fast stays hard for any method — the best
+possible is still 70 minutes off while it happens.
 
 Scored the way the card is actually read: played forward through her log from
 29 July to 2 October (the first two weeks only taught it), asked every 15
@@ -346,9 +363,9 @@ sleep is split once.
 | Once it ended | cleared after 2 normal nights |
 | On her real log, 25 Jul – 7 Sep, age ignored | never flagged (0 of 45 days) |
 
-While a sleep change is showing, the wake-up and wind-down predictions learn
-only from the days since it began (see *Her most recent weeks count most*
-above). Nothing else here feeds a prediction.
+While a change in her nights is showing, the wake-up prediction learns only
+from the days since it began (see *Her most recent weeks count most* above).
+Nothing else here feeds a prediction.
 
 ## If the published site stops working
 

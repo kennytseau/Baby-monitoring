@@ -53,8 +53,8 @@ export function PatternsSection() {
         <p className="tiny faint" style={{ marginTop: 8 }}>
           A change has to hold for 3 days in a row, each one outside the middle half of {p('{his}')} usual
           spread, and by enough to matter. It shows for up to {NEWS_DAYS / 7} weeks; after that it is{' '}
-          {p('{his}')} new normal. While {p('{his}')} sleep is changing, the sleep predictions on Home learn only from
-          the days since it began.
+          {p('{his}')} new normal. While {p('{his}')} nights are changing, the wake-up time on Home learns only from
+          the days since the change began.
         </p>
       </section>
       {regression.state !== 'outside' && (
