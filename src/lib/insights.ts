@@ -1,11 +1,13 @@
-import type { GrowthEntry, LogEntry } from './types'
+import type { GrowthEntry, LogEntry, Sex } from './types'
 import { happenedBy } from './log'
 import { dailySummaries } from './trends'
 import { sleepPattern } from './pattern'
 import { sleepBlocks } from './rhythm'
 import { MS_PER_MINUTE, quantile } from './patterns'
 import type { GuideId } from '../data/age-guides'
-import { parseISODate } from './age'
+import { ageInMonthsFloat, parseISODate } from './age'
+import { GROWTH_CURVES } from '../data/who-growth'
+import { valueAtZ, zScore } from './percentiles'
 
 /**
  * Her own last week, in the same units as the age guides, so the two can sit
@@ -99,4 +101,72 @@ export function herWeek(log: LogEntry[], growth: GrowthEntry[], now = new Date()
   if (gaps.length >= MIN_DAYS) values.wake = quantile([...gaps].sort((a, b) => a - b), 0.5)
 
   return result
+}
+
+/** Weighed this recently, the last weight is as good as today's */
+const FRESH_WEIGHT_DAYS = 3
+/** Beyond this, a weight is too old to project from */
+const MAX_ESTIMATE_DAYS = 56
+const DAY_MS = 24 * 60 * MS_PER_MINUTE
+
+export interface WeightEstimate {
+  /** The lower of the two projections, in kg */
+  low: number
+  /** The higher of the two */
+  high: number
+  /** The weigh-in it projects from */
+  fromKg: number
+  fromDate: string
+}
+
+/**
+ * Her weight today, projected from her last weigh-in, for when it may be weeks
+ * before the next one. Two projections, as a range:
+ *
+ *  - staying on the same percentile of the WHO curve, which allows for gain
+ *    slowing with age the way it typically does (about 130–160 g a week at
+ *    three to four months);
+ *  - carrying on at her latest measured rate (two weigh-ins 10 days to 6 weeks
+ *    apart).
+ *
+ * Tried against her own weigh-ins, neither was reliably closer — she was
+ * climbing percentiles, which the first undershoots and the second follows —
+ * and both beat assuming no gain at all by half a kilo or more within weeks.
+ * So the range is the honest answer. None in the three days after a weigh-in,
+ * and none past eight weeks, when it would be guesswork.
+ */
+export function estimatedWeight(
+  growth: GrowthEntry[],
+  birthDate: string,
+  sex: Sex,
+  now = new Date(),
+): WeightEstimate | undefined {
+  const weights = growth
+    .filter((g) => g.weightKg != null && !g.deletedAt)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const latest = weights[weights.length - 1]
+  if (!latest) return undefined
+  const weighed = parseISODate(latest.date)
+  const days = (now.getTime() - weighed.getTime()) / DAY_MS
+  if (days < FRESH_WEIGHT_DAYS || days > MAX_ESTIMATE_DAYS) return undefined
+
+  const rows = GROWTH_CURVES[sex].weight
+  const z = zScore(rows, ageInMonthsFloat(birthDate, weighed), latest.weightKg!)
+  const projections = [valueAtZ(rows, ageInMonthsFloat(birthDate, now), z)]
+
+  const earlier = weights.find((g) => {
+    const span = (weighed.getTime() - parseISODate(g.date).getTime()) / DAY_MS
+    return span >= MIN_WEIGHT_SPAN_DAYS && span <= MAX_WEIGHT_SPAN_DAYS
+  })
+  if (earlier) {
+    const perDay =
+      (latest.weightKg! - earlier.weightKg!) / ((weighed.getTime() - parseISODate(earlier.date).getTime()) / DAY_MS)
+    projections.push(latest.weightKg! + perDay * days)
+  }
+  return {
+    low: Math.min(...projections),
+    high: Math.max(...projections),
+    fromKg: latest.weightKg!,
+    fromDate: latest.date,
+  }
 }

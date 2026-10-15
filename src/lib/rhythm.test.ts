@@ -61,6 +61,21 @@ describe('forecastRhythm', () => {
     expect(minutes(5)).toBe(120)
   })
 
+  it('never narrows the wind-down, only the wake-up', () => {
+    // Up an hour after the 9am nap for ten days, then two hours for four
+    const log: LogEntry[] = []
+    for (let day = 1; day <= 14; day += 1) {
+      log.push(sleep(at(day, 9, 0), 60))
+      log.push(sleep(at(day, day <= 4 ? 12 : 11, 0), 45))
+    }
+    log.push(sleep(at(0, 9, 0), 60))
+    const now = new Date(at(0, 10, 5))
+    const awakeFor = (days?: number) =>
+      (forecastRhythm(log, now, days).windDown!.at.getTime() - at(0, 10, 0).getTime()) / 60_000
+    expect(awakeFor()).toBe(60)
+    expect(awakeFor(5)).toBe(60)
+  })
+
   it('says nothing useful until there is history', () => {
     const forecast = forecastRhythm([], NOW)
     expect(forecast.wakeUp).toBeUndefined()

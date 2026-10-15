@@ -1,4 +1,4 @@
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { usePatterns } from '../hooks/usePatterns'
 import { forecastRhythm } from '../lib/rhythm'
@@ -12,11 +12,12 @@ const IMMINENT_MINUTES = 5
  * The next thing to expect, at the top of Home: when she is likely to wake, or
  * when she is likely to be ready to go down. Both are read off her own logged
  * rhythm at this time of day, and both come with the range they were drawn
- * from — a baby is not a train timetable. While her sleep is changing, it
- * learns only from the days since the change began.
+ * from — a baby is not a train timetable. While her nights are changing, the
+ * wake-up learns only from the days since the change began.
  */
 export function RhythmCard() {
   const { state } = useAppState()
+  const p = usePronouns()
   const now = useNow(30_000)
   const historyDays = sleepHistoryDays(usePatterns().changes)
   const forecast = forecastRhythm(state.log, now, historyDays)
@@ -25,7 +26,7 @@ export function RhythmCard() {
     return (
       <section className="card rhythm-card">
         <p className="rhythm-label">What's next</p>
-        <p className="small muted">{forecast.reason}</p>
+        <p className="small muted">{p(forecast.reason)}</p>
       </section>
     )
   }
@@ -52,7 +53,7 @@ export function RhythmCard() {
       <p className="small">
         {passed
           ? `Any time now — ${formatDuration(-minutesAway)} past ${
-              forecast.asleep ? 'her usual wake-up' : 'her usual wind-down'
+              p(forecast.asleep ? '{his} usual wake-up' : '{his} usual wind-down')
             }`
           : minutesAway < IMMINENT_MINUTES
             ? 'Any time now'
@@ -60,8 +61,8 @@ export function RhythmCard() {
       </p>
       {prediction.afterShortNap ? (
         <p className="tiny faint">
-          Sooner than usual: after a nap of {formatDuration(prediction.afterShortNap.napMinutes)} she
-          has been staying up about {Math.round(prediction.afterShortNap.factor * 100)}% as long. Likely{' '}
+          Sooner than usual: after a nap of {formatDuration(prediction.afterShortNap.napMinutes)}{' '}
+          {p('{he}')} has been staying up about {Math.round(prediction.afterShortNap.factor * 100)}% as long. Likely{' '}
           {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}.
         </p>
       ) : (
@@ -70,9 +71,10 @@ export function RhythmCard() {
           {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
         </p>
       )}
-      {historyDays && (
+      {forecast.asleep && historyDays && (
         <p className="tiny faint">
-          Her sleep has changed lately, so this goes by her last {historyDays} days only.
+          {p('{His}')} nights have changed lately, so this goes by {p('{his}')} last {historyDays} days
+          only.
         </p>
       )}
     </section>

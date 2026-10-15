@@ -25,7 +25,8 @@ export function DayTimeline({ day, entries, now }: { day: string; entries: LogEn
   const sleeps = entries
     .filter((e): e is SleepEntry => e.type === 'sleep')
     .map((e) => {
-      const start = minutesIntoDay(e.time)
+      // A sleep carried over from the night before is drawn from midnight
+      const start = dayOf(e.time) === day ? minutesIntoDay(e.time) : 0
       const endIso = e.endTime ?? now.toISOString()
       // A sleep that runs past midnight is drawn to the end of its own day
       const end = dayOf(endIso) === day ? minutesIntoDay(endIso) : DAY_MINUTES

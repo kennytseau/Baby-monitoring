@@ -27,7 +27,14 @@ still with no accounts and nothing sold or tracked.
   wins show up on Home.
 - **Growth** — log weight, length and head circumference; see them plotted
   over shaded percentile bands (3rd–97th) approximating the WHO Child Growth
-  Standards, with an estimated percentile for each entry.
+  Standards, with an estimated percentile for each entry. Between weigh-ins
+  it estimates her weight today as a range: the low end assumes she stays on
+  her percentile, and the high end assumes she keeps gaining at her recent
+  rate. The range is rounded to 0.1 kg and moves a little each day. It shows
+  from three days to eight weeks after the last weigh-in, and the formula
+  guide uses it. On her own weigh-ins, neither end was reliably closer, and
+  holding the last weight was off by 0.6–1.5 kg. A new weigh-in replaces the
+  estimate, and a home weigh-in every week or two beats it.
 - **Babies around her age** — on the Growth tab, the ranges published guidance
   gives for sleep, naps, wake windows, feeds, formula, wet nappies and weight
   gain at her age, with her own last seven days alongside. Each range names
@@ -53,7 +60,9 @@ still with no accounts and nothing sold or tracked.
     stays as it was, totals leave it out, and no prediction learns from it.
   - Each day gets a 24-hour strip (sleep as bars, feeds / nappies / pumping as
     marks) plus totals: milk in, nursing minutes per side, nappies by type,
-    total and longest sleep, and how much was pumped.
+    total and longest sleep, and how much was pumped. A sleep that crosses
+    midnight counts on each day for the part that falls in it, so at 2am
+    "Today" already includes the night since midnight.
   - The last week is shown, with earlier days a tap away — drawing two months
     at once took seven seconds on a phone.
 - **By day** — today against the week behind it for milk, nursing, sleep,
@@ -88,9 +97,10 @@ npm test           # unit tests (age math, storage, percentiles)
 ```
 
 Open the printed URL on your phone or desktop. On first launch you'll be asked
-for your baby's name, birth date, sex (used to pick the right growth curves)
-and, optionally, her due date — if she arrived more than two weeks early, the
-app uses her adjusted age for milestone windows.
+for your baby's name, birth date, sex (used to pick the right growth curves,
+and for "she/her" or "he/him" throughout the app, milestones included) and,
+optionally, the due date — if the baby arrived more than two weeks early, the
+app uses the adjusted age for milestone windows.
 
 Deploy the `dist/` folder to any static host (Netlify, Vercel, GitHub Pages…).
 
@@ -189,17 +199,34 @@ decides the unit.
 
 **Her most recent weeks count most.** Every prediction learns from her last
 two weeks only — her last week, for feed sizes — so as she grows the estimates
-move with her and nothing about a ten-week-old is hard-coded. When her sleep visibly changes — the *What's
-changed* card is showing a sleep change, as it would at the start of a
-regression — the wake-up and wind-down predictions narrow further, to just the
-days since the change began (at least five), and the card says so. A planted
-regression in her real log showed why: in its first week, the wake-up error
-fell from 19 to 4 minutes for a sharp regression and 34 to 20 for a milder
-one. In the second week, and for wind-down, it made little difference either
-way — for the milder one, wind-down was within half an hour 65% of the time
-against 71%, though its typical error was a minute better. On her real log,
-where her nights were lengthening rather than breaking up, it made no real
-difference.
+move with her and nothing about a ten-week-old is hard-coded. When her *nights*
+visibly change — the *What's changed* card is showing a change in her longest
+stretch, night wakings or night sleep, as it would at the start of a
+regression — the wake-up prediction narrows further, to just the days since
+the change began (at least five), and the card says so. The wind-down never
+narrows: two weeks did best for it in every case tested.
+
+It first narrowed on any sleep change, for both predictions. Her log to
+16 October showed the flaw: her naps shortening narrowed it to five days, too
+few bedtime sleeps to learn from, just as her bedtime sleeps grew to six to
+nine hours. Over 2–16 October, wake-ups were off by 71 minutes that way, 58
+with no narrowing, and 48 narrowing on night changes only; wind-down went from
+19 to 17 minutes (76% within half an hour).
+
+Then on 40 simulated babies, 10 for each kind of change at day 35, with the
+best possible prediction worked out from the rules they follow — wake-up error
+in the two weeks after the change:
+
+| Change | Narrow on any sleep change | Never narrow | Night changes only | Best possible |
+| --- | --- | --- | --- | --- |
+| None, steady growth | 47 min | 46 min | 47 min | 40 min |
+| Regression | 24 min | 29 min | 24 min | 20 min |
+| Nights lengthen fast | 124 min | 152 min | 128 min | 70 min |
+| Naps shorten only | 53 min | 50 min | 53 min | 37 min |
+
+So it keeps the head start in a regression, costs nothing when nothing
+changes, and nights lengthening fast stays hard for any method — the best
+possible is still 70 minutes off while it happens.
 
 Scored the way the card is actually read: played forward through her log from
 29 July to 2 October (the first two weeks only taught it), asked every 15
@@ -343,9 +370,9 @@ sleep is split once.
 | Once it ended | cleared after 2 normal nights |
 | On her real log, 25 Jul – 7 Sep, age ignored | never flagged (0 of 45 days) |
 
-While a sleep change is showing, the wake-up and wind-down predictions learn
-only from the days since it began (see *Her most recent weeks count most*
-above). Nothing else here feeds a prediction.
+While a change in her nights is showing, the wake-up prediction learns only
+from the days since it began (see *Her most recent weeks count most* above).
+Nothing else here feeds a prediction.
 
 ## If the published site stops working
 

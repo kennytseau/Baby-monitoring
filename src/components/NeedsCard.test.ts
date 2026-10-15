@@ -57,5 +57,7 @@ describe('what the card says', () => {
       'About 70 ml when she wakes — Last feed 2 h ago · usually 1 h 20 m–2 h 30 m apart',
       'A change when she wakes — Last change 2 h ago · usually 1 h 20 m–2 h 30 m apart',
     ])
+    const forABoy = needLines({ asleep: true, feed: need('feed', 'late') }, 'male')[0].replace(/\u00a0/g, ' ')
+    expect(forABoy).toMatch(/^About 70 ml when he wakes/)
   })
 })

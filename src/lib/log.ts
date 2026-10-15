@@ -9,6 +9,7 @@ import type {
 } from './types'
 
 import { formatDuration, formatTime } from './format'
+import { parseISODate } from './age'
 
 const MS_PER_MINUTE = 60_000
 
@@ -112,6 +113,40 @@ export function happenedBy<T extends { time: string }>(entries: T[], now = new D
 /** Minutes asleep so far; a sleep still running counts up to `now` */
 export function sleepMinutes(entry: SleepEntry, now = new Date()): number {
   return minutesBetween(entry.time, hasEnded(entry, now) ? entry.endTime! : now.toISOString())
+}
+
+/** A stretch of time: from its start, up to but not including its end */
+export interface TimeWindow {
+  from: Date
+  to: Date
+}
+
+/** One calendar day, midnight to midnight, local time */
+export function dayWindow(day: string): TimeWindow {
+  const from = parseISODate(day)
+  const to = new Date(from)
+  to.setDate(to.getDate() + 1)
+  return { from, to }
+}
+
+/** The minutes of a sleep that fall inside the window — a sleep over midnight is split between the days */
+export function sleepMinutesWithin(entry: SleepEntry, window: TimeWindow, now = new Date()): number {
+  const start = Math.max(Date.parse(entry.time), window.from.getTime())
+  const end = Math.min(hasEnded(entry, now) ? Date.parse(entry.endTime!) : now.getTime(), window.to.getTime())
+  return Math.max(0, (end - start) / 60_000)
+}
+
+/**
+ * What belongs to a window of time: everything that happened in it, and any
+ * sleep that began before it and ran on into it. So a night that crosses
+ * midnight shows, and counts, on both days — not only the one it began on.
+ */
+export function entriesWithin(log: LogEntry[], window: TimeWindow, now = new Date()): LogEntry[] {
+  return happenedBy(log, now).filter((entry) => {
+    const at = Date.parse(entry.time)
+    if (at >= window.from.getTime() && at < window.to.getTime()) return true
+    return entry.type === 'sleep' && at < window.from.getTime() && sleepMinutesWithin(entry, window, now) > 0
+  })
 }
 
 /** What the session yielded — the sides when they were measured, else the combined amount */
@@ -236,8 +271,12 @@ export interface DayTotals {
   medicines: Array<{ name: string; amount?: string; time: string }>
 }
 
-/** Roll a day's (or any slice's) entries up into the numbers parents actually compare */
-export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
+/**
+ * Roll a day's (or any slice's) entries up into the numbers parents actually
+ * compare. Given the day's window, a sleep counts only for the part of it
+ * inside the day.
+ */
+export function dayTotals(entries: LogEntry[], now = new Date(), window?: TimeWindow): DayTotals {
   const totals: DayTotals = {
     feeds: 0,
     nursingSessions: 0,
@@ -282,7 +321,7 @@ export function dayTotals(entries: LogEntry[], now = new Date()): DayTotals {
         totals.solids += 1
       }
     } else if (entry.type === 'sleep') {
-      const mins = sleepMinutes(entry, now)
+      const mins = window ? sleepMinutesWithin(entry, window, now) : sleepMinutes(entry, now)
       totals.sleeps += 1
       totals.sleepMinutes += mins
       totals.longestSleepMinutes = Math.max(totals.longestSleepMinutes, mins)
@@ -439,12 +478,12 @@ export function suggestNursingSide(log: LogEntry[], now = new Date()): SideSugge
   const last = sortedByTime(happenedBy(log, now).filter(isNursing))[0]
   if (!last) return null
   if (last.startSide) {
-    return { side: OTHER_SIDE[last.startSide], because: `she started on the ${last.startSide} last time`, lastAt: last.time }
+    return { side: OTHER_SIDE[last.startSide], because: `{he} started on the ${last.startSide} last time`, lastAt: last.time }
   }
   const left = last.leftMinutes ?? 0
   const right = last.rightMinutes ?? 0
-  if (left > 0 && right === 0) return { side: 'right', because: 'she fed on the left last time', lastAt: last.time }
-  if (right > 0 && left === 0) return { side: 'left', because: 'she fed on the right last time', lastAt: last.time }
+  if (left > 0 && right === 0) return { side: 'right', because: '{he} fed on the left last time', lastAt: last.time }
+  if (right > 0 && left === 0) return { side: 'left', because: '{he} fed on the right last time', lastAt: last.time }
   if (left === right) return null
   const less: BreastSide = left < right ? 'left' : 'right'
   return {

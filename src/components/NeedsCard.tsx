@@ -1,7 +1,8 @@
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { forecastNeeds, type Need, type NeedsForecast } from '../lib/needs'
-import { formatDuration } from '../lib/format'
+import { formatDuration, withPronouns } from '../lib/format'
+import type { Sex } from '../lib/types'
 
 /** "1 h 53 m" is one word to a reader, so do not let it wrap across two lines */
 function duration(minutes: number): string {
@@ -15,6 +16,7 @@ function duration(minutes: number): string {
  */
 export function NeedsCard() {
   const { state } = useAppState()
+  const p = usePronouns()
   const now = useNow(30_000)
   const forecast = forecastNeeds(state.log, now)
 
@@ -35,8 +37,8 @@ export function NeedsCard() {
       {forecast.feed && <NeedRow need={forecast.feed} asleep={forecast.asleep} />}
       {forecast.nappy && <NeedRow need={forecast.nappy} asleep={forecast.asleep} />}
       <p className="tiny faint" style={{ marginTop: 8 }}>
-        From her own last week or two — how long she goes at this hour, and how much she has been
-        taking — so it moves as she grows. A guide, not a schedule.
+        From {p('{his}')} own last week or two — how long {p('{he}')} goes at this hour, and how much {p('{he}')} has
+        been taking — so it moves as {p('{he}')} grows. A guide, not a schedule.
         {rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
       </p>
     </section>
@@ -44,6 +46,7 @@ export function NeedsCard() {
 }
 
 function NeedRow({ need, asleep }: { need: Need; asleep: boolean }) {
+  const p = usePronouns()
   const feed = need.kind === 'feed'
   return (
     <div className="list-item">
@@ -51,7 +54,7 @@ function NeedRow({ need, asleep }: { need: Need; asleep: boolean }) {
         {feed ? '🍼' : '🧷'}
       </span>
       <div className="grow">
-        <div className="item-title">{title(need, asleep)}</div>
+        <div className="item-title">{p(title(need, asleep))}</div>
         <div className="item-sub">{evidence(need)}</div>
       </div>
       {need.state !== 'settled' && (
@@ -74,7 +77,7 @@ function title(need: Need, asleep: boolean): string {
           : `About ${duration(need.serving.value)} nursing`
         : 'A feed'
 
-  if (asleep && (need.state === 'due' || need.state === 'late')) return `${what} when she wakes`
+  if (asleep && (need.state === 'due' || need.state === 'late')) return `${what} when {he} wakes`
   switch (need.state) {
     case 'late':
       return `${what}, due ${duration(-need.dueIn)} ago`
@@ -94,8 +97,8 @@ function evidence(need: Need): string {
 }
 
 /** Exported for tests: the exact line the card puts in front of a tired parent */
-export function needLines(forecast: NeedsForecast): string[] {
+export function needLines(forecast: NeedsForecast, sex: Sex = 'female'): string[] {
   return [forecast.feed, forecast.nappy]
     .filter((need): need is Need => Boolean(need))
-    .map((need) => `${title(need, forecast.asleep)} — ${evidence(need)}`)
+    .map((need) => withPronouns(`${title(need, forecast.asleep)} — ${evidence(need)}`, sex))
 }

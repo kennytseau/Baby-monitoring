@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { QuickLog } from '../components/QuickLog'
 import {
@@ -23,6 +23,9 @@ import { uid } from '../lib/storage'
 import {
   NAPPY_LABELS,
   dayTotals,
+  dayWindow,
+  entriesWithin,
+  hasEnded,
   hasHappened,
   sortedByTime,
   summarizeEntry,
@@ -80,6 +83,7 @@ const DAYS_PER_PAGE = 7
 
 export function DailyLog() {
   const { state, addLog, updateLog, deleteLog } = useAppState()
+  const p = usePronouns()
   const now = useNow(30_000)
   const [formOpen, setFormOpen] = useState(false)
   const [dayCount, setDayCount] = useState(DAYS_PER_PAGE)
@@ -110,13 +114,24 @@ export function DailyLog() {
   )
 
   const days = useMemo(() => {
+    // Each entry is listed under the day it began. A sleep that runs past
+    // midnight also belongs to the days it runs into, for their strip and totals.
     const byDay = new Map<string, LogEntry[]>()
+    const dayNames = new Set<string>()
     for (const entry of state.log) {
       if (!hasHappened(entry, now)) continue
       const day = dayOf(entry.time)
       const list = byDay.get(day) ?? []
       list.push(entry)
       byDay.set(day, list)
+      dayNames.add(day)
+      if (entry.type === 'sleep') {
+        const end = new Date(hasEnded(entry, now) ? entry.endTime! : now)
+        for (const d = new Date(entry.time); dayOf(d.toISOString()) < dayOf(end.toISOString()); ) {
+          d.setDate(d.getDate() + 1)
+          dayNames.add(dayOf(d.toISOString()))
+        }
+      }
     }
     // Wake windows span sleeps, so they are worked out across the whole log and
     // then filed under the day the baby woke up.
@@ -129,14 +144,14 @@ export function DailyLog() {
       windowsByDay.set(day, list)
     }
 
-    return [...byDay.entries()]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([day, entries]) => {
+    return [...dayNames]
+      .sort((a, b) => b.localeCompare(a))
+      .map((day) => {
         const rows: TimelineRow[] = [
-          ...entries.map((entry) => ({ kind: 'entry' as const, id: entry.id, time: entry.time, entry })),
+          ...(byDay.get(day) ?? []).map((entry) => ({ kind: 'entry' as const, id: entry.id, time: entry.time, entry })),
           ...(windowsByDay.get(day) ?? []),
         ]
-        return { day, entries, rows: sortedByTime(rows) }
+        return { day, rows: sortedByTime(rows) }
       })
   }, [state.log, now])
 
@@ -459,8 +474,8 @@ export function DailyLog() {
               />
             ))}
             <p className="tiny faint" style={{ marginTop: 8 }}>
-              These don't count until their time comes. If she doesn't go down when expected, edit
-              the time or delete it.
+              These don't count until their time comes. If {p('{he}')} doesn't go down when expected,
+              edit the time or delete it.
             </p>
           </div>
         </section>
@@ -470,31 +485,38 @@ export function DailyLog() {
         <div className="empty">Nothing logged yet — the buttons above make it a one-tap job.</div>
       )}
 
-      {days.slice(0, dayCount).map(({ day, entries, rows }) => (
-        <section key={day} className="stack">
-          <div className="day-divider">{formatDayLabel(day)}</div>
-          <DayTimeline day={day} entries={entries} now={now} />
-          <DayTotalsCard totals={dayTotals(entries, now)} />
-          <div className="card">
-            {rows.map((row) =>
-              row.kind === 'wake' ? (
-                <div className="wake-row" key={row.id}>
-                  <span aria-hidden="true">☀️</span> Awake {formatDuration(row.minutes)}
-                  {row.open ? ' so far' : ''} · from {formatTime(row.time)}
-                </div>
-              ) : (
-                <LogRow
-                  key={row.id}
-                  entry={row.entry}
-                  now={now}
-                  onEdit={() => startEdit(row.entry)}
-                  onDelete={() => deleteLog(row.entry.id)}
-                />
-              ),
+      {days.slice(0, dayCount).map(({ day, rows }) => {
+        // Worked out only for the days on screen; a long history is not redrawn every tick
+        const window = dayWindow(day)
+        const entries = entriesWithin(state.log, window, now)
+        return (
+          <section key={day} className="stack">
+            <div className="day-divider">{formatDayLabel(day)}</div>
+            <DayTimeline day={day} entries={entries} now={now} />
+            <DayTotalsCard totals={dayTotals(entries, now, window)} />
+            {rows.length > 0 && (
+              <div className="card">
+                {rows.map((row) =>
+                  row.kind === 'wake' ? (
+                    <div className="wake-row" key={row.id}>
+                      <span aria-hidden="true">☀️</span> Awake {formatDuration(row.minutes)}
+                      {row.open ? ' so far' : ''} · from {formatTime(row.time)}
+                    </div>
+                  ) : (
+                    <LogRow
+                      key={row.id}
+                      entry={row.entry}
+                      now={now}
+                      onEdit={() => startEdit(row.entry)}
+                      onDelete={() => deleteLog(row.entry.id)}
+                    />
+                  ),
+                )}
+              </div>
             )}
-          </div>
-        </section>
-      ))}
+          </section>
+        )
+      })}
 
       {days.length > dayCount && (
         <button className="btn btn-block" onClick={() => setDayCount((n) => n + DAYS_PER_PAGE)}>

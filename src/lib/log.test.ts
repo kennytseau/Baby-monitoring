@@ -12,6 +12,8 @@ import {
   pauseNursing,
   resumeNursing,
   dayTotals,
+  dayWindow,
+  entriesWithin,
   nursingMinutes,
   sideMinutes,
   sleepMinutes,
@@ -25,6 +27,7 @@ import {
   pumpTotalMl,
 } from './log'
 import type { FeedEntry, LogEntry, NappyEntry, PumpEntry, SleepEntry } from './types'
+import { withPronouns } from './format'
 
 const NOW = new Date('2026-09-06T12:00:00Z')
 const at = (hhmm: string) => `2026-09-06T${hhmm}:00.000Z`
@@ -353,7 +356,10 @@ describe('which side to start on', () => {
 
   it('suggests the other side from where the last feed started', () => {
     const last = nursing({ id: 'f1', time: at('09:00'), startSide: 'right', leftMinutes: 12, rightMinutes: 10 })
-    expect(suggestNursingSide([last], NOW)).toMatchObject({ side: 'left', because: 'she started on the right last time' })
+    const suggestion = suggestNursingSide([last], NOW)!
+    expect(suggestion.side).toBe('left')
+    expect(withPronouns(suggestion.because, 'female')).toBe('she started on the right last time')
+    expect(withPronouns(suggestion.because, 'male')).toBe('he started on the right last time')
   })
 
   it('goes by the latest feed, not an older one', () => {
@@ -413,5 +419,35 @@ describe('pumping as one total or side by side', () => {
     const entry = pump({ totalMl: 120, durationMinutes: 20 })
     expect(pumpTotalMl(entry)).toBe(120)
     expect(summarizeEntry(entry)).toEqual({ title: 'Pumped 120 ml', detail: 'both sides · 20 min' })
+  })
+})
+
+describe('a sleep across midnight', () => {
+  const night: SleepEntry = {
+    id: 'n',
+    type: 'sleep',
+    time: new Date(2026, 9, 14, 22, 0).toISOString(),
+    endTime: new Date(2026, 9, 15, 2, 0).toISOString(),
+  }
+  const morning = new Date(2026, 9, 15, 9, 0)
+
+  it('counts on each day for the part that falls there', () => {
+    for (const [day, minutes] of [['2026-10-14', 120], ['2026-10-15', 120]] as const) {
+      const window = dayWindow(day)
+      const totals = dayTotals(entriesWithin([night], window, morning), morning, window)
+      expect(totals.sleeps).toBe(1)
+      expect(totals.sleepMinutes).toBe(minutes)
+    }
+  })
+
+  it('counts a sleep still going after midnight towards today, from midnight', () => {
+    const open: SleepEntry = { ...night, endTime: undefined }
+    const at0130 = new Date(2026, 9, 15, 1, 30)
+    const today = dayWindow('2026-10-15')
+    expect(dayTotals(entriesWithin([open], today, at0130), at0130, today).sleepMinutes).toBe(90)
+  })
+
+  it('leaves a day it does not reach alone', () => {
+    expect(entriesWithin([night], dayWindow('2026-10-16'), morning)).toEqual([])
   })
 })

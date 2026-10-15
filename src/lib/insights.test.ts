@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { herWeek } from './insights'
+import { estimatedWeight, herWeek } from './insights'
 import { guidesForAge } from '../data/age-guides'
 import type { GrowthEntry, LogEntry } from './types'
+import { withPronouns } from './format'
 
 const NOW = new Date(2026, 9, 2, 14, 0)
 
@@ -95,7 +96,9 @@ describe('guidesForAge', () => {
 
   it('turns the formula guide into millilitres once she has a weight', () => {
     expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('750–1000 ml at 5 kg')
-    expect(guidesForAge(2.8).find((g) => g.id === 'bottle')?.text).toBe('150–200 ml per kg of her weight')
+    const perKg = guidesForAge(2.8).find((g) => g.id === 'bottle')!.text
+    expect(withPronouns(perKg, 'female')).toBe('150–200 ml per kg of her weight')
+    expect(withPronouns(perKg, 'male')).toBe('150–200 ml per kg of his weight')
     expect(guidesForAge(7).find((g) => g.id === 'bottle')).toBeUndefined()
   })
 })
@@ -107,5 +110,40 @@ describe('predictions', () => {
       .filter(([, text]) => (text as string).includes('age-guides'))
       .map(([file]) => file)
     expect(readers).toEqual(['./insights.ts'])
+  })
+})
+
+describe('estimatedWeight', () => {
+  // Made-up weigh-ins for a girl born 7 July
+  const growth: GrowthEntry[] = [
+    { id: 'g1', date: '2026-08-19', weightKg: 4.7 },
+    { id: 'g2', date: '2026-09-03', weightKg: 5.3 },
+    { id: 'g3', date: '2026-09-24', weightKg: 6.1 },
+  ]
+  const on = (iso: string) => new Date(`${iso}T12:00:00`)
+
+  it('ranges between staying on her percentile and keeping up her recent gain', () => {
+    const estimate = estimatedWeight(growth, '2026-07-07', 'female', on('2026-10-16'))!
+    expect(estimate.fromKg).toBe(6.1)
+    expect(estimate.low).toBeGreaterThan(6.5) // her percentile, about 6.6
+    expect(estimate.low).toBeLessThan(6.7)
+    // 4.7 → 6.1 over 36 days, carried on for 22 more
+    expect(estimate.high).toBeCloseTo(6.1 + ((6.1 - 4.7) / 36) * 22.5, 1)
+  })
+
+  it('follows her percentile alone when there is no recent gain to go on', () => {
+    const estimate = estimatedWeight([growth[2]], '2026-07-07', 'female', on('2026-10-16'))!
+    expect(estimate.low).toBe(estimate.high)
+  })
+
+  it('says nothing just after a weigh-in, or long after one', () => {
+    expect(estimatedWeight(growth, '2026-07-07', 'female', on('2026-09-25'))).toBeUndefined()
+    expect(estimatedWeight(growth, '2026-07-07', 'female', on('2026-12-01'))).toBeUndefined()
+    expect(estimatedWeight([], '2026-07-07', 'female', on('2026-10-16'))).toBeUndefined()
+  })
+
+  it('reads as an estimate in the formula guide', () => {
+    expect(guidesForAge(3.3, 6.9, true).find((g) => g.id === 'bottle')!.text).toBe('1040–1380 ml at about 6.9 kg (estimated)')
+    expect(guidesForAge(3.3, 6.1).find((g) => g.id === 'bottle')!.text).toBe('920–1220 ml at 6.1 kg')
   })
 })

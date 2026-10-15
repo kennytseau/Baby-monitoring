@@ -189,7 +189,7 @@ export function GrowthChart({
       )}
 
       {visible.length === 0 && (
-        <div className="gc-empty">No measurements yet — add her first one below.</div>
+        <div className="gc-empty">No measurements yet — add the first one below.</div>
       )}
     </div>
   )

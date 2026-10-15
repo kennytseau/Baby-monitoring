@@ -135,3 +135,25 @@ describe('comparing a part-finished day', () => {
     expect(yesterday.totals.sleepMinutes).toBe(180)
   })
 })
+
+describe('days across midnight', () => {
+  it('gives today the part of last night after midnight', () => {
+    // 22:00 yesterday to 03:00 today
+    const night: LogEntry = {
+      id: 'night',
+      type: 'sleep',
+      time: at(1, 22),
+      endTime: new Date(Date.parse(at(1, 22)) + 5 * 60 * 60_000).toISOString(),
+    }
+    const [today, yesterday] = dailySummaries([night], 2, NOW)
+    expect(today.totals.sleepMinutes).toBe(180)
+    expect(yesterday.totals.sleepMinutes).toBe(120)
+  })
+
+  it('compares a past day only up to this time of day, splitting a sleep at the cutoff', () => {
+    // At 18:00, yesterday's 17:00–19:00 nap counts its first hour only
+    const [, yesterday] = dailySummaries([sleep(1, 17, 120)], 2, NOW, true)
+    expect(yesterday.totals.sleepMinutes).toBe(60)
+    expect(yesterday.napMinutes).toBe(60)
+  })
+})

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { AGE_BANDS, CATEGORY_LABELS, bandForAgeMonths } from '../data/milestones'
 import type { AgeBand, MilestoneDef } from '../data/milestones'
 import { developmentalAgeMonths } from '../lib/age'
@@ -8,6 +8,7 @@ import { RecentWins } from '../components/RecentWins'
 
 export function Milestones() {
   const { state } = useAppState()
+  const p = usePronouns()
   const profile = state.profile!
 
   const currentBand = bandForAgeMonths(developmentalAgeMonths(profile))
@@ -35,7 +36,7 @@ export function Milestones() {
         <h1 className="page-title">Milestones</h1>
         <p className="page-subtitle">
           What most babies do by each age, and how to help {profile.name} get there. Tap a milestone
-          for ideas; tap the circle when she does it.
+          for ideas; tap the circle when {p('{he}')} does it.
         </p>
       </header>
 
@@ -54,8 +55,8 @@ export function Milestones() {
 
       <p className="disclaimer">
         Based on the CDC "Learn the Signs. Act Early." checklists — what 75% or more of babies do by
-        each age. Every baby develops at her own pace; this is not medical advice. If she misses
-        milestones or loses skills she had, talk to your pediatrician.
+        each age. Every baby develops at {p('{his}')} own pace; this is not medical advice. If{' '}
+        {p('{he}')} misses milestones or loses skills {p('{he}')} had, talk to your pediatrician.
       </p>
     </main>
   )
@@ -74,6 +75,7 @@ function BandCard({
   onToggle: () => void
   achieved: Map<string, string>
 }) {
+  const p = usePronouns()
   const doneCount = band.milestones.filter((m) => achieved.has(m.id)).length
   return (
     <section className={`card${isCurrent ? ' card-tinted' : ''}`}>
@@ -102,7 +104,7 @@ function BandCard({
 
       {isOpen && (
         <div style={{ marginTop: 10 }}>
-          <p className="small muted">{band.overview}</p>
+          <p className="small muted">{p(band.overview)}</p>
           {band.milestones.map((m) => (
             <MilestoneRow key={m.id} milestone={m} achievedOn={achieved.get(m.id)} />
           ))}
@@ -114,6 +116,7 @@ function BandCard({
 
 function MilestoneRow({ milestone, achievedOn }: { milestone: MilestoneDef; achievedOn?: string }) {
   const { setMilestoneAchieved } = useAppState()
+  const p = usePronouns()
   const [expanded, setExpanded] = useState(false)
   const done = achievedOn != null
 
@@ -122,7 +125,7 @@ function MilestoneRow({ milestone, achievedOn }: { milestone: MilestoneDef; achi
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <button
           className={`milestone-check${done ? ' done' : ''}`}
-          aria-label={done ? `Unmark "${milestone.title}"` : `Mark "${milestone.title}" as achieved`}
+          aria-label={done ? `Unmark "${p(milestone.title)}"` : `Mark "${p(milestone.title)}" as achieved`}
           onClick={() => setMilestoneAchieved(milestone.id, done ? null : todayISO())}
         >
           ✓
@@ -134,7 +137,7 @@ function MilestoneRow({ milestone, achievedOn }: { milestone: MilestoneDef; achi
         >
           <div className="grow">
             <div className="item-title" style={done ? { opacity: 0.65 } : undefined}>
-              {milestone.title}
+              {p(milestone.title)}
             </div>
             <div className="row" style={{ marginTop: 3, flexWrap: 'wrap', gap: 6 }}>
               <span className={`chip chip-${milestone.category}`}>
@@ -149,13 +152,13 @@ function MilestoneRow({ milestone, achievedOn }: { milestone: MilestoneDef; achi
       {expanded && (
         <div style={{ marginLeft: 38 }}>
           <p className="small muted" style={{ marginTop: 8 }}>
-            {milestone.description}
+            {p(milestone.description)}
           </p>
           <div className="how-to">
             <strong>How to get there</strong>
             <ul>
               {milestone.howToEncourage.map((tip, i) => (
-                <li key={i}>{tip}</li>
+                <li key={i}>{p(tip)}</li>
               ))}
             </ul>
           </div>

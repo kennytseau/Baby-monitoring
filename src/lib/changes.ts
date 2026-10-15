@@ -242,25 +242,27 @@ function changeFrom(series: DayMeasures[], start: number, measure: MeasureId): P
   return null
 }
 
-/** The measures that describe her sleep, as against her feeds */
-const SLEEP_MEASURES: MeasureId[] = ['longestNight', 'nightWakings', 'nightSleep', 'napLength', 'daySleep']
-/** However recent a change, the sleep predictions learn from at least this many days */
+/** The measures that describe her nights — a regression shows in these */
+const NIGHT_MEASURES: MeasureId[] = ['longestNight', 'nightWakings', 'nightSleep']
+/** However recent a change, the wake-up prediction learns from at least this many days */
 const MIN_CHANGED_HISTORY_DAYS = 5
 
 /**
- * While her sleep is changing, how many days the sleep predictions should
+ * While her nights are changing, how many days the wake-up prediction should
  * learn from: just the days since the change began, so the old pattern stops
- * pulling them back. Undefined when her sleep has not changed lately.
+ * pulling it back. Undefined when her nights have not changed lately.
  *
- * Tested by planting a regression into her real log: in its first week the
- * wake-up error fell from 19 to 4 minutes (a sharp regression) and 34 to 20 (a
- * milder one), with the second week about level; on her real log, where her
- * nights were lengthening rather than breaking up, it made no real difference.
+ * Only a change in her nights counts. It first narrowed on any sleep change,
+ * and on her log to 16 October that backfired: her naps shortening narrowed it
+ * to five days, too few bedtime sleeps to learn from, and wake-ups went from 58
+ * to 71 minutes off. On night changes only it was 50. On simulated babies it
+ * keeps the gain in a regression (24 minutes against 29 without narrowing) and
+ * matches either way when nothing changes.
  */
 export function sleepHistoryDays(changes: PatternChange[]): number | undefined {
-  const sleep = changes.filter((c) => SLEEP_MEASURES.includes(c.measure))
-  if (sleep.length === 0) return undefined
-  const since = Math.max(...sleep.map((c) => c.days.length)) + 1
+  const nights = changes.filter((c) => NIGHT_MEASURES.includes(c.measure))
+  if (nights.length === 0) return undefined
+  const since = Math.max(...nights.map((c) => c.days.length)) + 1
   return Math.min(NEWS_DAYS, Math.max(MIN_CHANGED_HISTORY_DAYS, since))
 }
 

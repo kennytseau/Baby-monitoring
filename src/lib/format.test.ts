@@ -6,7 +6,9 @@ import {
   resolveLogTime,
   toDatetimeInput,
   toTimeInput,
+  withPronouns,
 } from './format'
+import { AGE_BANDS } from '../data/milestones'
 
 const NOW = new Date(2026, 8, 7, 8, 30)
 
@@ -120,5 +122,28 @@ describe('toDatetimeInput', () => {
   it('round-trips: the value it produces parses back to the same minute', () => {
     const at = new Date(2026, 8, 7, 23, 59)
     expect(new Date(toDatetimeInput(at)).getTime()).toBe(at.getTime())
+  })
+})
+
+describe('withPronouns', () => {
+  it('fills she/her or he/him/his, capitals included', () => {
+    const text = '{He} lifts {his} head when you call {him}, all by {himself}. {His} turn.'
+    expect(withPronouns(text, 'female')).toBe('She lifts her head when you call her, all by herself. Her turn.')
+    expect(withPronouns(text, 'male')).toBe('He lifts his head when you call him, all by himself. His turn.')
+  })
+
+  it('leaves text without placeholders alone', () => {
+    expect(withPronouns('A change in about 40 min {soon}', 'male')).toBe('A change in about 40 min {soon}')
+  })
+
+  it('reads every milestone right for a boy, with nothing left unfilled for either', () => {
+    const texts = AGE_BANDS.flatMap((band) => [
+      band.overview,
+      ...band.milestones.flatMap((m) => [m.title, m.description, ...m.howToEncourage]),
+    ])
+    for (const text of texts) {
+      expect(withPronouns(text, 'male')).not.toMatch(/\b(she|her|herself)\b/i)
+      for (const sex of ['female', 'male'] as const) expect(withPronouns(text, sex)).not.toMatch(/\{\w+\}/)
+    }
   })
 })

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useAppState } from '../hooks/useAppState'
+import { useAppState, usePronouns } from '../hooks/useAppState'
 import { developmentalAgeMonths } from '../lib/age'
 import { bandForAgeMonths } from '../data/milestones'
 
@@ -10,6 +10,7 @@ import { bandForAgeMonths } from '../data/milestones'
  */
 export function DevelopmentCard() {
   const { state } = useAppState()
+  const p = usePronouns()
   const profile = state.profile!
   const band = bandForAgeMonths(developmentalAgeMonths(profile))
 
@@ -20,10 +21,10 @@ export function DevelopmentCard() {
         <span className="chip chip-neutral">{band.shortLabel}</span>
       </div>
       <p className="small" style={{ marginTop: 8 }}>
-        {band.overview}
+        {p(band.overview)}
       </p>
       <Link to="/milestones" className="btn btn-ghost btn-sm" style={{ marginLeft: -12 }}>
-        See her milestones →
+        See {p('{his}')} milestones →
       </Link>
     </section>
   )
