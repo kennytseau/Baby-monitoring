@@ -254,6 +254,21 @@ input, select, textarea { font: inherit; color: inherit; }
   width: 100%;
 }
 .field textarea { min-height: 72px; line-height: 1.4; }
+/* iOS Safari draws date and time fields its own way: the value centred, the
+   box sized to its text instead of the field, and an empty one collapsed.
+   Without the native look they line up with every other field; tapping one
+   still opens the wheel picker. */
+.field input[type='date'],
+.field input[type='time'],
+.field input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.5;
+}
+.field input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -448,6 +463,42 @@ a { color: var(--accent-text); }
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
+}
+
+/* ---------- Timing highlights ---------- */
+/*
+ * Light yellow from half an hour before an expected wind-down, feed or change
+ * to half an hour after it; light pink once it is further past, which is
+ * often why she is cranky. Day only: night mode keeps its one dim palette.
+ * The words on the card say the same thing, so the colour is never the only cue.
+ */
+:root {
+  --near-soft: #fcf1c7;
+  --over-soft: #fbe0e3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --near-soft: #3a3219;
+    --over-soft: #3f2328;
+  }
+}
+:root:not([data-night='on']) .rhythm-card.timing-near { background: var(--near-soft); }
+:root:not([data-night='on']) .rhythm-card.timing-over { background: var(--over-soft); }
+:root:not([data-night='on']) .need-row.timing-near,
+:root:not([data-night='on']) .need-row.timing-over {
+  margin: 4px -8px;
+  padding: 12px 8px;
+  border-radius: var(--radius-sm);
+  border-bottom-color: transparent;
+}
+:root:not([data-night='on']) .need-row.timing-near { background: var(--near-soft); }
+:root:not([data-night='on']) .need-row.timing-over { background: var(--over-soft); }
+/* The usual greys sink to 3.6:1 on the pink; a step darker keeps them at 5:1 */
+@media not all and (prefers-color-scheme: dark) {
+  :root:not([data-night='on']) :is(.timing-near, .timing-over) {
+    --text-muted: #655e55;
+    --text-faint: #857d72;
+  }
 }
 
 /* ---------- Trend charts ---------- */

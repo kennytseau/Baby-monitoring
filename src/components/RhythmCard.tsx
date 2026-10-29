@@ -3,6 +3,7 @@ import { useNow } from '../hooks/useNow'
 import { usePatterns } from '../hooks/usePatterns'
 import { forecastRhythm } from '../lib/rhythm'
 import { sleepHistoryDays } from '../lib/changes'
+import { timingOf } from '../lib/needs'
 import { formatDuration, formatTime } from '../lib/format'
 
 /** Closer than this and "in about 3 minutes" is a precision the data does not have */
@@ -38,9 +39,12 @@ export function RhythmCard() {
   // so once it has gone by the card says so rather than chasing the clock.
   const minutesAway = (prediction.at.getTime() - now.getTime()) / 60_000
   const passed = minutesAway <= -IMMINENT_MINUTES
+  // Awake and nearing or past her usual wind-down: coloured in day mode, as a
+  // likely reason for grizzling (see the stylesheet). Not for wake-ups.
+  const timing = forecast.asleep ? undefined : timingOf(minutesAway)
 
   return (
-    <section className="card rhythm-card" aria-live="polite">
+    <section className={`card rhythm-card${timing ? ` timing-${timing}` : ''}`} aria-live="polite">
       <div className="row-between">
         <p className="rhythm-label">
           <span aria-hidden="true">{forecast.asleep ? '😴' : '☀️'}</span>{' '}

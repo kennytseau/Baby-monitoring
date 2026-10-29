@@ -97,44 +97,21 @@ export function minutesIntoDay(at: string | Date): number {
   return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
 }
 
-/**
- * Turn "HH:mm" from a time input into a real datetime: the occurrence of that
- * clock time nearest to now, which may be either side of it.
- *
- * Both directions come up. A 23:50 bedtime typed at 00:10 means last night —
- * twenty minutes ago, not twenty-three hours away. A 00:10 feed typed at 23:50
- * means twenty minutes from now. Taking the nearest occurrence gets both right
- * without a rule about which way time is allowed to run, and it lets a time be
- * set a little ahead on purpose: the app simply treats that entry as not yet
- * having happened until it does.
- */
-export function dateFromTimeInput(value: string, now: Date = new Date()): Date | null {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim())
-  if (!match) return null
-  const hours = Number(match[1])
-  const minutes = Number(match[2])
-  if (hours > 23 || minutes > 59) return null
+/** What a datetime-local input gives back; read without a zone, it is local time */
+const DATETIME_INPUT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 
-  const today = new Date(now)
-  today.setHours(hours, minutes, 0, 0)
-  const shifted = new Date(today)
-  shifted.setDate(shifted.getDate() + (today.getTime() > now.getTime() ? -1 : 1))
-  return Math.abs(today.getTime() - now.getTime()) <= Math.abs(shifted.getTime() - now.getTime())
-    ? today
-    : shifted
-}
-
-/** "HH:mm" for a time input, defaulting its value to now */
-export function toTimeInput(date: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`
+/** "8:46 pm" for today, otherwise with the day: "yesterday, 8:46 pm", "Tue 27 Oct, 8:46 pm" */
+export function formatTimeAndDay(at: Date): string {
+  const label = formatDayLabel(toISODate(at))
+  if (label === 'Today') return formatTime(at)
+  return `${label === 'Yesterday' ? 'yesterday' : label}, ${formatTime(at)}`
 }
 
 /** How far back a quick-log entry is being recorded */
 export interface LogTimeChoice {
   /** Minutes before now, for the one-tap offsets */
   offsetMinutes: number
-  /** "HH:mm" typed in, which wins over the offset when set */
+  /** A date and time picked ("YYYY-MM-DDTHH:mm"), which wins over the offset when set */
   exactTime?: string
 }
 
@@ -144,9 +121,9 @@ export interface LogTimeChoice {
  * while to type an amount does not drag the time backwards with you.
  */
 export function resolveLogTime(choice: LogTimeChoice, now: Date = new Date()): Date {
-  if (choice.exactTime) {
-    const exact = dateFromTimeInput(choice.exactTime, now)
-    if (exact) return exact
+  if (choice.exactTime && DATETIME_INPUT.test(choice.exactTime)) {
+    const exact = new Date(choice.exactTime)
+    if (!Number.isNaN(exact.getTime())) return exact
   }
   const offset = Number.isFinite(choice.offsetMinutes) ? Math.max(0, choice.offsetMinutes) : 0
   return offset === 0 ? now : new Date(now.getTime() - offset * 60_000)

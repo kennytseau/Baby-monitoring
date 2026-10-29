@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  dateFromTimeInput,
   formatDuration,
   positiveNumber,
   resolveLogTime,
   toDatetimeInput,
-  toTimeInput,
   withPronouns,
 } from './format'
 import { AGE_BANDS } from '../data/milestones'
@@ -21,54 +19,6 @@ describe('formatDuration', () => {
   })
 })
 
-describe('dateFromTimeInput', () => {
-  it('reads a time earlier today', () => {
-    const parsed = dateFromTimeInput('07:40', NOW)
-    expect(parsed?.getDate()).toBe(7)
-    expect(parsed?.getHours()).toBe(7)
-    expect(parsed?.getMinutes()).toBe(40)
-  })
-
-  it('reads a time later than now as yesterday, so a bedtime typed after midnight works', () => {
-    const parsed = dateFromTimeInput('23:50', new Date(2026, 8, 7, 0, 10))
-    expect(parsed?.getDate()).toBe(6)
-    expect(parsed?.getHours()).toBe(23)
-  })
-
-  it('reads a time a little ahead as meaning later today, not yesterday', () => {
-    const parsed = dateFromTimeInput('10:30', NOW)
-    expect(parsed?.getDate()).toBe(7)
-    expect(parsed?.getHours()).toBe(10)
-    expect(parsed!.getTime()).toBeGreaterThan(NOW.getTime())
-  })
-
-  it('reads a time just after midnight typed late at night as tonight', () => {
-    const parsed = dateFromTimeInput('00:10', new Date(2026, 8, 7, 23, 50))
-    expect(parsed?.getDate()).toBe(8)
-    expect(parsed?.getHours()).toBe(0)
-  })
-
-  it('takes whichever occurrence of the clock time is nearer', () => {
-    // At 08:30 the tipping point is 20:30, half a day away in both directions.
-    expect(dateFromTimeInput('20:00', NOW)?.getDate()).toBe(7)
-    expect(dateFromTimeInput('21:00', NOW)?.getDate()).toBe(6)
-  })
-
-  it('accepts now itself', () => {
-    expect(dateFromTimeInput('08:30', NOW)?.getTime()).toBe(NOW.getTime())
-  })
-
-  it('rejects anything that is not a real time', () => {
-    for (const bad of ['', 'now', '8', '25:00', '10:75', '10-30']) {
-      expect(dateFromTimeInput(bad, NOW)).toBeNull()
-    }
-  })
-
-  it('round-trips through toTimeInput', () => {
-    expect(dateFromTimeInput(toTimeInput(NOW), NOW)?.getTime()).toBe(NOW.getTime())
-  })
-})
-
 describe('resolveLogTime', () => {
   it('is now when nothing is chosen', () => {
     expect(resolveLogTime({ offsetMinutes: 0 }, NOW).getTime()).toBe(NOW.getTime())
@@ -79,15 +29,16 @@ describe('resolveLogTime', () => {
     expect(NOW.getTime() - at.getTime()).toBe(10 * 60_000)
   })
 
-  it('lets a typed time win over the offset', () => {
-    const at = resolveLogTime({ offsetMinutes: 10, exactTime: '07:15' }, NOW)
-    expect(at.getHours()).toBe(7)
-    expect(at.getMinutes()).toBe(15)
+  it('takes a picked date and time as it is, days back included', () => {
+    const at = resolveLogTime({ offsetMinutes: 10, exactTime: '2026-10-27T20:46' }, NOW)
+    expect(at.getTime()).toBe(new Date(2026, 9, 27, 20, 46).getTime())
   })
 
-  it('falls back to the offset when the typed time is nonsense', () => {
-    const at = resolveLogTime({ offsetMinutes: 5, exactTime: '99:99' }, NOW)
-    expect(NOW.getTime() - at.getTime()).toBe(5 * 60_000)
+  it('falls back to the offset when the picked time is nonsense', () => {
+    for (const bad of ['99:99', '2026-13-45T99:99']) {
+      const at = resolveLogTime({ offsetMinutes: 5, exactTime: bad }, NOW)
+      expect(NOW.getTime() - at.getTime()).toBe(5 * 60_000)
+    }
   })
 
   it('never stamps an entry in the future', () => {

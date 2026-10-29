@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { forecastNeeds } from './needs'
+import { forecastNeeds, timingOf } from './needs'
 import type { LogEntry } from './types'
 
 const DAY = 24 * 60 * 60_000
@@ -183,5 +183,16 @@ describe('only what has happened', () => {
 
   it('does not treat a sleep set for later as her being asleep', () => {
     expect(forecastNeeds([...history(180, 30), sleep(minutesAgo(-30))], NOW).asleep).toBe(false)
+  })
+})
+
+describe('timingOf', () => {
+  it('is near from half an hour before to half an hour after, and over beyond that', () => {
+    expect(timingOf(31)).toBeUndefined()
+    expect(timingOf(30)).toBe('near')
+    expect(timingOf(0)).toBe('near')
+    expect(timingOf(-29)).toBe('near')
+    expect(timingOf(-30)).toBe('over')
+    expect(timingOf(-120)).toBe('over')
   })
 })
