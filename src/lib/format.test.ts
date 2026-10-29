@@ -85,6 +85,11 @@ describe('resolveLogTime', () => {
     expect(at.getMinutes()).toBe(15)
   })
 
+  it('takes a picked date and time as it is, days back included', () => {
+    const at = resolveLogTime({ offsetMinutes: 10, exactTime: '2026-10-27T20:46' }, NOW)
+    expect(at.getTime()).toBe(new Date(2026, 9, 27, 20, 46).getTime())
+  })
+
   it('falls back to the offset when the typed time is nonsense', () => {
     const at = resolveLogTime({ offsetMinutes: 5, exactTime: '99:99' }, NOW)
     expect(NOW.getTime() - at.getTime()).toBe(5 * 60_000)

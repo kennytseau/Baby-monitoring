@@ -18,8 +18,9 @@ import {
   formatDuration,
   formatTime,
   positiveNumber,
+  formatTimeAndDay,
   resolveLogTime,
-  toTimeInput,
+  toDatetimeInput,
 } from '../lib/format'
 import type { BottleContent, MedicationEntry, NappyKind } from '../lib/types'
 
@@ -259,7 +260,7 @@ export function QuickLog() {
             aria-label="Set an exact time"
             onClick={() => {
               setPickingTime((open) => !open)
-              if (!exactTime) setExactTime(toTimeInput(new Date()))
+              if (!exactTime) setExactTime(toDatetimeInput(new Date()))
             }}
           >
             🕑
@@ -268,12 +269,13 @@ export function QuickLog() {
       </div>
 
       {pickingTime && (
-        <div className="row">
-          <div className="field grow">
-            <label htmlFor="quick-at">Time it happened</label>
+        // The field gets the full width: a date and time does not fit beside a button on a phone
+        <div className="stack">
+          <div className="field">
+            <label htmlFor="quick-at">When it happened</label>
             <input
               id="quick-at"
-              type="time"
+              type="datetime-local"
               value={exactTime}
               onChange={(e) => {
                 setExactTime(e.target.value)
@@ -281,7 +283,7 @@ export function QuickLog() {
               }}
             />
           </div>
-          <button className="btn btn-sm" style={{ alignSelf: 'flex-end' }} onClick={resetTime}>
+          <button className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={resetTime}>
             Back to now
           </button>
         </div>
@@ -289,7 +291,7 @@ export function QuickLog() {
 
       {backdated && (
         <p className="tiny warn" role="status">
-          Logging at {formatTime(logAt())} — {formatDuration(
+          Logging at {formatTimeAndDay(logAt())} — {formatDuration(
             Math.max(1, (now.getTime() - logAt().getTime()) / 60_000),
           )}{' '}
           ago. Back to now after it saves.
@@ -437,7 +439,7 @@ export function QuickLog() {
             )}
           </p>
           <button className="btn btn-primary btn-block" onClick={saveSleep}>
-            {openSleep ? 'Woke up' : 'Asleep'} {backdated ? `at ${formatTime(logAt())}` : 'now'}
+            {openSleep ? 'Woke up' : 'Asleep'} {backdated ? `at ${formatTimeAndDay(logAt())}` : 'now'}
           </button>
           {sleepError && <p className="tiny warn">{sleepError}</p>}
         </div>

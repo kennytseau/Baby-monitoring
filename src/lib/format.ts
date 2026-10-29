@@ -130,11 +130,24 @@ export function toTimeInput(date: Date = new Date()): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+/** What a datetime-local input gives back; read without a zone, it is local time */
+const DATETIME_INPUT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+
+/** "8:46 pm" for today, otherwise with the day: "yesterday, 8:46 pm", "Tue 27 Oct, 8:46 pm" */
+export function formatTimeAndDay(at: Date): string {
+  const label = formatDayLabel(toISODate(at))
+  if (label === 'Today') return formatTime(at)
+  return `${label === 'Yesterday' ? 'yesterday' : label}, ${formatTime(at)}`
+}
+
 /** How far back a quick-log entry is being recorded */
 export interface LogTimeChoice {
   /** Minutes before now, for the one-tap offsets */
   offsetMinutes: number
-  /** "HH:mm" typed in, which wins over the offset when set */
+  /**
+   * A date and time picked ("YYYY-MM-DDTHH:mm"), which wins over the offset
+   * when set. A bare "HH:mm" still works, as the nearest such time to now.
+   */
   exactTime?: string
 }
 
@@ -145,8 +158,10 @@ export interface LogTimeChoice {
  */
 export function resolveLogTime(choice: LogTimeChoice, now: Date = new Date()): Date {
   if (choice.exactTime) {
-    const exact = dateFromTimeInput(choice.exactTime, now)
-    if (exact) return exact
+    const exact = DATETIME_INPUT.test(choice.exactTime)
+      ? new Date(choice.exactTime)
+      : dateFromTimeInput(choice.exactTime, now)
+    if (exact && !Number.isNaN(exact.getTime())) return exact
   }
   const offset = Number.isFinite(choice.offsetMinutes) ? Math.max(0, choice.offsetMinutes) : 0
   return offset === 0 ? now : new Date(now.getTime() - offset * 60_000)

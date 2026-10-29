@@ -254,6 +254,21 @@ input, select, textarea { font: inherit; color: inherit; }
   width: 100%;
 }
 .field textarea { min-height: 72px; line-height: 1.4; }
+/* iOS Safari draws date and time fields its own way: the value centred, the
+   box sized to its text instead of the field, and an empty one collapsed.
+   Without the native look they line up with every other field; tapping one
+   still opens the wheel picker. */
+.field input[type='date'],
+.field input[type='time'],
+.field input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.5;
+}
+.field input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .field input:focus, .field select:focus, .field textarea:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;

@@ -14,7 +14,9 @@ still with no accounts and nothing sold or tracked.
 
 - **Home ("Today")** — her exact age in weeks and days (with adjusted age for
   babies born early), one-tap quick logging, whether she's asleep or how long she's been awake, and
-  today's milk / sleep / nappy totals at a glance.
+  today's milk / sleep / nappy totals at a glance. Quick logging can be set
+  back 5–30 minutes in one tap, or to any day and time with the 🕑 picker
+  (the wheel picker on iPhone).
 - **What's next** — when she's likely to wake, or to be ready for sleep, and
   whether a feed or a change is about due. All four are read off *her own*
   recent log at this time of day, so they follow her as she grows rather than
