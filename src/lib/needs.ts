@@ -41,6 +41,8 @@ const SOON_MINUTES = 20
 const DUE_MINUTES = 5
 /** Past her usual stretch by this much, "about now" becomes overdue */
 const LATE_MINUTES = 30
+/** Within this much either side of the expected time, the card is coloured as close */
+const NEAR_MINUTES = 30
 /** Amounts are rounded to this, the way a bottle is actually made up */
 const SERVING_STEP = 5
 
@@ -80,6 +82,20 @@ export interface NeedsForecast {
   asleep: boolean
   /** Set when there is not enough logged yet to say anything */
   reason?: string
+}
+
+/** How close an expected sleep, feed or change is, for colouring its card */
+export type Timing = 'near' | 'over'
+
+/**
+ * Near from half an hour before the expected time to half an hour after it;
+ * over once it is further past than that — the point where "overdue" shows,
+ * and often the reason she is cranky. `minutesAway` is negative once past.
+ */
+export function timingOf(minutesAway: number): Timing | undefined {
+  if (minutesAway <= -LATE_MINUTES) return 'over'
+  if (minutesAway <= NEAR_MINUTES) return 'near'
+  return undefined
 }
 
 /** When the next one is due, from how long she has been going lately at this hour */

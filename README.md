@@ -20,7 +20,11 @@ still with no accounts and nothing sold or tracked.
 - **What's next** — when she's likely to wake, or to be ready for sleep, and
   whether a feed or a change is about due. All four are read off *her own*
   recent log at this time of day, so they follow her as she grows rather than
-  telling you what a baby "should" do. See *Reading her rhythm* below.
+  telling you what a baby "should" do. See *Reading her rhythm* below. In
+  day mode, the ready-for-sleep card and the feed and change rows turn light
+  yellow from half an hour before her usual time to half an hour after, and
+  light pink once she's further past it, which is often why she's cranky.
+  Night mode leaves them uncoloured.
 - **Milestones** — checklists for 0–24 months based on the CDC
   "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
   age), organised by age band with her current band highlighted. Every

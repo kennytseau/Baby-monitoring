@@ -1,6 +1,6 @@
 import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
-import { forecastNeeds, type Need, type NeedsForecast } from '../lib/needs'
+import { forecastNeeds, timingOf, type Need, type NeedsForecast } from '../lib/needs'
 import { formatDuration, withPronouns } from '../lib/format'
 import type { Sex } from '../lib/types'
 
@@ -48,8 +48,10 @@ export function NeedsCard() {
 function NeedRow({ need, asleep }: { need: Need; asleep: boolean }) {
   const p = usePronouns()
   const feed = need.kind === 'feed'
+  // Coloured in day mode as it draws near and once it is well past (see the stylesheet)
+  const timing = timingOf(need.dueIn)
   return (
-    <div className="list-item">
+    <div className={`list-item need-row${timing ? ` timing-${timing}` : ''}`}>
       <span className="item-icon" aria-hidden="true">
         {feed ? '🍼' : '🧷'}
       </span>
