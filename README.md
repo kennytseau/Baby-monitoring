@@ -25,6 +25,15 @@ still with no accounts and nothing sold or tracked.
   yellow from half an hour before her usual time to half an hour after, and
   light pink once she's further past it, which is often why she's cranky.
   Night mode leaves them uncoloured.
+- **Catching up** — when today is behind her own usual by this time of day,
+  a short suggestion appears under the card it belongs to:
+  - **Milk** (from midday): how much to add to the bottles still to come, up
+    to her biggest usual bottle, or an extra feed before bed.
+  - **An extra nap**, when day sleep is behind and her next nap is still to come.
+  - **A longer nap**, after a nap of one sleep cycle (under 30 minutes).
+  - **An earlier bedtime**, when day sleep is behind and bed is next.
+  The suggestions are common advice, and the card says so. See *Catching up*
+  below.
 - **Milestones** — checklists for 0–24 months based on the CDC
   "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
   age), organised by age band with her current band highlighted. Every
@@ -288,6 +297,35 @@ It stays quiet until there's something to learn from: a handful of logged
 stretches for each, and it says so plainly until then. While she's asleep, a
 feed or change that's fallen due reads "when she wakes" rather than telling you
 to wake her.
+
+### Catching up
+
+"Behind" means behind *her own* last week at the same time of day, using the
+comparison the By day tab already makes:
+- **Milk:** at least 60 ml and a fifth of her usual bottle milk by now, unless
+  she has nursed 15 minutes longer than usual.
+- **Day sleep:** at least 40 minutes of nap time.
+
+On her log to 22 November, replayed every half hour over the last 14 days,
+milk was flagged on 6 days, day sleep on 3, and a one-cycle nap on 5. Before midday, a feed given a little
+late reads as a bottle behind, so milk stays quiet until then.
+
+**How milk is made up.**
+1. The shortfall is spread over the bottles she usually still has from this
+   time of day.
+2. Each bottle goes no bigger than her biggest usual bottle (the 90th
+   percentile of her feeds over a fortnight; about 110–120 ml lately).
+3. Anything those bottles can't carry becomes an extra feed before bed.
+4. A shortfall bigger than one evening can make up is said plainly, with
+   "don't push it".
+
+**What to do is common advice, not learned from her.** Her own log doesn't
+back up the rules of thumb, so the app doesn't claim to:
+- On days with under 3 h 20 m of day sleep, her first night stretch was, if
+  anything, longer.
+- How much milk she had in the day barely related to her night.
+
+Being behind is real. That it costs her sleep is not something her data shows.
 
 ### Things that were tried and didn't help
 
