@@ -32,8 +32,8 @@ still with no accounts and nothing sold or tracked.
   - **An extra nap**, when day sleep is behind and her next nap is still to come.
   - **A longer nap**, after a nap of one sleep cycle (under 30 minutes).
   - **An earlier bedtime**, when day sleep is behind and bed is next.
-  The suggestions are common advice, and the card says so. See *Catching up*
-  below.
+  The suggestions follow Australian guidance where there is some, and the card
+  says so. See *Catching up* below.
 - **Milestones** — checklists for 0–24 months based on the CDC
   "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
   age), organised by age band with her current band highlighted. Every
@@ -50,11 +50,11 @@ still with no accounts and nothing sold or tracked.
   guide uses it. On her own weigh-ins, neither end was reliably closer, and
   holding the last weight was off by 0.6–1.5 kg. A new weigh-in replaces the
   estimate, and a home weigh-in every week or two beats it.
-- **Babies around her age** — on the Growth tab, the ranges published guidance
-  gives for sleep, naps, wake windows, feeds, formula, wet nappies and weight
-  gain at her age, with her own last seven days alongside. Each range names
-  its source, and the ones that are popular advice rather than research say
-  so. It is there to read and nothing more: no prediction uses it (a test
+- **Babies around her age** — on the Growth tab, the ranges Australian
+  guidance gives for sleep, naps, wake windows, feeds, formula, wet nappies and
+  weight gain at her age, with her own last seven days alongside. Each range
+  names its source, and the ones that are popular advice rather than published
+  guidance say so. It is there to read and nothing more: no prediction uses it (a test
   makes sure of that).
 - **Daily log** — the day in one place:
   - **Milk** — nursing with a live per-side timer (start on the left, switch to
@@ -319,8 +319,21 @@ late reads as a bottle behind, so milk stays quiet until then.
 4. A shortfall bigger than one evening can make up is said plainly, with
    "don't push it".
 
-**What to do is common advice, not learned from her.** Her own log doesn't
-back up the rules of thumb, so the app doesn't claim to:
+**What to do follows Australian guidance, not her log.**
+- **Settle her on her tired signs** (yawning, rubbing her eyes, staring)
+  rather than the clock, even before her usual bedtime: RCH Melbourne, Raising
+  Children Network, Pregnancy, Birth and Baby.
+- **Resettle after a short nap.** If she wakes after 20–30 minutes, stroke or
+  pat her in the cot for about 10 minutes before getting her up: RCH Melbourne.
+- **Sleep safely when out.** Red Nose and Product Safety Australia say a pram
+  isn't a safe place to sleep unsupervised and a carrier, sling or wrap isn't
+  safe for sleep. So the extra-nap point says to stay with her, keep her face
+  uncovered, and move her to a cot when you can.
+- **Milk** has no Australian rule for catching up. Topping up and an extra
+  feed are general advice, and the card says to let her appetite lead.
+
+Her own log doesn't back up the usual rules of thumb either, so the app
+doesn't claim to:
 - On days with under 3 h 20 m of day sleep, her first night stretch was, if
   anything, longer.
 - How much milk she had in the day barely related to her night.
@@ -499,16 +512,23 @@ from *Settings & data* before clearing or switching devices.
 Her age is shown in weeks and days for as long as that is useful. Switching to
 months later is one constant, `AGE_IN_MONTHS_FROM_DAYS` in `src/lib/age.ts`.
 
-The typical ranges on the Growth tab come from the US National Sleep
-Foundation and the American Academy of Sleep Medicine (sleep), the American
-Academy of Pediatrics and the US CDC (feeds), the NHS (formula and wet
-nappies) and the Raising Children Network (wet nappies). Nap counts, wake
-windows and weight gain per week are figures commonly quoted rather than
-research, and the card says so.
+The typical ranges on the Growth tab come from Australian guidance:
+- **Sleep:** the Australian 24-Hour Movement Guidelines.
+- **Naps and wet nappies:** Raising Children Network.
+- **Wake windows** at 3–6 months: Tresillian.
+- **Feeds:** Raising Children Network and Pregnancy, Birth and Baby.
+- **Formula:** the NHMRC Infant Feeding Guidelines, about 150 ml per kg a day
+  to 3 months and about 120 from 3 to 6.
+- **Weight gain:** Tresillian and RCH Melbourne.
 
-Milestone content follows the CDC's 2022 "Learn the Signs. Act Early."
-checklists; growth curves closely approximate the WHO Child Growth Standards
-percentiles (transcribed values for visualization, not the official LMS
-tables). **None of this is medical advice.** Every baby develops at her own
-pace — your pediatrician is the reference for anything that concerns you,
-especially missed milestones, lost skills, or growth worries.
+The other nap counts and wake windows are commonly quoted rather than
+published guidance, and the card says so.
+
+Growth curves closely approximate the WHO Child Growth Standards percentiles
+(transcribed values for visualization, not the official LMS tables). These
+are the charts Australia uses from birth to 2 years. Milestone content still
+follows the US CDC's 2022 "Learn the Signs. Act Early." checklists.
+
+**None of this is medical advice.** Every baby develops at her own pace. Your
+maternal and child health nurse or GP is the reference for anything that
+concerns you, especially missed milestones, lost skills, or growth worries.

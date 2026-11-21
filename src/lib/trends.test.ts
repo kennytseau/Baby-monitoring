@@ -233,6 +233,8 @@ describe('catchUpTips', () => {
     const tips = catchUpTips(log, on(15))
     expect(tips.map((t) => t.kind)).toEqual(['extraNap'])
     expect(tips[0].text).toContain('about 1 h 20 m behind')
+    expect(tips[0].text).toContain('stay with {him} and keep {his} face uncovered')
+    expect(tips[0].text).not.toContain('carrier nap counts')
   })
 
   it('suggests an earlier bedtime when day sleep is behind and bed is next', () => {
@@ -245,7 +247,8 @@ describe('catchUpTips', () => {
     ]
     const tips = catchUpTips(log, on(18))
     expect(tips.map((t) => t.kind)).toEqual(['earlyBed'])
-    expect(tips[0].text).toMatch(/instead of \{his\} usual|rather than holding out for \{his\} usual/)
+    expect(tips[0].text).toContain('settle {him} when they show, even if')
+    expect(tips[0].text).toContain('rather than {his} usual')
   })
 
   it('suggests stretching the next nap after a one-cycle nap, but not after a doze', () => {

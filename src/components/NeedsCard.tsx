@@ -48,7 +48,7 @@ export function NeedsCard() {
         From {p('{his}')} own last week or two — how long {p('{he}')} goes at this hour, and how much {p('{he}')} has
         been taking — so it moves as {p('{he}')} grows. A guide, not a schedule.
         {rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
-        {milk ? p(' How to make up milk is common advice, not learned from {his} log.') : ''}
+        {milk ? p(' How to make up milk is general advice, not learned from {his} log; let {his} appetite lead.') : ''}
       </p>
     </section>
   )

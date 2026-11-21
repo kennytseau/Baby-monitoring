@@ -89,17 +89,23 @@ describe('guidesForAge', () => {
   it('picks the band for her age', () => {
     const at12Weeks = guidesForAge(2.8)
     expect(at12Weeks.find((g) => g.id === 'sleep')?.text).toBe('14–17 h')
-    expect(at12Weeks.find((g) => g.id === 'feeds')?.text).toBe('7–9 nursing, 6–8 by bottle')
+    expect(at12Weeks.find((g) => g.id === 'feeds')?.text).toBe('8–12 nursing, 6–8 by bottle')
     expect(at12Weeks.find((g) => g.id === 'wake')?.text).toBe('60–90 min')
     expect(guidesForAge(5).find((g) => g.id === 'sleep')?.text).toBe('12–16 h')
+    expect(guidesForAge(4).find((g) => g.id === 'wake')?.text).toBe('About 2 h')
+    expect(guidesForAge(4).find((g) => g.id === 'naps')?.text).toBe('2–3 a day')
   })
 
   it('turns the formula guide into millilitres once she has a weight', () => {
-    expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('750–1000 ml at 5 kg')
+    expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('About 750 ml at 5 kg')
     const perKg = guidesForAge(2.8).find((g) => g.id === 'bottle')!.text
-    expect(withPronouns(perKg, 'female')).toBe('150–200 ml per kg of her weight')
-    expect(withPronouns(perKg, 'male')).toBe('150–200 ml per kg of his weight')
+    expect(withPronouns(perKg, 'female')).toBe('About 150 ml per kg of her weight')
+    expect(withPronouns(perKg, 'male')).toBe('About 150 ml per kg of his weight')
     expect(guidesForAge(7).find((g) => g.id === 'bottle')).toBeUndefined()
+  })
+
+  it('follows the NHMRC drop to about 120 ml per kg from three months', () => {
+    expect(guidesForAge(4.5, 7.6).find((g) => g.id === 'bottle')?.text).toBe('About 910 ml at 7.6 kg')
   })
 })
 
@@ -143,7 +149,7 @@ describe('estimatedWeight', () => {
   })
 
   it('reads as an estimate in the formula guide', () => {
-    expect(guidesForAge(3.3, 6.9, true).find((g) => g.id === 'bottle')!.text).toBe('1040–1380 ml at about 6.9 kg (estimated)')
-    expect(guidesForAge(3.3, 6.1).find((g) => g.id === 'bottle')!.text).toBe('920–1220 ml at 6.1 kg')
+    expect(guidesForAge(3.3, 6.9, true).find((g) => g.id === 'bottle')!.text).toBe('About 830 ml at 6.9 kg (estimated weight)')
+    expect(guidesForAge(3.3, 6.1).find((g) => g.id === 'bottle')!.text).toBe('About 730 ml at 6.1 kg')
   })
 })

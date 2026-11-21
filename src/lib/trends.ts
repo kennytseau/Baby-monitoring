@@ -202,6 +202,8 @@ export interface CatchUpTip {
 const DAY_MS = 24 * 60 * MS_PER_MINUTE
 const median = (xs: number[]) => quantile([...xs].sort((a, b) => a - b), 0.5)
 const roundTo = (value: number, step: number) => Math.round(value / step) * step
+/** Settle her on her tired signs rather than the clock (RCH Melbourne, Raising Children Network) */
+const TIRED_SIGNS = 'Watch for {his} tired signs (yawning, rubbing {his} eyes, staring) and settle {him} when they show'
 /** "Around" a time means to the nearest five minutes, not 12:16 */
 const around = (at: Date) => formatTime(new Date(roundTo(at.getTime(), 5 * MS_PER_MINUTE)))
 
@@ -209,10 +211,12 @@ const around = (at: Date) => formatTime(new Date(roundTo(at.getTime(), 5 * MS_PE
  * Where today is behind her own usual by this time of day, and a way to make
  * it up: milk, an extra or longer nap, or an earlier bedtime.
  *
- * Being behind is read from her log. What to do about it is common advice,
- * not learned from her: on her log to 22 November, a day of less milk or
- * less day sleep did not go on to shorten her night, so the app has no
- * evidence of its own to go on.
+ * Being behind is read from her log. What to do about it follows Australian
+ * guidance where there is some: settling on tired signs (RCH Melbourne,
+ * Raising Children Network), resettling after a 20–30 minute nap (RCH
+ * Melbourne), and safe sleep when out (Red Nose). It is not learned from her:
+ * on her log to 22 November, a day of less milk or less day sleep did not go
+ * on to shorten her night.
  */
 export function catchUpTips(log: LogEntry[], now = new Date()): CatchUpTip[] {
   const byNow = dailySummaries(log, CATCH_UP_DAYS + 1, now, true)
@@ -292,17 +296,16 @@ function sleepTips(log: LogEntry[], now: Date, today: DaySummary, past: DaySumma
       tips.push({
         kind: 'earlyBed',
         // Already due down before that? Then the wind-down above is the earlier bedtime.
-        text:
-          next.getTime() <= at.getTime()
-            ? `Day sleep is about ${short} short of {his} usual, so put {him} down when {he}'s ready, around ${around(next)}, rather than holding out for {his} usual ${around(bedtime)}.`
-            : `Day sleep is about ${short} short of {his} usual, so an earlier bedtime may help: around ${around(at)} instead of {his} usual ${around(bedtime)}.`,
+        text: `Day sleep is about ${short} short of {his} usual. ${TIRED_SIGNS}, even if that's before {his} usual bedtime: around ${around(
+          next.getTime() <= at.getTime() ? next : at,
+        )} rather than {his} usual ${around(bedtime)}.`,
       })
     } else {
       tips.push({
         kind: 'extraNap',
-        text: `Day sleep is about ${short} behind {his} usual by now. ${
-          next.getTime() <= now.getTime() ? '{His} next nap is due now, so try not to let it slip' : `Try not to let {his} next nap (around ${around(next)}) slip`
-        }; a pram or carrier nap counts if you're out. If bedtime still looks a long way off after it, a short extra catnap can bridge the gap.`,
+        text: `Day sleep is about ${short} behind {his} usual by now, and {his} next nap is due ${
+          next.getTime() <= now.getTime() ? 'now' : `around ${around(next)}`
+        }. ${TIRED_SIGNS}. If {he} falls asleep in the pram or carrier while you're out, stay with {him} and keep {his} face uncovered, then move {him} to a cot when you can. If bedtime still looks a long way off after that nap, a short extra nap can bridge the gap.`,
       })
     }
   }
@@ -314,7 +317,7 @@ function sleepTips(log: LogEntry[], now: Date, today: DaySummary, past: DaySumma
   if (last && oneCycle && hour >= NAP_START_HOUR && hour < NAP_END_HOUR && !nextIsBedtime) {
     tips.push({
       kind: 'longerNap',
-      text: `{His} last nap was only ${formatDuration(last.minutes)}, about one sleep cycle. For the next one, if {he} stirs around the half-hour mark, try resettling {him} before getting {him} up; a dark, quiet spot helps {him} link cycles.`,
+      text: `{His} last nap was only ${formatDuration(last.minutes)}, about one sleep cycle. Next time, if {he} wakes after 20–30 minutes, try resettling {him} in the cot with stroking or patting for about 10 minutes before getting {him} up.`,
     })
   }
   return tips

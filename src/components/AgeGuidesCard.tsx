@@ -34,7 +34,7 @@ export function AgeGuidesCard() {
         <span className="chip chip-neutral">for interest</span>
       </div>
       <p className="tiny muted">
-        Typical ranges from published guidance, with {profile.name}'s last 7 days alongside. Every
+        Typical ranges from Australian guidance, with {profile.name}'s last 7 days alongside. Every
         baby is different, and none of this feeds the app's predictions — those learn from {p('{him}')}{' '}
         alone.
       </p>

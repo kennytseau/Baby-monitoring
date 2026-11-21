@@ -90,8 +90,8 @@ export function RhythmCard() {
             ))}
           </ul>
           <p className="tiny faint">
-            Compared with {p('{his}')} own last week at this time of day. The suggestions are common advice, not
-            learned from {p('{his}')} log.
+            Compared with {p('{his}')} own last week at this time of day. The suggestions follow Australian
+            guidance (RCH Melbourne, Raising Children Network, Red Nose), not {p('{his}')} log.
           </p>
         </>
       )}
