@@ -3,12 +3,17 @@ import type { MilestoneCategory } from '../lib/types'
 /**
  * Developmental milestone reference, 0–24 months.
  *
- * Milestone selection is based on the CDC "Learn the Signs. Act Early."
- * checklists (2022 revision), which describe what MOST babies (75% or more)
- * do BY each age. Encouragement activities follow common CDC/AAP guidance.
+ * Milestone selection is based on the "Learn the Signs. Act Early." checklists
+ * (2022 revision, from the US CDC), which describe what MOST babies (75% or
+ * more) do BY each age. NSW Health uses the same checklists in the Blue Book
+ * as its main developmental monitoring tool. Encouragement activities follow
+ * common guidance, with Australian advice where it differs: tummy time (the
+ * 24-Hour Movement Guidelines), baby walkers (Product Safety Australia) and
+ * starting solids.
  *
  * This is general information, not medical advice. Every baby develops at
- * her own pace — talk to your pediatrician about anything that concerns you.
+ * her own pace — talk to your GP or child and family health nurse about
+ * anything that concerns you.
  */
 
 export interface MilestoneDef {
@@ -207,7 +212,7 @@ export const AGE_BANDS: AgeBand[] = [
         category: 'motor',
         description: 'On {his} tummy {he} lifts {his} head to about 45 degrees and holds it, wobbly but determined.',
         howToEncourage: [
-          'Work up to 15–30 total minutes of tummy time a day, in short bursts.',
+          'Work up to at least 30 minutes of tummy time a day, in short bursts while {he} is awake — the Australian 24-Hour Movement Guidelines.',
           'Put a mirror or a favourite toy just in front of {him} to make lifting {his} head worth the effort.',
         ],
       },
@@ -371,7 +376,7 @@ export const AGE_BANDS: AgeBand[] = [
     fromMonths: 6,
     toMonths: 9,
     overview:
-      'Half a year! {He} is likely laughing out loud, rolling, grabbing everything in reach and putting it straight in {his} mouth, and blowing raspberries. {He} clearly knows {his} people now. Many babies start solid foods around this age (ask your pediatrician), and sitting with support is becoming a favourite way to see the world.',
+      'Half a year! {He} is likely laughing out loud, rolling, grabbing everything in reach and putting it straight in {his} mouth, and blowing raspberries. {He} clearly knows {his} people now, and sitting with support is becoming a favourite way to see the world. Australian guidance is to start solid foods at around 6 months, and not before 4 months.',
     milestones: [
       {
         id: 'm6-knows-familiar-people',
@@ -722,7 +727,7 @@ export const AGE_BANDS: AgeBand[] = [
         description: 'Sideways steps along the couch, hands shuffling along for balance.',
         howToEncourage: [
           'Arrange stable furniture in a line with small gaps to tempt crossing.',
-          'Skip the classic baby walkers — the AAP advises against them; a sturdy push wagon is better.',
+          'Skip baby walkers — Australian child safety experts (Product Safety Australia, Kidsafe) advise against them; a sturdy push wagon is better.',
         ],
       },
       {

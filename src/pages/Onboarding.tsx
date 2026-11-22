@@ -88,7 +88,8 @@ export function Onboarding() {
 
       <p className="disclaimer">
         Little One offers general information about how babies typically develop. It is not medical
-        advice — always talk to your pediatrician about anything that concerns you.
+        advice — always talk to your GP or child and family health nurse about anything that concerns
+        you.
       </p>
     </main>
   )

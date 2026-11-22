@@ -256,8 +256,8 @@ export function Growth() {
       )}
 
       <p className="disclaimer">
-        Percentiles here are approximate and for interest only — your pediatrician's measurements
-        and charts are the reference that counts.
+        Percentiles here are approximate and for interest only — the measurements and charts from
+        your child health nurse or GP are the reference that counts.
       </p>
     </main>
   )

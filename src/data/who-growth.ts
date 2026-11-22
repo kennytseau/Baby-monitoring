@@ -6,8 +6,9 @@ import type { CurveRow } from '../lib/percentiles'
  * WHO Child Growth Standards (percentiles P3 / P15 / P50 / P85 / P97).
  *
  * These values are for at-home visualization only — they are approximations
- * transcribed to one decimal place, not the official LMS tables. Your
- * pediatrician's charts are the clinical reference.
+ * transcribed to one decimal place, not the official LMS tables. Your child
+ * health nurse's or GP's charts are the clinical reference. Australia uses the
+ * WHO charts from birth to 2 years.
  */
 
 export type Measure = 'weight' | 'length' | 'head'

@@ -34,9 +34,10 @@ still with no accounts and nothing sold or tracked.
   - **An earlier bedtime**, when day sleep is behind and bed is next.
   The suggestions follow Australian guidance where there is some, and the card
   says so. See *Catching up* below.
-- **Milestones** — checklists for 0–24 months based on the CDC
-  "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
-  age), organised by age band with her current band highlighted. Every
+- **Milestones** — checklists for 0–24 months based on the "Learn the Signs.
+  Act Early." checklists (what 75%+ of babies do by each age). These come from
+  the US CDC, and NSW Health uses the same checklists in the Blue Book. They're
+  organised by age band with her current band highlighted. Every
   milestone explains what it looks like **and concrete ways to help her get
   there**. Tap the circle when she does it — the date is recorded and recent
   wins show up on Home.
@@ -477,7 +478,7 @@ src/
               wake windows, day totals), the shared hour-of-day estimator and
               the sleep / feed / nappy predictions built on it, sync merge +
               client, percentiles, formatting
-  data/       milestone dataset (CDC-based), growth curve tables (WHO-based),
+  data/       milestone dataset (Learn the Signs. Act Early.), growth curve tables (WHO),
               typical ranges by age (for reading only)
   hooks/      app state provider, quick-log actions, ticking clock, night mode
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Trends, Memories
@@ -526,8 +527,10 @@ published guidance, and the card says so.
 
 Growth curves closely approximate the WHO Child Growth Standards percentiles
 (transcribed values for visualization, not the official LMS tables). These
-are the charts Australia uses from birth to 2 years. Milestone content still
-follows the US CDC's 2022 "Learn the Signs. Act Early." checklists.
+are the charts Australia uses from birth to 2 years. Milestone content follows
+the 2022 "Learn the Signs. Act Early." checklists from the US CDC. NSW Health
+uses the same checklists in the Blue Book as its main developmental monitoring
+tool, so the milestones match what your child health nurse checks against.
 
 **None of this is medical advice.** Every baby develops at her own pace. Your
 maternal and child health nurse or GP is the reference for anything that
