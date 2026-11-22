@@ -210,7 +210,7 @@ export function Home() {
 
       <p className="disclaimer">
         General information, not medical advice. Every baby develops at {p('{his}')} own pace — talk to your
-        pediatrician about anything that concerns you.
+        GP or child and family health nurse about anything that concerns you.
       </p>
     </main>
   )

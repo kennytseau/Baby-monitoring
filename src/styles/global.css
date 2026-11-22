@@ -465,6 +465,24 @@ a { color: var(--accent-text); }
   margin-top: 2px;
 }
 
+/* Ways to catch up on milk or sleep, under the card they belong to */
+.tips {
+  list-style: none;
+  margin: 10px 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tips li {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+}
+
 /* ---------- Timing highlights ---------- */
 /*
  * Light yellow from half an hour before an expected wind-down, feed or change

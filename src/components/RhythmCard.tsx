@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { usePatterns } from '../hooks/usePatterns'
 import { forecastRhythm } from '../lib/rhythm'
 import { sleepHistoryDays } from '../lib/changes'
 import { timingOf } from '../lib/needs'
+import { catchUpTips } from '../lib/trends'
 import { formatDuration, formatTime } from '../lib/format'
 
 /** Closer than this and "in about 3 minutes" is a precision the data does not have */
@@ -22,6 +24,11 @@ export function RhythmCard() {
   const now = useNow(30_000)
   const historyDays = sleepHistoryDays(usePatterns().changes)
   const forecast = forecastRhythm(state.log, now, historyDays)
+  // Milk has its own place, under the feed in "Might be due"
+  const tips = useMemo(
+    () => catchUpTips(state.log, now).filter((tip) => tip.kind !== 'milk'),
+    [state.log, now],
+  )
 
   if (forecast.reason) {
     return (
@@ -74,6 +81,19 @@ export function RhythmCard() {
           Usually {formatTime(prediction.earliest)}–{formatTime(prediction.latest)}, from{' '}
           {prediction.samples} similar {forecast.asleep ? 'sleeps' : 'wake windows'} at this time of day.
         </p>
+      )}
+      {tips.length > 0 && (
+        <>
+          <ul className="tips">
+            {tips.map((tip) => (
+              <li key={tip.kind}>{p(tip.text)}</li>
+            ))}
+          </ul>
+          <p className="tiny faint">
+            Compared with {p('{his}')} own last week at this time of day. The suggestions follow Australian
+            guidance (RCH Melbourne, Raising Children Network, Red Nose), not {p('{his}')} log.
+          </p>
+        </>
       )}
       {forecast.asleep && historyDays && (
         <p className="tiny faint">

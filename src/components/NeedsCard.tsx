@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useAppState, usePronouns } from '../hooks/useAppState'
 import { useNow } from '../hooks/useNow'
 import { forecastNeeds, timingOf, type Need, type NeedsForecast } from '../lib/needs'
 import { formatDuration, withPronouns } from '../lib/format'
+import { catchUpTips } from '../lib/trends'
 import type { Sex } from '../lib/types'
 
 /** "1 h 53 m" is one word to a reader, so do not let it wrap across two lines */
@@ -19,6 +21,7 @@ export function NeedsCard() {
   const p = usePronouns()
   const now = useNow(30_000)
   const forecast = forecastNeeds(state.log, now)
+  const milk = useMemo(() => catchUpTips(state.log, now).find((tip) => tip.kind === 'milk'), [state.log, now])
 
   if (forecast.reason) {
     return (
@@ -36,10 +39,16 @@ export function NeedsCard() {
       <p className="rhythm-label">Might be due</p>
       {forecast.feed && <NeedRow need={forecast.feed} asleep={forecast.asleep} />}
       {forecast.nappy && <NeedRow need={forecast.nappy} asleep={forecast.asleep} />}
+      {milk && (
+        <ul className="tips">
+          <li>{p(milk.text)}</li>
+        </ul>
+      )}
       <p className="tiny faint" style={{ marginTop: 8 }}>
         From {p('{his}')} own last week or two — how long {p('{he}')} goes at this hour, and how much {p('{he}')} has
         been taking — so it moves as {p('{he}')} grows. A guide, not a schedule.
         {rough ? ' Still thin on data at this hour, so treat these as rough.' : ''}
+        {milk ? p(' How to make up milk is general advice, not learned from {his} log; let {his} appetite lead.') : ''}
       </p>
     </section>
   )

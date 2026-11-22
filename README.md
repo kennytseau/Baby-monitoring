@@ -25,9 +25,19 @@ still with no accounts and nothing sold or tracked.
   yellow from half an hour before her usual time to half an hour after, and
   light pink once she's further past it, which is often why she's cranky.
   Night mode leaves them uncoloured.
-- **Milestones** — checklists for 0–24 months based on the CDC
-  "Learn the Signs. Act Early." checklists (what 75%+ of babies do by each
-  age), organised by age band with her current band highlighted. Every
+- **Catching up** — when today is behind her own usual by this time of day,
+  a short suggestion appears under the card it belongs to:
+  - **Milk** (from midday): how much to add to the bottles still to come, up
+    to her biggest usual bottle, or an extra feed before bed.
+  - **An extra nap**, when day sleep is behind and her next nap is still to come.
+  - **A longer nap**, after a nap of one sleep cycle (under 30 minutes).
+  - **An earlier bedtime**, when day sleep is behind and bed is next.
+  The suggestions follow Australian guidance where there is some, and the card
+  says so. See *Catching up* below.
+- **Milestones** — checklists for 0–24 months based on the "Learn the Signs.
+  Act Early." checklists (what 75%+ of babies do by each age). These come from
+  the US CDC, and NSW Health uses the same checklists in the Blue Book. They're
+  organised by age band with her current band highlighted. Every
   milestone explains what it looks like **and concrete ways to help her get
   there**. Tap the circle when she does it — the date is recorded and recent
   wins show up on Home.
@@ -41,11 +51,11 @@ still with no accounts and nothing sold or tracked.
   guide uses it. On her own weigh-ins, neither end was reliably closer, and
   holding the last weight was off by 0.6–1.5 kg. A new weigh-in replaces the
   estimate, and a home weigh-in every week or two beats it.
-- **Babies around her age** — on the Growth tab, the ranges published guidance
-  gives for sleep, naps, wake windows, feeds, formula, wet nappies and weight
-  gain at her age, with her own last seven days alongside. Each range names
-  its source, and the ones that are popular advice rather than research say
-  so. It is there to read and nothing more: no prediction uses it (a test
+- **Babies around her age** — on the Growth tab, the ranges Australian
+  guidance gives for sleep, naps, wake windows, feeds, formula, wet nappies and
+  weight gain at her age, with her own last seven days alongside. Each range
+  names its source, and the ones that are popular advice rather than published
+  guidance say so. It is there to read and nothing more: no prediction uses it (a test
   makes sure of that).
 - **Daily log** — the day in one place:
   - **Milk** — nursing with a live per-side timer (start on the left, switch to
@@ -289,6 +299,48 @@ stretches for each, and it says so plainly until then. While she's asleep, a
 feed or change that's fallen due reads "when she wakes" rather than telling you
 to wake her.
 
+### Catching up
+
+"Behind" means behind *her own* last week at the same time of day, using the
+comparison the By day tab already makes:
+- **Milk:** at least 60 ml and a fifth of her usual bottle milk by now, unless
+  she has nursed 15 minutes longer than usual.
+- **Day sleep:** at least 40 minutes of nap time.
+
+On her log to 22 November, replayed every half hour over the last 14 days,
+milk was flagged on 6 days, day sleep on 3, and a one-cycle nap on 5. Before midday, a feed given a little
+late reads as a bottle behind, so milk stays quiet until then.
+
+**How milk is made up.**
+1. The shortfall is spread over the bottles she usually still has from this
+   time of day.
+2. Each bottle goes no bigger than her biggest usual bottle (the 90th
+   percentile of her feeds over a fortnight; about 110–120 ml lately).
+3. Anything those bottles can't carry becomes an extra feed before bed.
+4. A shortfall bigger than one evening can make up is said plainly, with
+   "don't push it".
+
+**What to do follows Australian guidance, not her log.**
+- **Settle her on her tired signs** (yawning, rubbing her eyes, staring)
+  rather than the clock, even before her usual bedtime: RCH Melbourne, Raising
+  Children Network, Pregnancy, Birth and Baby.
+- **Resettle after a short nap.** If she wakes after 20–30 minutes, stroke or
+  pat her in the cot for about 10 minutes before getting her up: RCH Melbourne.
+- **Sleep safely when out.** Red Nose and Product Safety Australia say a pram
+  isn't a safe place to sleep unsupervised and a carrier, sling or wrap isn't
+  safe for sleep. So the extra-nap point says to stay with her, keep her face
+  uncovered, and move her to a cot when you can.
+- **Milk** has no Australian rule for catching up. Topping up and an extra
+  feed are general advice, and the card says to let her appetite lead.
+
+Her own log doesn't back up the usual rules of thumb either, so the app
+doesn't claim to:
+- On days with under 3 h 20 m of day sleep, her first night stretch was, if
+  anything, longer.
+- How much milk she had in the day barely related to her night.
+
+Being behind is real. That it costs her sleep is not something her data shows.
+
 ### Things that were tried and didn't help
 
 Worth recording so they aren't tried again. None of these beat the model above
@@ -426,7 +478,7 @@ src/
               wake windows, day totals), the shared hour-of-day estimator and
               the sleep / feed / nappy predictions built on it, sync merge +
               client, percentiles, formatting
-  data/       milestone dataset (CDC-based), growth curve tables (WHO-based),
+  data/       milestone dataset (Learn the Signs. Act Early.), growth curve tables (WHO),
               typical ranges by age (for reading only)
   hooks/      app state provider, quick-log actions, ticking clock, night mode
   pages/      Onboarding, Home, Milestones, Growth, DailyLog, Trends, Memories
@@ -461,16 +513,25 @@ from *Settings & data* before clearing or switching devices.
 Her age is shown in weeks and days for as long as that is useful. Switching to
 months later is one constant, `AGE_IN_MONTHS_FROM_DAYS` in `src/lib/age.ts`.
 
-The typical ranges on the Growth tab come from the US National Sleep
-Foundation and the American Academy of Sleep Medicine (sleep), the American
-Academy of Pediatrics and the US CDC (feeds), the NHS (formula and wet
-nappies) and the Raising Children Network (wet nappies). Nap counts, wake
-windows and weight gain per week are figures commonly quoted rather than
-research, and the card says so.
+The typical ranges on the Growth tab come from Australian guidance:
+- **Sleep:** the Australian 24-Hour Movement Guidelines.
+- **Naps and wet nappies:** Raising Children Network.
+- **Wake windows** at 3–6 months: Tresillian.
+- **Feeds:** Raising Children Network and Pregnancy, Birth and Baby.
+- **Formula:** the NHMRC Infant Feeding Guidelines, about 150 ml per kg a day
+  to 3 months and about 120 from 3 to 6.
+- **Weight gain:** Tresillian and RCH Melbourne.
 
-Milestone content follows the CDC's 2022 "Learn the Signs. Act Early."
-checklists; growth curves closely approximate the WHO Child Growth Standards
-percentiles (transcribed values for visualization, not the official LMS
-tables). **None of this is medical advice.** Every baby develops at her own
-pace — your pediatrician is the reference for anything that concerns you,
-especially missed milestones, lost skills, or growth worries.
+The other nap counts and wake windows are commonly quoted rather than
+published guidance, and the card says so.
+
+Growth curves closely approximate the WHO Child Growth Standards percentiles
+(transcribed values for visualization, not the official LMS tables). These
+are the charts Australia uses from birth to 2 years. Milestone content follows
+the 2022 "Learn the Signs. Act Early." checklists from the US CDC. NSW Health
+uses the same checklists in the Blue Book as its main developmental monitoring
+tool, so the milestones match what your child health nurse checks against.
+
+**None of this is medical advice.** Every baby develops at her own pace. Your
+maternal and child health nurse or GP is the reference for anything that
+concerns you, especially missed milestones, lost skills, or growth worries.

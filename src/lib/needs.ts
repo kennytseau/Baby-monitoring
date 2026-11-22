@@ -135,6 +135,32 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
   }
 }
 
+/** One feed as she had it: a top-up within the same feed counts as part of it */
+export interface FeedEvent {
+  at: Date
+  ml: number
+  /** Minutes at the breast */
+  minutes: number
+}
+
+/** Feeds merged into the feeds she actually had, oldest first */
+export function feedEvents(feeds: FeedEntry[]): FeedEvent[] {
+  const events: FeedEvent[] = []
+  for (const f of sortedByTime(feeds, 'asc')) {
+    const time = new Date(f.time)
+    const ml = f.amountMl && f.amountMl > 0 ? f.amountMl : 0
+    const minutes = f.kind === 'nursing' ? (f.leftMinutes ?? 0) + (f.rightMinutes ?? 0) : 0
+    const last = events[events.length - 1]
+    if (last && (time.getTime() - last.at.getTime()) / MS_PER_MINUTE < SAME_EVENT_MINUTES) {
+      last.ml += ml
+      last.minutes += minutes
+    } else {
+      events.push({ at: time, ml, minutes })
+    }
+  }
+  return events
+}
+
 /**
  * How much the next feed is likely to be, at the hour it is due.
  *
@@ -149,19 +175,7 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
  * no use offering millilitres to someone who nurses.
  */
 function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
-  const events: { at: Date; ml: number; minutes: number }[] = []
-  for (const f of sortedByTime(feeds, 'asc')) {
-    const time = new Date(f.time)
-    const ml = f.amountMl && f.amountMl > 0 ? f.amountMl : 0
-    const minutes = f.kind === 'nursing' ? (f.leftMinutes ?? 0) + (f.rightMinutes ?? 0) : 0
-    const last = events[events.length - 1]
-    if (last && (time.getTime() - last.at.getTime()) / MS_PER_MINUTE < SAME_EVENT_MINUTES) {
-      last.ml += ml
-      last.minutes += minutes
-    } else {
-      events.push({ at: time, ml, minutes })
-    }
-  }
+  const events = feedEvents(feeds)
   const bottles = events.filter((e) => e.ml > 0).map((e) => ({ at: e.at, value: e.ml }))
   const nursing = events
     .filter((e) => e.ml === 0 && e.minutes > 0)

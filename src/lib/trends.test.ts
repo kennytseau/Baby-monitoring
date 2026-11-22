@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { comparedToUsual, dailySummaries, trendSeries } from './trends'
+import { catchUpTips, comparedToUsual, dailySummaries, trendSeries, usualBedtime } from './trends'
 import type { LogEntry } from './types'
 
 const NOW = new Date(2026, 8, 7, 18, 0)
@@ -155,5 +155,111 @@ describe('days across midnight', () => {
     const [, yesterday] = dailySummaries([sleep(1, 17, 120)], 2, NOW, true)
     expect(yesterday.totals.sleepMinutes).toBe(60)
     expect(yesterday.napMinutes).toBe(60)
+  })
+})
+
+describe('catchUpTips', () => {
+  function napAt(daysAgo: number, hour: number, minute: number, minutes: number): LogEntry {
+    n += 1
+    const start = at(daysAgo, hour, minute)
+    return { id: `c${n}`, type: 'sleep', time: start, endTime: new Date(Date.parse(start) + minutes * 60_000).toISOString() }
+  }
+  function nursed(daysAgo: number, hour: number, minutes: number): LogEntry {
+    n += 1
+    return { id: `c${n}`, type: 'feed', kind: 'nursing', leftMinutes: minutes, time: at(daysAgo, hour) }
+  }
+  /** A week of the same day: bottles of 80 ml, with 120 ml at 3pm and 6pm, three naps, bed at 7:30pm */
+  function usualWeek(): LogEntry[] {
+    const log: LogEntry[] = []
+    for (let d = 1; d <= 7; d += 1) {
+      for (const [hour, ml] of [[6, 80], [9, 80], [12, 80], [15, 120], [18, 120], [21, 80]]) log.push(bottle(d, hour, ml))
+      log.push(napAt(d, 9, 30, 60), napAt(d, 13, 0, 90), napAt(d, 16, 30, 45), napAt(d, 19, 30, 600))
+    }
+    return log
+  }
+  const on = (hour: number, minute = 0) => new Date(2026, 8, 7, hour, minute)
+  const kinds = (log: LogEntry[], now: Date) => catchUpTips(log, now).map((t) => t.kind)
+
+  it('finds her usual bedtime from the evening sleeps', () => {
+    const bed = usualBedtime(usualWeek(), on(15))!
+    expect([bed.getHours(), bed.getMinutes()]).toEqual([19, 30])
+  })
+
+  it('says nothing on a day that is going as usual', () => {
+    const log = [...usualWeek(), bottle(0, 6, 80), bottle(0, 9, 80), bottle(0, 12, 80), napAt(0, 9, 30, 60), napAt(0, 13, 0, 90)]
+    expect(kinds(log, on(15))).toEqual([])
+  })
+
+  it('spreads a milk shortfall over the bottles still to come, up to her biggest', () => {
+    // 160 ml by 3pm against a usual 240: three bottles usually follow
+    const log = [...usualWeek(), bottle(0, 6, 80), bottle(0, 9, 80), napAt(0, 9, 30, 60), napAt(0, 13, 0, 90)]
+    const milk = catchUpTips(log, on(15)).find((t) => t.kind === 'milk')!
+    expect(milk.text).toContain('about 80 ml behind {his} usual by now (160 ml so far, usually 240)')
+    expect(milk.text).toContain('add about 30 ml to each of {his} next 3 bottles (about 110 ml; {his} biggest usual is 120 ml).')
+    expect(milk.text).not.toContain('extra feed')
+  })
+
+  it('adds an extra feed for what the bottles cannot carry', () => {
+    // 160 ml behind: three bottles take 40 ml more each at most, leaving 40
+    const log = [...usualWeek(), bottle(0, 6, 80), napAt(0, 9, 30, 60), napAt(0, 13, 0, 90)]
+    const milk = catchUpTips(log, on(15)).find((t) => t.kind === 'milk')!
+    expect(milk.text).toContain('add about 40 ml to each of {his} next 3 bottles')
+    expect(milk.text).toContain('and offer an extra feed of about 40 ml before bed')
+  })
+
+  it('suggests an extra feed when her bottles are already as big as she takes', () => {
+    const log: LogEntry[] = usualWeek().map((e) => (e.type === 'feed' ? { ...e, amountMl: 100 } : e))
+    log.push(bottle(0, 6, 100), bottle(0, 9, 100), napAt(0, 9, 30, 60), napAt(0, 13, 0, 90))
+    const milk = catchUpTips(log, on(15)).find((t) => t.kind === 'milk')!
+    expect(milk.text).toContain('rarely takes more than 100 ml at once, so an extra feed of about 100 ml')
+    expect(milk.text).not.toContain('still leaves')
+  })
+
+  it('does not promise back more than an evening can make up', () => {
+    // Nothing by 6pm against 360: top-ups and one extra feed carry 160 at most
+    const log = [...usualWeek(), napAt(0, 9, 30, 60), napAt(0, 13, 0, 90), napAt(0, 16, 30, 45)]
+    const milk = catchUpTips(log, on(18)).find((t) => t.kind === 'milk')!
+    expect(milk.text).toContain('an extra feed of about 80 ml before bed. That still leaves about 200 ml')
+  })
+
+  it('leaves milk alone before midday, or when she has nursed longer than usual', () => {
+    const log = [...usualWeek(), napAt(0, 9, 30, 60)]
+    expect(kinds(log, on(11, 30))).not.toContain('milk')
+    expect(kinds([...log, napAt(0, 13, 0, 90), nursed(0, 11, 30)], on(15))).not.toContain('milk')
+  })
+
+  it('suggests not missing the next nap when day sleep is behind and bedtime is a way off', () => {
+    const log = [...usualWeek(), bottle(0, 6, 80), bottle(0, 9, 80), bottle(0, 12, 80), napAt(0, 9, 30, 30), napAt(0, 13, 0, 40)]
+    const tips = catchUpTips(log, on(15))
+    expect(tips.map((t) => t.kind)).toEqual(['extraNap'])
+    expect(tips[0].text).toContain('about 1 h 20 m behind')
+    expect(tips[0].text).toContain('stay with {him} and keep {his} face uncovered')
+    expect(tips[0].text).not.toContain('carrier nap counts')
+  })
+
+  it('suggests an earlier bedtime when day sleep is behind and bed is next', () => {
+    const log = [
+      ...usualWeek(),
+      ...[6, 9, 12, 15].map((h) => bottle(0, h, h >= 15 ? 120 : 80)),
+      napAt(0, 9, 30, 30),
+      napAt(0, 13, 0, 40),
+      napAt(0, 16, 30, 20),
+    ]
+    const tips = catchUpTips(log, on(18))
+    expect(tips.map((t) => t.kind)).toEqual(['earlyBed'])
+    expect(tips[0].text).toContain('settle {him} when they show, even if')
+    expect(tips[0].text).toContain('rather than {his} usual')
+  })
+
+  it('suggests stretching the next nap after a one-cycle nap, but not after a doze', () => {
+    const log = [...usualWeek(), bottle(0, 6, 80), bottle(0, 9, 80)]
+    expect(kinds([...log, napAt(0, 9, 30, 20)], on(10, 30))).toContain('longerNap')
+    expect(kinds([...log, napAt(0, 9, 30, 5)], on(10, 30))).not.toContain('longerNap')
+  })
+
+  it('says nothing about sleep while she is asleep, or without a week to compare', () => {
+    const asleep: LogEntry = { id: 'open', type: 'sleep', time: at(0, 13) }
+    expect(kinds([...usualWeek(), napAt(0, 9, 30, 20), asleep], on(13, 30)).filter((k) => k !== 'milk')).toEqual([])
+    expect(kinds([bottle(1, 9, 80), bottle(0, 9, 80)], on(15))).toEqual([])
   })
 })

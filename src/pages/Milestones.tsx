@@ -54,9 +54,10 @@ export function Milestones() {
       ))}
 
       <p className="disclaimer">
-        Based on the CDC "Learn the Signs. Act Early." checklists — what 75% or more of babies do by
-        each age. Every baby develops at {p('{his}')} own pace; this is not medical advice. If{' '}
-        {p('{he}')} misses milestones or loses skills {p('{he}')} had, talk to your pediatrician.
+        Based on the "Learn the Signs. Act Early." checklists NSW Health uses in the Blue Book (from
+        the US CDC) — what 75% or more of babies do by each age. Every baby develops at {p('{his}')} own
+        pace; this is not medical advice. If {p('{he}')} misses milestones or loses skills {p('{he}')}{' '}
+        had, talk to your GP or child and family health nurse.
       </p>
     </main>
   )
