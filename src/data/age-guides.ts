@@ -42,6 +42,9 @@ const HOUR = 60
  * moves to the next band on its own as she grows.
  */
 const MOVEMENT_GUIDELINES = 'Australian 24-Hour Movement Guidelines'
+/** NSW Health's children's hospitals network and a local health district */
+const SCHN = "Sydney Children's Hospitals Network (NSW Health)"
+const SESLHD = 'South Eastern Sydney Local Health District (NSW Health)'
 const COMMONLY_QUOTED = 'Commonly quoted by sleep guides, not from published guidance'
 
 interface Guide {
@@ -63,8 +66,17 @@ const SLEEP: Band<Guide>[] = [
 const NAPS: Band<Guide>[] = [
   { from: 0, to: 1.5, value: { range: [0, 0], text: 'Lots of short sleeps, no set pattern yet', source: COMMONLY_QUOTED } },
   { from: 1.5, to: 3, value: { range: [3, 4], source: 'Tresillian, 6–12 weeks' } },
-  { from: 3, to: 6, value: { range: [2, 3], source: 'Tresillian, 3–5 months; Karitane adds an optional third short nap at 5–6' } },
-  { from: 6, to: 12, value: { range: [2, 2], source: 'Tresillian and Karitane, 6–12 months' } },
+  {
+    from: 3,
+    to: 6,
+    value: { range: [2, 3], source: `Tresillian, 3–5 months (2–3); ${SCHN}: around 3` },
+  },
+  {
+    from: 6,
+    to: 9,
+    value: { range: [2, 3], source: `${SCHN}: many drop from three naps to two at 6–9 months; Tresillian: 2` },
+  },
+  { from: 9, to: 12, value: { range: [2, 2], source: 'Tresillian and Karitane, 9–12 months' } },
   { from: 12, to: 18, value: { range: [1, 2], source: 'Tresillian: two naps become one between 12 and 18 months' } },
   { from: 18, to: 24, value: { range: [1, 1], source: 'Raising Children Network, toddlers' } },
 ]
@@ -99,7 +111,7 @@ const FEEDS: Band<Guide>[] = [
     value: {
       range: [6, 12],
       text: '8–12 nursing, 6–8 by bottle',
-      source: 'Raising Children Network (nursing); Pregnancy, Birth and Baby (bottles)',
+      source: `Raising Children Network (nursing); Pregnancy, Birth and Baby (bottles); ${SESLHD}: up to 8 at one month`,
     },
   },
   {
@@ -112,7 +124,11 @@ const FEEDS: Band<Guide>[] = [
     to: 6,
     value: { range: [6, 7], text: 'About 5 by day and 1–2 overnight', source: 'Tresillian, 4–5 months' },
   },
-  { from: 6, to: 12, value: { range: [4, 6], text: '4–6, alongside solids', source: 'Karitane, 6–12 months' } },
+  {
+    from: 6,
+    to: 12,
+    value: { range: [4, 6], text: '4–6, alongside solids', source: `Karitane, 6–12 months; ${SESLHD}: around 5 at six months` },
+  },
 ]
 
 /** Weight gain in grams a week: a guide, not a minimum */
@@ -125,12 +141,16 @@ const WEIGHT_GAIN: Band<[number, number]>[] = [
 /**
  * Formula for a baby fed only formula, per kilo of body weight a day, from the
  * NHMRC Infant Feeding Guidelines: about 150 ml to 3 months, about 120 to 6,
- * then 90–120 alongside solids (as the Better Health Channel gives it).
+ * then about 100 alongside solids, down to 90 for some (as SESLHD gives it).
  */
 const ML_PER_KG: Band<{ range: [number, number]; source: string }>[] = [
   { from: 0, to: 3, value: { range: [150, 150], source: 'NHMRC Infant Feeding Guidelines, 0–3 months' } },
   { from: 3, to: 6, value: { range: [120, 120], source: 'NHMRC Infant Feeding Guidelines, 3–6 months' } },
-  { from: 6, to: 12, value: { range: [90, 120], source: 'NHMRC Infant Feeding Guidelines via Better Health Channel, 6–12 months' } },
+  {
+    from: 6,
+    to: 12,
+    value: { range: [90, 100], source: `NHMRC Infant Feeding Guidelines via ${SESLHD}, 6–12 months` },
+  },
 ]
 
 function hours(minutes: number): string {
@@ -223,7 +243,7 @@ export function guidesForAge(ageMonths: number, weightKg?: number, estimated = f
       id: 'wet',
       label: 'Wet nappies a day',
       text: '5 or more heavy disposables, or 6–8 cloth',
-      source: 'Raising Children Network',
+      source: `Raising Children Network; ${SESLHD}`,
     })
   }
 

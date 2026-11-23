@@ -518,17 +518,18 @@ months later is one constant, `AGE_IN_MONTHS_FROM_DAYS` in `src/lib/age.ts`.
 The typical ranges on the Growth tab come from Australian guidance, as
 narrow as it goes. The national guidelines give one range for most of the
 first year, so the month-by-month bands come from Karitane and Tresillian, the
-NSW parenting services:
+NSW parenting services, with NSW Health's own figures alongside where they
+add something:
 
 | Guide | Bands and sources |
 | --- | --- |
 | Sleep in 24 hours | 24-Hour Movement Guidelines to 3 months and from 1 year; Karitane 3–6 months (14–15 h) and 7–12 months (12–14 h) |
-| Naps | Tresillian at 6–12 weeks, 3–5, 6–8, 9–12 and 12–18 months; Raising Children Network for toddlers |
+| Naps | Tresillian at 6–12 weeks, 3–5, 6–8, 9–12 and 12–18 months; Sydney Children's Hospitals Network (NSW Health) at 3–6 and 6–9 months, where it counts a nap more; Raising Children Network for toddlers |
 | Day sleep in total | Tresillian 3–5 months (3–4 h), 6–8 and 9–12 months (2–3 h), 12–18 months; Raising Children Network for toddlers |
 | Awake between sleeps | Tresillian to 3 months and at 9–12 months; Karitane at 3–4½, 4½–6 and 6–9 months |
-| Feeds | Raising Children Network and Pregnancy, Birth and Baby to 4 months; Tresillian 4–5 months; Karitane 6–12 months |
-| Formula | NHMRC Infant Feeding Guidelines: about 150 ml per kg a day to 3 months, about 120 to 6, then 90–120 alongside solids |
-| Wet nappies | Raising Children Network |
+| Feeds | Raising Children Network and Pregnancy, Birth and Baby to 4 months; Tresillian 4–5 months; Karitane 6–12 months; checked against South Eastern Sydney Local Health District (NSW Health) |
+| Formula | NHMRC Infant Feeding Guidelines, as South Eastern Sydney Local Health District (NSW Health) gives them: about 150 ml per kg a day to 3 months, about 120 to 6, then about 100 (90 for some) alongside solids |
+| Wet nappies | Raising Children Network; South Eastern Sydney Local Health District (NSW Health) |
 | Weight gain | Tresillian and RCH Melbourne |
 
 Wake windows after 12 months and the newborn nap pattern are commonly quoted

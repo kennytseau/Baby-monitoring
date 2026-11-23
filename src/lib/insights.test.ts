@@ -105,7 +105,8 @@ describe('guidesForAge', () => {
     expect(text(4.6, 'wake')).toBe('2–2.5 h')
     expect(text(4.6, 'feeds')).toBe('About 5 by day and 1–2 overnight')
     // Six months
-    expect(text(6, 'naps')).toBe('2 a day')
+    expect(text(6, 'naps')).toBe('2–3 a day')
+    expect(text(9.5, 'naps')).toBe('2 a day')
     expect(text(6, 'daySleep')).toBe('2–3 h')
     expect(text(6, 'wake')).toBe('2–3 h')
     expect(text(6, 'feeds')).toBe('4–6, alongside solids')
@@ -122,7 +123,7 @@ describe('guidesForAge', () => {
     const perKg = text(2.8, 'bottle')!
     expect(withPronouns(perKg, 'female')).toBe('About 150 ml per kg of her weight')
     expect(withPronouns(perKg, 'male')).toBe('About 150 ml per kg of his weight')
-    expect(text(7, 'bottle', 8)).toBe('720–960 ml at 8 kg')
+    expect(text(7, 'bottle', 8)).toBe('720–800 ml at 8 kg')
     expect(text(13, 'bottle')).toBeUndefined()
   })
 
