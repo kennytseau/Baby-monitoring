@@ -80,6 +80,7 @@ export function herWeek(log: LogEntry[], growth: GrowthEntry[], now = new Date()
   if (fed.length >= MIN_DAYS) values.feeds = mean(fed.map((d) => d.feeds.length))
   if (summaries.length >= MIN_DAYS) {
     values.naps = mean(summaries.map((s) => s.naps))
+    values.daySleep = mean(summaries.map((s) => s.napMinutes))
     values.wet = mean(summaries.map((s) => s.totals.nappies.wet + s.totals.nappies.mixed))
     const bottles = mean(summaries.map((s) => s.totals.bottleMl))
     if (bottles > 0) values.bottle = bottles

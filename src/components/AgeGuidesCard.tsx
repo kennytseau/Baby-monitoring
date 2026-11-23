@@ -70,6 +70,7 @@ function hers(guide: AgeGuide, week: HerWeek): string {
   }
   switch (guide.id) {
     case 'sleep':
+    case 'daySleep':
     case 'wake':
       return `${formatDuration(value)}${guide.id === 'wake' ? ' typically' : ' a day'}`
     case 'bottle':

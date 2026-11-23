@@ -51,6 +51,7 @@ describe('herWeek', () => {
     expect(week.values.sleep).toBe(390)
     expect(week.values.feeds).toBe(4)
     expect(week.values.naps).toBe(2)
+    expect(week.values.daySleep).toBe(150)
     expect(week.values.wet).toBe(6)
     expect(week.values.bottle).toBe(400)
     expect(week.alsoNursed).toBe(false)
@@ -86,26 +87,48 @@ describe('herWeek', () => {
 })
 
 describe('guidesForAge', () => {
+  const text = (age: number, id: string, weightKg?: number) =>
+    guidesForAge(age, weightKg).find((g) => g.id === id)?.text
+
   it('picks the band for her age', () => {
-    const at12Weeks = guidesForAge(2.8)
-    expect(at12Weeks.find((g) => g.id === 'sleep')?.text).toBe('14–17 h')
-    expect(at12Weeks.find((g) => g.id === 'feeds')?.text).toBe('8–12 nursing, 6–8 by bottle')
-    expect(at12Weeks.find((g) => g.id === 'wake')?.text).toBe('60–90 min')
-    expect(guidesForAge(5).find((g) => g.id === 'sleep')?.text).toBe('12–16 h')
-    expect(guidesForAge(4).find((g) => g.id === 'wake')?.text).toBe('About 2 h')
-    expect(guidesForAge(4).find((g) => g.id === 'naps')?.text).toBe('2–3 a day')
+    expect(text(2.8, 'sleep')).toBe('14–17 h')
+    expect(text(2.8, 'feeds')).toBe('8–12 nursing, 6–8 by bottle')
+    expect(text(2.8, 'wake')).toBe('1–2.5 h')
+    expect(text(2.8, 'daySleep')).toBeUndefined()
+  })
+
+  it('narrows month by month through the first year', () => {
+    // Just past 4½ months
+    expect(text(4.6, 'sleep')).toBe('14–15 h')
+    expect(text(4.6, 'naps')).toBe('2–3 a day')
+    expect(text(4.6, 'daySleep')).toBe('3–4 h')
+    expect(text(4.6, 'wake')).toBe('2–2.5 h')
+    expect(text(4.6, 'feeds')).toBe('About 5 by day and 1–2 overnight')
+    // Six months
+    expect(text(6, 'naps')).toBe('2–3 a day')
+    expect(text(9.5, 'naps')).toBe('2 a day')
+    expect(text(6, 'daySleep')).toBe('2–3 h')
+    expect(text(6, 'wake')).toBe('2–3 h')
+    expect(text(6, 'feeds')).toBe('4–6, alongside solids')
+    // Seven months, then nine
+    expect(text(7, 'sleep')).toBe('12–14 h')
+    expect(text(9.5, 'wake')).toBe('2.5–3.5 h')
+    // Into the second year
+    expect(text(13, 'naps')).toBe('1–2 a day')
+    expect(text(20, 'naps')).toBe('1 a day')
   })
 
   it('turns the formula guide into millilitres once she has a weight', () => {
-    expect(guidesForAge(2.8, 5).find((g) => g.id === 'bottle')?.text).toBe('About 750 ml at 5 kg')
-    const perKg = guidesForAge(2.8).find((g) => g.id === 'bottle')!.text
+    expect(text(2.8, 'bottle', 5)).toBe('About 750 ml at 5 kg')
+    const perKg = text(2.8, 'bottle')!
     expect(withPronouns(perKg, 'female')).toBe('About 150 ml per kg of her weight')
     expect(withPronouns(perKg, 'male')).toBe('About 150 ml per kg of his weight')
-    expect(guidesForAge(7).find((g) => g.id === 'bottle')).toBeUndefined()
+    expect(text(7, 'bottle', 8)).toBe('720–800 ml at 8 kg')
+    expect(text(13, 'bottle')).toBeUndefined()
   })
 
   it('follows the NHMRC drop to about 120 ml per kg from three months', () => {
-    expect(guidesForAge(4.5, 7.6).find((g) => g.id === 'bottle')?.text).toBe('About 910 ml at 7.6 kg')
+    expect(text(4.5, 'bottle', 7.6)).toBe('About 910 ml at 7.6 kg')
   })
 })
 
