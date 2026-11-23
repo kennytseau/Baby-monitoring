@@ -52,10 +52,12 @@ still with no accounts and nothing sold or tracked.
   holding the last weight was off by 0.6–1.5 kg. A new weigh-in replaces the
   estimate, and a home weigh-in every week or two beats it.
 - **Babies around her age** — on the Growth tab, the ranges Australian
-  guidance gives for sleep, naps, wake windows, feeds, formula, wet nappies and
-  weight gain at her age, with her own last seven days alongside. Each range
-  names its source, and the ones that are popular advice rather than published
-  guidance say so. It is there to read and nothing more: no prediction uses it (a test
+  guidance gives for sleep, naps, day sleep in total, wake windows, feeds,
+  formula, wet nappies and weight gain at her age, with her own last seven
+  days alongside. The bands go month by month where the guidance does (every
+  month or half-month through the first year), and the card moves to the next
+  band by itself as she grows. Each range names its source, and the ones that
+  are popular advice rather than published guidance say so. It is there to read and nothing more: no prediction uses it (a test
   makes sure of that).
 - **Daily log** — the day in one place:
   - **Milk** — nursing with a live per-side timer (start on the left, switch to
@@ -513,17 +515,24 @@ from *Settings & data* before clearing or switching devices.
 Her age is shown in weeks and days for as long as that is useful. Switching to
 months later is one constant, `AGE_IN_MONTHS_FROM_DAYS` in `src/lib/age.ts`.
 
-The typical ranges on the Growth tab come from Australian guidance:
-- **Sleep:** the Australian 24-Hour Movement Guidelines.
-- **Naps and wet nappies:** Raising Children Network.
-- **Wake windows** at 3–6 months: Tresillian.
-- **Feeds:** Raising Children Network and Pregnancy, Birth and Baby.
-- **Formula:** the NHMRC Infant Feeding Guidelines, about 150 ml per kg a day
-  to 3 months and about 120 from 3 to 6.
-- **Weight gain:** Tresillian and RCH Melbourne.
+The typical ranges on the Growth tab come from Australian guidance, as
+narrow as it goes. The national guidelines give one range for most of the
+first year, so the month-by-month bands come from Karitane and Tresillian, the
+NSW parenting services:
 
-The other nap counts and wake windows are commonly quoted rather than
-published guidance, and the card says so.
+| Guide | Bands and sources |
+| --- | --- |
+| Sleep in 24 hours | 24-Hour Movement Guidelines to 3 months and from 1 year; Karitane 3–6 months (14–15 h) and 7–12 months (12–14 h) |
+| Naps | Tresillian at 6–12 weeks, 3–5, 6–8, 9–12 and 12–18 months; Raising Children Network for toddlers |
+| Day sleep in total | Tresillian 3–5 months (3–4 h), 6–8 and 9–12 months (2–3 h), 12–18 months; Raising Children Network for toddlers |
+| Awake between sleeps | Tresillian to 3 months and at 9–12 months; Karitane at 3–4½, 4½–6 and 6–9 months |
+| Feeds | Raising Children Network and Pregnancy, Birth and Baby to 4 months; Tresillian 4–5 months; Karitane 6–12 months |
+| Formula | NHMRC Infant Feeding Guidelines: about 150 ml per kg a day to 3 months, about 120 to 6, then 90–120 alongside solids |
+| Wet nappies | Raising Children Network |
+| Weight gain | Tresillian and RCH Melbourne |
+
+Wake windows after 12 months and the newborn nap pattern are commonly quoted
+rather than published guidance, and the card says so.
 
 Growth curves closely approximate the WHO Child Growth Standards percentiles
 (transcribed values for visualization, not the official LMS tables). These
