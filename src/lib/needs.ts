@@ -1,6 +1,7 @@
 import type { FeedEntry, LogEntry } from './types'
 import { findOpenSleep, happenedBy, sortedByTime } from './log'
 import { estimateByHour, gapSamples, MIN_SAMPLES, MS_PER_MINUTE } from './patterns'
+import { clockFor, type Clock } from './clock'
 
 /**
  * When the next feed and the next change are likely, and how much she will
@@ -99,7 +100,7 @@ export function timingOf(minutesAway: number): Timing | undefined {
 }
 
 /** When the next one is due, from how long she has been going lately at this hour */
-function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
+function needFor(kind: NeedKind, times: string[], now: Date, clock: Clock): Need | null {
   const parsed = times.map((t) => Date.parse(t)).filter(Number.isFinite)
   if (parsed.length === 0) return null
 
@@ -111,7 +112,7 @@ function needFor(kind: NeedKind, times: string[], now: Date): Need | null {
   const since = (now.getTime() - lastAt.getTime()) / MS_PER_MINUTE
   // How long she has already gone narrows it down; beyond the cap the log has
   // simply not been kept up, and there is nothing sensible left to condition on.
-  const estimated = estimateByHour(samples, lastAt, TIMING_HISTORY_DAYS, Math.min(since, MAX_GAP_MINUTES))
+  const estimated = estimateByHour(samples, lastAt, TIMING_HISTORY_DAYS, Math.min(since, MAX_GAP_MINUTES), clock)
   if (!estimated) return null
 
   const dueIn = estimated.value - since
@@ -174,7 +175,7 @@ export function feedEvents(feeds: FeedEntry[]): FeedEvent[] {
  * Whichever way she has been fed most often lately decides the unit — there is
  * no use offering millilitres to someone who nurses.
  */
-function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
+function servingFor(feeds: FeedEntry[], at: Date, clock: Clock): Serving | undefined {
   const events = feedEvents(feeds)
   const bottles = events.filter((e) => e.ml > 0).map((e) => ({ at: e.at, value: e.ml }))
   const nursing = events
@@ -182,7 +183,7 @@ function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
     .map((e) => ({ at: e.at, value: e.minutes }))
 
   const unit = bottles.length >= nursing.length ? 'ml' : 'min'
-  const estimated = estimateByHour(unit === 'ml' ? bottles : nursing, at, AMOUNT_HISTORY_DAYS)
+  const estimated = estimateByHour(unit === 'ml' ? bottles : nursing, at, AMOUNT_HISTORY_DAYS, 0, clock)
   if (!estimated || estimated.samples < MIN_SAMPLES) return undefined
   return { unit, value: Math.max(SERVING_STEP, Math.round(estimated.value / SERVING_STEP) * SERVING_STEP) }
 }
@@ -190,17 +191,20 @@ function servingFor(feeds: FeedEntry[], at: Date): Serving | undefined {
 export function forecastNeeds(allEntries: LogEntry[], now = new Date()): NeedsForecast {
   // Only what has actually happened: a feed lined up for later is not a feed.
   const log = happenedBy(allEntries, now)
+  const clock = clockFor(allEntries)
   const feeds = log.filter((e): e is FeedEntry => e.type === 'feed')
   const feed = needFor(
     'feed',
     feeds.map((e) => e.time),
     now,
+    clock,
   )
-  if (feed) feed.serving = servingFor(feeds, feed.at)
+  if (feed) feed.serving = servingFor(feeds, feed.at, clock)
   const nappy = needFor(
     'nappy',
     log.filter((e) => e.type === 'nappy').map((e) => e.time),
     now,
+    clock,
   )
   const asleep = Boolean(findOpenSleep(log, now))
 

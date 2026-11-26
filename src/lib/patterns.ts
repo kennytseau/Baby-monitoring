@@ -1,3 +1,5 @@
+import { DEVICE_CLOCK, type Clock } from './clock'
+
 /**
  * Learning a baby's habits from her own log.
  *
@@ -76,17 +78,19 @@ export function estimateByHour(
   from: Date,
   historyDays: number,
   elapsedMinutes = 0,
+  /** Whose clock "the same hour" is read on: hers, from the zones in the log (see clock.ts) */
+  clock: Clock = DEVICE_CLOCK,
 ): Estimate | null {
   const recent = recentPool(samples, from, historyDays)
   const pool = recent.length > 0 ? recent : samples.filter((s) => s.at.getTime() <= from.getTime())
   if (pool.length === 0) return null
 
-  const hour = from.getHours()
+  const hour = clock.hourOf(from)
   for (const [width, approximate] of [
     [1, false],
     [2, true],
   ] as const) {
-    const near = pool.filter((s) => hoursApart(s.at.getHours(), hour) <= width)
+    const near = pool.filter((s) => hoursApart(clock.hourOf(s.at), hour) <= width)
     if (near.length >= MIN_SAMPLES) {
       return summarize(near, approximate || recent.length === 0, elapsedMinutes)
     }

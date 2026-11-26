@@ -1,6 +1,7 @@
 import type { LogEntry } from './types'
 import { hasEnded, startedSleeps } from './log'
 import { estimateByHour, MIN_SAMPLES, MS_PER_MINUTE, quantile, type Estimate, type Sample } from './patterns'
+import { clockFor, type Clock } from './clock'
 
 /**
  * Predicting the next wake-up and the next wind-down, from her own sleeps at
@@ -135,7 +136,7 @@ function napBand(minutes: number): 'catnap' | 'short' | 'full' {
  * fraction of her usual wake window at that hour — read off her own past short
  * naps, and 1 (no change) after a full nap or when there are too few to go on.
  */
-function afterNapFactor(blocks: SleepBlock[], napMinutes: number, from: Date): number {
+function afterNapFactor(blocks: SleepBlock[], napMinutes: number, from: Date, clock: Clock): number {
   const band = napBand(napMinutes)
   if (band === 'full') return 1
 
@@ -150,7 +151,7 @@ function afterNapFactor(blocks: SleepBlock[], napMinutes: number, from: Date): n
     const awake = (next.start.getTime() - nap.end.getTime()) / MS_PER_MINUTE
     if (awake <= 0 || awake > MAX_WAKE_WINDOW_MINUTES) continue
     // Her usual at that moment, from what came before it — never from itself.
-    const usual = estimateByHour(usualSamples, new Date(nap.end.getTime() - 1), HISTORY_DAYS)
+    const usual = estimateByHour(usualSamples, new Date(nap.end.getTime() - 1), HISTORY_DAYS, 0, clock)
     if (usual && usual.value > 0) ratios.push(awake / usual.value)
   }
   if (ratios.length < MIN_SAMPLES) return 1
@@ -190,6 +191,7 @@ export function forecastRhythm(
   const blocks = sleepBlocks(log, now)
   const current = blocks[blocks.length - 1]
   const asleep = !!current?.open
+  const clock = clockFor(log)
 
   if (blocks.length === 0) {
     return { asleep: false, reason: 'Log a few sleeps and this will start predicting {his} rhythm.' }
@@ -200,7 +202,7 @@ export function forecastRhythm(
   // she runs past it is no use to plan around; a fixed one that has been
   // passed says something — the card shows "any time now" instead.
   if (asleep) {
-    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, wakeUpHistoryDays)
+    const estimated = estimateByHour(sleepLengthSamples(blocks), current.start, wakeUpHistoryDays, 0, clock)
     if (!estimated) {
       return { asleep, reason: 'Not enough sleeps logged yet to guess when {he} will wake.' }
     }
@@ -208,13 +210,13 @@ export function forecastRhythm(
   }
 
   const lastWoke = current.end
-  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, HISTORY_DAYS)
+  const estimated = estimateByHour(wakeWindowSamples(blocks), lastWoke, HISTORY_DAYS, 0, clock)
   if (!estimated) {
     return { asleep, reason: 'Not enough sleeps logged yet to guess {his} next wind-down.' }
   }
   // A catnap leaves her nearly as tired as before it, so the window that
   // follows is shorter — by as much as her own short naps have shown.
-  const factor = afterNapFactor(blocks, current.minutes, lastWoke)
+  const factor = afterNapFactor(blocks, current.minutes, lastWoke, clock)
   if (factor < 1) {
     return {
       asleep,
