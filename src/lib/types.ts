@@ -46,7 +46,17 @@ export type BreastSide = 'left' | 'right'
 export type BottleContent = 'formula' | 'expressed' | 'mixed'
 export type NappyKind = 'wet' | 'poo' | 'mixed'
 
-export interface FeedEntry extends SyncMeta {
+/** What every log entry carries besides its own fields */
+export interface LogMeta extends SyncMeta {
+  /**
+   * The time zone the phone was in when this was logged (IANA, e.g.
+   * "Australia/Sydney"), so her past is read on the clock of where it
+   * happened. Missing on entries from before it was recorded.
+   */
+  tz?: string
+}
+
+export interface FeedEntry extends LogMeta {
   id: string
   type: 'feed'
   /** ISO datetime the feed started */
@@ -68,7 +78,7 @@ export interface FeedEntry extends SyncMeta {
   note?: string
 }
 
-export interface SleepEntry extends SyncMeta {
+export interface SleepEntry extends LogMeta {
   id: string
   type: 'sleep'
   /** ISO datetime the sleep started */
@@ -78,7 +88,7 @@ export interface SleepEntry extends SyncMeta {
   note?: string
 }
 
-export interface NappyEntry extends SyncMeta {
+export interface NappyEntry extends LogMeta {
   id: string
   type: 'nappy'
   /** ISO datetime */
@@ -88,7 +98,7 @@ export interface NappyEntry extends SyncMeta {
 }
 
 /** A dose of medicine — what it was, how much, and when */
-export interface MedicationEntry extends SyncMeta {
+export interface MedicationEntry extends LogMeta {
   id: string
   type: 'medication'
   /** ISO datetime the dose was given */
@@ -101,7 +111,7 @@ export interface MedicationEntry extends SyncMeta {
 }
 
 /** A pumping session — millilitres expressed from each breast */
-export interface PumpEntry extends SyncMeta {
+export interface PumpEntry extends LogMeta {
   id: string
   type: 'pump'
   /** ISO datetime the session started */

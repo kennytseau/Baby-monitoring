@@ -343,6 +343,38 @@ doesn't claim to:
 
 Being behind is real. That it costs her sleep is not something her data shows.
 
+### Time zones (built for travel, not shown in the app yet)
+
+Every prediction compares her with herself at the same time of day. Read on
+the phone's current clock, a fortnight logged in Sydney would land 11 hours
+out after a flight to London: her 8:30pm bedtimes would read as 9:30am.
+
+**What's recorded.**
+- Each new log entry records the phone's time zone (`tz`, e.g.
+  `Australia/Sydney`).
+- An edit keeps the zone the entry already had.
+- Entries from before this, or synced from a phone without it, take the zone
+  of the nearest entry that has one.
+
+**How it's used** (`src/lib/clock.ts`).
+- Her past is read on the clock of where it happened. The wake-up, wind-down,
+  feed and change predictions, bottle sizes and her usual bedtime keep to her
+  routine on the local clock after landing. That's what travelling parents aim
+  for; the jet-lagged first days stay hard to call whatever the model.
+- Days logged on another clock are left out of the comparisons that line days
+  up hour by hour: the catch-up points and the change detector. After a flight
+  they stay quiet until there are local days to compare with, rather than
+  reporting nonsense.
+
+**What it changes at home: nothing.** On her log to 22 November, the
+predictions, catch-up points and daily measures were identical with every
+entry tagged as Sydney, across 811 checks through November.
+
+**Tested** by a fortnight on a Sydney routine and two days in London on the
+same local routine (`src/lib/clock.test.ts`). With the phone in London, the
+bedtime, nap and bedtime-hour tests fail on the old phone-clock reading and
+pass on hers.
+
 ### Things that were tried and didn't help
 
 Worth recording so they aren't tried again. None of these beat the model above

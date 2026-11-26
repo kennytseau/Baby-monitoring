@@ -19,6 +19,7 @@ import {
 import type { Collection } from '../lib/sync'
 import { MAX_CHANGES_PER_PUSH, SyncError, createHousehold, pushPull } from '../lib/syncClient'
 import { todayISO, withPronouns } from '../lib/format'
+import { deviceTimeZone } from '../lib/clock'
 
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error'
 
@@ -98,8 +99,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const updateGrowth = useCallback((entry: GrowthEntry) => change('growth', entry), [change])
   const deleteGrowth = useCallback((id: string) => remove('growth', id), [remove])
 
-  const addLog = useCallback((entry: LogEntry) => change('log', entry), [change])
-  const updateLog = useCallback((entry: LogEntry) => change('log', entry), [change])
+  // Each entry keeps the zone it was logged in, so travel does not shift her
+  // past on the clock; an edit keeps the zone the entry already had.
+  const addLog = useCallback(
+    (entry: LogEntry) => {
+      const tz = entry.tz ?? deviceTimeZone()
+      change('log', tz ? { ...entry, tz } : entry)
+    },
+    [change],
+  )
+  const updateLog = useCallback((entry: LogEntry) => {
+    setDoc((s) => {
+      const tz = entry.tz ?? s.log.find((e) => e.id === entry.id)?.tz
+      return applyLocalChange(s, 'log', tz ? { ...entry, tz } : entry)
+    })
+  }, [])
   const deleteLog = useCallback((id: string) => remove('log', id), [remove])
 
   const addMemory = useCallback((memory: Memory) => change('memories', memory), [change])

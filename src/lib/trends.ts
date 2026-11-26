@@ -6,6 +6,7 @@ import { formatDuration, formatTime } from './format'
 import { feedEvents } from './needs'
 import { MIN_SAMPLES, MS_PER_MINUTE, quantile } from './patterns'
 import { forecastRhythm, sleepBlocks } from './rhythm'
+import { clockFor, loggedElsewhere } from './clock'
 
 /** A daytime sleep counts as a nap; the rest is night sleep */
 const NAP_START_HOUR = 6
@@ -221,8 +222,15 @@ const around = (at: Date) => formatTime(new Date(roundTo(at.getTime(), 5 * MS_PE
 export function catchUpTips(log: LogEntry[], now = new Date()): CatchUpTip[] {
   const byNow = dailySummaries(log, CATCH_UP_DAYS + 1, now, true)
   const whole = dailySummaries(log, CATCH_UP_DAYS + 1, now)
-  // A day with nothing logged is a gap in the record, not a day of nothing
-  const past = byNow.slice(1).filter((_, i) => whole[i + 1].totals.feeds + whole[i + 1].totals.sleeps > 0)
+  const clock = clockFor(log)
+  // A day with nothing logged is a gap in the record, not a day of nothing;
+  // and a day logged on another clock (before a flight) cannot be laid
+  // against this one hour by hour, so it waits until there are local days.
+  const past = byNow.slice(1).filter((s, i) => {
+    const noon = parseISODate(s.day)
+    noon.setHours(12)
+    return whole[i + 1].totals.feeds + whole[i + 1].totals.sleeps > 0 && !loggedElsewhere(clock, noon)
+  })
   if (past.length < MIN_USUAL_DAYS) return []
   const milk = milkTip(log, now, byNow[0], past)
   return [...(milk ? [milk] : []), ...sleepTips(log, now, byNow[0], past)]
@@ -312,7 +320,7 @@ function sleepTips(log: LogEntry[], now: Date, today: DaySummary, past: DaySumma
 
   const blocks = sleepBlocks(log, now)
   const last = blocks[blocks.length - 1]
-  const hour = last?.start.getHours() ?? -1
+  const hour = last ? clockFor(log).hourOf(last.start) : -1
   const oneCycle = last && !last.open && last.minutes >= MIN_NAP_MINUTES && last.minutes < ONE_CYCLE_MINUTES
   if (last && oneCycle && hour >= NAP_START_HOUR && hour < NAP_END_HOUR && !nextIsBedtime) {
     tips.push({
@@ -328,13 +336,17 @@ function sleepTips(log: LogEntry[], now: Date, today: DaySummary, past: DaySumma
  * evening sleep over the last fortnight.
  */
 export function usualBedtime(log: LogEntry[], now = new Date()): Date | undefined {
-  const starts = new Map<string, number>()
+  // Read on her clock, so a fortnight of Sydney bedtimes still says 8:30pm in London
+  const clock = clockFor(log)
+  const starts = new Map<number, number>()
   for (const block of sleepBlocks(log, now)) {
     if (block.open || block.minutes < NIGHT_SLEEP_MINUTES) continue
     if (now.getTime() - block.start.getTime() > BEDTIME_HISTORY_DAYS * DAY_MS) continue
-    if (block.start.getHours() < BEDTIME_FROM_HOUR) continue
-    const day = toISODate(block.start)
-    if (!starts.has(day)) starts.set(day, block.start.getHours() * 60 + block.start.getMinutes())
+    const minute = clock.minuteOfDay(block.start)
+    if (minute < BEDTIME_FROM_HOUR * 60) continue
+    // One bedtime per evening: the evening is her local day it started on
+    const evening = Math.round((block.start.getTime() / MS_PER_MINUTE - minute) / (24 * 60))
+    if (!starts.has(evening)) starts.set(evening, minute)
   }
   if (starts.size < MIN_USUAL_DAYS) return undefined
   const minutes = Math.round(median([...starts.values()]))

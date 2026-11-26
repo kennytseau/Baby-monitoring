@@ -3,6 +3,7 @@ import { happenedBy, sortedByTime } from './log'
 import { sleepBlocks, type SleepBlock } from './rhythm'
 import { SAME_EVENT_MINUTES } from './needs'
 import { MS_PER_MINUTE, quantile } from './patterns'
+import { clockFor, loggedElsewhere } from './clock'
 import { toISODate } from './age'
 
 /**
@@ -99,6 +100,7 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
   }
 
   const first = new Date(sortedByTime(happened, 'asc')[0].time)
+  const clock = clockFor(log)
   const days: DayMeasures[] = []
   for (let morning = at(first, 0); morning <= now; morning.setDate(morning.getDate() + 1)) {
     const day = toISODate(morning)
@@ -129,7 +131,10 @@ export function dailyMeasures(log: LogEntry[], now = new Date()): DayMeasures[] 
     midnight.setDate(midnight.getDate() + 1)
     if (midnight <= now && feedDays.has(day)) values.feeds = feedDays.get(day)
 
-    days.push({ day, values })
+    // A day logged on another clock (before a flight) has its nights and days
+    // in the wrong hours on this one, so it counts as not logged rather than
+    // as a sudden change.
+    days.push({ day, values: loggedElsewhere(clock, at(morning, 12)) ? {} : values })
   }
   return days
 }
